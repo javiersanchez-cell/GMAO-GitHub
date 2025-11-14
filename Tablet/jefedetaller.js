@@ -2,7 +2,7 @@ function cerrarSesion() {
     if (confirm('¿Está seguro que desea cerrar sesión?')) {
         localStorage.removeItem('gmao_logged_in');
         localStorage.removeItem('gmao_username');
-        window.location.href = '../login.html';
+        window.location.href = '../index.html';
     }
 }
 
@@ -24,13 +24,13 @@ function verOrdenesTrabajo() {
 // Verificar autenticación al cargar la página
 window.addEventListener('load', () => {
     if (localStorage.getItem('gmao_logged_in') !== 'true') {
-        window.location.href = '../login.html';
+        window.location.href = '../index.html';
     }
     
     // Verificar que sea el usuario correcto
     const username = localStorage.getItem('gmao_username');
     if (username !== 'jefedetaller') {
         alert('❌ Acceso no autorizado para este usuario');
-        window.location.href = '../login.html';
+        window.location.href = '../index.html';
     }
 });
