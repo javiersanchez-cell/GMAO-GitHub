@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLANASA GMAO - Ver Solicitudes</title>
+    <link rel="stylesheet" href="ver-solicitudes.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <div class="container">
+
+
+        <div class="filters-section">
+            <div class="filter-group">
+                <label for="importancia-filter">Importancia:</label>
+                <select id="importancia-filter" onchange="filtrarSolicitudes()">
+                    <option value="todas">Todas</option>
+                    <option value="alta">Alta</option>
+                    <option value="media">Media</option>
+                    <option value="baja">Baja</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="tipo-filter">Tipo Mantenimiento:</label>
+                <select id="tipo-filter" onchange="filtrarSolicitudes()">
+                    <option value="todos">Todos</option>
+                    <option value="Mantenimiento Preventivo">Preventivo</option>
+                    <option value="Mantenimiento Correctivo">Correctivo</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="activo-filter">Tipo Activo:</label>
+                <select id="activo-filter" onchange="filtrarSolicitudes()">
+                    <option value="todos">Todos</option>
+                    <option value="Tractor">Tractor</option>
+                    <option value="Pulverizador">Pulverizador</option>
+                    <option value="Cosechadora">Cosechadora</option>
+                    <option value="Sistema de Riego">Sistema de Riego</option>
+                    <option value="Generador">Generador</option>
+                    <option value="Bomba">Bomba</option>
+                    <option value="Cultivador">Cultivador</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="solicitudes-container" id="solicitudes-lista">
+            <!-- Las solicitudes se cargarán dinámicamente -->
+        </div>
+
+    </div>
+
+    <!-- Modal para ver detalles de solicitud -->
+    <div id="modal-detalle" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-titulo">Detalle de Solicitud</h2>
+                <button class="modal-close" onclick="cerrarModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-contenido">
+                <!-- Contenido se carga dinámicamente -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-guardar" onclick="guardarCambios()">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+                <button class="btn-crear-orden" onclick="crearOrdenTrabajo()">
+                    <i class="fas fa-plus-circle"></i> Crear Orden de Trabajo
+                </button>
+                <button class="btn-cancelar" onclick="cerrarModal()">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para crear orden de trabajo -->
+    <div id="modal-orden-trabajo" class="modal">
+        <div class="modal-content wizard-modal">
+            <div class="modal-header">
+                <h2>📋 Crear Orden de Trabajo</h2>
+                <button class="modal-close" onclick="cerrarModalOrden()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Resumen por filas -->
+                <div class="resumen-filas">
+                    <div class="fila-resumen editable" id="fila-criticidad" style="display: none;" onclick="editarPaso(1)">
+                        <div class="fila-numero">1</div>
+                        <div class="fila-contenido">
+                            <div class="fila-titulo">Criticidad seleccionada</div>
+                            <div class="fila-valor" id="valor-criticidad"></div>
+                        </div>
+                        <div class="fila-acciones">
+                            <div class="fila-check">✓</div>
+                            <div class="fila-editar">✏️</div>
+                        </div>
+                    </div>
+                    
+                    <div class="fila-resumen editable" id="fila-fechas" style="display: none;" onclick="editarPaso(2)">
+                        <div class="fila-numero">2</div>
+                        <div class="fila-contenido">
+                            <div class="fila-titulo">Fechas programadas</div>
+                            <div class="fila-valor" id="valor-fechas"></div>
+                        </div>
+                        <div class="fila-acciones">
+                            <div class="fila-check">✓</div>
+                            <div class="fila-editar">✏️</div>
+                        </div>
+                    </div>
+                    
+                    <div class="fila-resumen editable" id="fila-responsable" style="display: none;" onclick="editarPaso(3)">
+                        <div class="fila-numero">3</div>
+                        <div class="fila-contenido">
+                            <div class="fila-titulo">Técnico asignado</div>
+                            <div class="fila-valor" id="valor-responsable"></div>
+                        </div>
+                        <div class="fila-acciones">
+                            <div class="fila-check">✓</div>
+                            <div class="fila-editar">✏️</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="orden-wizard">
+                    <!-- Paso 1: Criticidad -->
+                    <div id="paso1" class="paso-wizard">
+                        <h4>🚨 ¿Qué criticidad tiene esta avería?</h4>
+                        <div class="criticidad-options-simple">
+                            <button class="criticidad-btn-simple baja" onclick="seleccionarCriticidad('Baja')">
+                                🟢 Baja
+                            </button>
+                            <button class="criticidad-btn-simple media" onclick="seleccionarCriticidad('Media')">
+                                🟡 Media
+                            </button>
+                            <button class="criticidad-btn-simple alta" onclick="seleccionarCriticidad('Alta')">
+                                🟠 Alta
+                            </button>
+                            <button class="criticidad-btn-simple critica" onclick="seleccionarCriticidad('Crítica')">
+                                🔴 Crítica
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Paso 2: Fechas -->
+                    <div id="paso2" class="paso-wizard" style="display: none;">
+                        <h4>📅 ¿Cuándo hacerlo?</h4>
+                        <div class="fechas-programadas">
+                            <div class="campo-fecha-programada">
+                                <label>Fecha de inicio:</label>
+                                <input type="date" id="fechaInicio" onchange="validarFechasProgramadas()">
+                            </div>
+                            <div class="campo-fecha-programada">
+                                <label>Fecha de finalización:</label>
+                                <input type="date" id="fechaFin" onchange="validarFechasProgramadas()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 3: Responsable -->
+                    <div id="paso3" class="paso-wizard" style="display: none;">
+                        <h4>👤 ¿Quién lo va a hacer?</h4>
+                        <div class="responsable-simple">
+                            <label>Técnico responsable:</label>
+                            <select id="responsable" onchange="validarResponsable()">
+                                <option value="">Seleccionar técnico...</option>
+                                <option value="Carlos Méndez">👨‍🔧 Carlos Méndez</option>
+                                <option value="Ana García">👩‍🔧 Ana García</option>
+                                <option value="Luis Fernández">👨‍🔧 Luis Fernández</option>
+                                <option value="María Ruiz">👩‍🔧 María Ruiz</option>
+                                <option value="Diego López">👨‍🔧 Diego López</option>
+                            </select>
+                        </div>
+                        <button id="btnSiguienteResponsable" class="btn-continuar" onclick="siguientePaso(4)" disabled>
+                            Continuar
+                        </button>
+                    </div>
+
+                    <!-- Paso 4: Lista de Tareas -->
+                    <div id="paso4" class="paso-wizard" style="display: none;">
+                        <h4>📝 Tareas y Descripción (Opcional)</h4>
+                        
+                        <!-- Selector de tipo para cargar tareas -->
+                        <div class="tipo-selector-wrapper">
+                            <label for="tipoTrabajo">Tipo de trabajo:</label>
+                            <select id="tipoTrabajo" onchange="cargarTareasPredeterminadas()">
+                                <option value="">Seleccionar tipo...</option>
+                                <option value="preventivo-motor">Mantenimiento Preventivo - Motor</option>
+                                <option value="preventivo-hidraulico">Mantenimiento Preventivo - Sistema Hidráulico</option>
+                                <option value="preventivo-electrico">Mantenimiento Preventivo - Sistema Eléctrico</option>
+                                <option value="correctivo-mecanico">Mantenimiento Correctivo - Mecánico</option>
+                                <option value="correctivo-electrico">Mantenimiento Correctivo - Eléctrico</option>
+                                <option value="correctivo-hidraulico">Mantenimiento Correctivo - Hidráulico</option>
+                            </select>
+                        </div>
+
+                        <!-- Contenido en 2 columnas -->
+                        <div class="contenido-dos-columnas">
+                            <!-- Columna izquierda: Lista de tareas -->
+                            <div class="columna-tareas">
+                                <div class="tareas-editables-container">
+                                    <div class="tareas-header">
+                                        <h5>Tareas programadas (opcional)</h5>
+                                        <button type="button" onclick="añadirTareaNueva()" class="btn-añadir-tarea">+ Añadir tarea</button>
+                                    </div>
+                                    <div id="lista-tareas-editables" class="lista-tareas">
+                                        <p class="sin-tareas">Puedes seleccionar un tipo de trabajo para cargar tareas predeterminadas o dejar vacío</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Columna derecha: Descripción -->
+                            <div class="columna-descripcion">
+                                <div class="descripcion-adicional">
+                                    <h5>Descripción adicional (opcional)</h5>
+                                    <textarea id="descripcionOrden" placeholder="Puedes añadir información adicional sobre el trabajo, pero no es obligatorio..." rows="12"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="wizard-acciones-finales">
+                            <button onclick="crearOrden()" class="btn-crear-final">
+                                ✅ Crear Orden de Trabajo
+                            </button>
+                            <button onclick="cerrarModalOrden()" class="btn-cancelar-final">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="ver-solicitudes.js"></script>
+    <script>
+        // Cargar navbar
+        fetch('../Components/navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('navbar-container').innerHTML = html;
+                // Mostrar el botón de volver después de cargar el navbar
+                setTimeout(() => {
+                    const btnVolver = document.getElementById('btn-volver-nav');
+                    if (btnVolver) {
+                        btnVolver.classList.add('show');
+                    }
+                }, 100);
+            })
+            .catch(error => {
+                console.error('Error cargando navbar:', error);
+            });
+    </script>
+</body>
+</html>

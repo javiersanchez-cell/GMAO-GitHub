@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GMAO Planasa – Máquinas</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <style>
+    :root{
+      --brand:#1f6f3d; --brand-2:#13492a;
+      --bg:#ffffff; --muted:#f5f7f6; --muted-2:#eef2f0;
+      --card:#ffffff; --txt:#1b1b1b; --txt-2:#596270;
+      --border:rgba(0,0,0,.12); --shadow:0 10px 30px rgba(0,0,0,.10);
+      --ok:#2e7d32; --warn:#f7b500; --crit:#c62828; --info:#1e88e5;
+      --pm-window:60;
+    }
+    [data-theme="dark"]{
+      --bg:#0f1512; --muted:#0b1a14; --muted-2:#0e1f18;
+      --card:#121a16; --txt:#e8f0eb; --txt-2:#a9b6ad;
+      --border:rgba(255,255,255,.12); --shadow:0 10px 30px rgba(0,0,0,.5);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--txt);font:15px system-ui,-apple-system,Segoe UI,Roboto,Arial;display:grid;grid-template-columns:300px 1fr;transition:background .3s,color .3s}
+    a{color:inherit;text-decoration:none}
+    aside{background:var(--card);border-right:1px solid var(--border);padding:18px;display:flex;flex-direction:column;gap:16px}
+    .brand{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;font-weight:800;box-shadow:var(--shadow)}
+    .logo{width:28px;height:28px;border-radius:8px;background:#fff}
+    nav{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+    .nav-item{padding:12px;border-radius:12px;color:var(--txt-2);cursor:pointer;font-weight:700;border:1px solid transparent}
+    .nav-item:hover{background:var(--muted-2)}
+    .nav-item.active{background:rgba(31,111,61,.12);color:var(--brand);border-color:rgba(31,111,61,.25)}
+    main{overflow:auto}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;font-weight:700;position:sticky;top:0;z-index:3}
+    .h-actions{display:flex;gap:8px;align-items:center}
+    .btn{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700;backdrop-filter:blur(6px)}
+    .btn:hover{background:rgba(255,255,255,.16)}
+    .select, .input{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--txt)}
+    .small{font-size:12px;color:var(--txt-2)}
+    /* Layout */
+    .content{padding:20px;display:grid;grid-template-rows:auto 1fr;gap:16px}
+    .top{display:grid;grid-template-columns:2fr 1.2fr;gap:16px;align-items:stretch}
+    .mapwrap{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;min-height:420px;display:flex;flex-direction:column}
+    #map{flex:1;min-height:360px}
+    .map-legend{padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:12px;flex-wrap:wrap}
+    .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;border:1px solid var(--border)}
+    .d-ok{background:#2e7d32}.d-pm{background:#f7b500}.d-rep{background:#c62828}.d-fs{background:#9e9e9e}
+    .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:220px}
+    .panel .head{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:800;display:flex;justify-content:space-between;align-items:center}
+    .panel .body{flex:1;padding:14px;color:var(--txt-2);overflow:auto;display:flex;flex-direction:column;gap:12px}
+    .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .kpi{background:var(--muted);border:1px solid var(--border);border-radius:12px;padding:10px}
+    .kpi .v{font-weight:900;color:var(--txt);font-size:20px}
+    .kpi .l{font-size:12px;color:var(--txt-2)}
+    .filters{display:grid;grid-template-columns:1fr;gap:12px}
+    .field label{display:block;font-weight:800;margin-bottom:6px;color:var(--txt-2)}
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{padding:8px 12px;border-radius:999px;border:1px solid var(--border);cursor:pointer;font-weight:800;color:var(--txt-2);background:var(--muted);user-select:none}
+    .chip.active{background:rgba(31,111,61,.12);color:var(--brand);border-color:rgba(31,111,61,.35)}
+    .chip .cnt{opacity:.7;margin-left:6px}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    /* Listado */
+    .list-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
+    .list-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;justify-content:space-between}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(260px,1fr));gap:14px;padding:14px}
+    .card{border:1px solid var(--border);border-radius:12px;background:var(--card);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease}
+    .card:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(0,0,0,.12);border-color:rgba(31,111,61,.35)}
+    .thumb{height:120px;background:linear-gradient(135deg,#d8f0e1,#ffffff);display:grid;place-items:center;position:relative}
+    [data-theme="dark"] .thumb{background:linear-gradient(135deg,#163425,#101613)}
+    .ribbon{position:absolute;top:10px;left:10px;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900;background:#e8f5e9;color:var(--ok);border:1px solid rgba(0,0,0,.06)}
+    .r-warn{background:#fff3cd;color:#7a5d00}
+    .r-crit{background:#ffebee;color:var(--crit)}
+    .tractor{width:64px;height:64px;opacity:.9}
+    .card .meta{padding:12px;display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center}
+    .title{font-weight:900;color:var(--txt);font-size:16px}
+    .badge{padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;justify-self:end}
+    .stats{display:flex;gap:8px;flex-wrap:wrap;color:var(--txt-2);font-size:12px}
+    .stat{padding:6px 8px;border:1px dashed var(--border);border-radius:8px;background:var(--muted)}
+    .pmbar{height:8px;border-radius:6px;background:var(--muted);border:1px solid var(--border);overflow:hidden}
+    .pmbar>span{display:block;height:100%;width:0}
+    .pm-ok{background:linear-gradient(90deg,#a8e6b1,#4caf50)}
+    .pm-warn{background:linear-gradient(90deg,#ffe082,#f7b500)}
+    .pm-crit{background:linear-gradient(90deg,#ff8a80,#c62828)}
+    @media (max-width:1200px){.grid{grid-template-columns:repeat(2,1fr)}.top{grid-template-columns:1fr}}
+    @media (max-width:720px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <aside>
+    <div class="brand"><div class="logo"></div>GMAO Planasa</div>
+    <nav class="nav" role="navigation" aria-label="Menú principal">
+      <a class="nav-item" href="Inicio.html">📊 Inicio</a>
+      <a class="nav-item" href="Incidencias.html">📝 Incidencias Usuario</a>
+      <a class="nav-item" href="GMO.html">📅 Gestión MO</a>
+      <a class="nav-item active" href="Maquinaria.html">🛠️ Gestión Máquinas</a>
+      <a class="nav-item" href="Finanzas.html">💶 Finanzas</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header>
+      <div>Máquinas – Mapa (Fincas), filtros y listado</div>
+      <div class="h-actions">
+        <button id="export" class="btn" title="Exportar CSV">⬇️ Exportar</button>
+        <button id="theme" class="btn" aria-pressed="false" title="Cambiar tema">🌙 Tema</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="top">
+        <section class="mapwrap" aria-label="Mapa de máquinas">
+          <div id="map" role="application" aria-label="Mapa de ubicaciones"></div>
+          <div class="map-legend small">
+            <span><span class="dot d-ok"></span>Disponible</span>
+            <span><span class="dot d-pm"></span>Preventivo</span>
+            <span><span class="dot d-rep"></span>En reparación</span>
+            <span><span class="dot d-fs"></span>Fuera de servicio</span>
+            <span class="small" id="map-resume" style="margin-left:auto">0 marcadores</span>
+          </div>
+        </section>
+
+        <section class="panel" aria-label="Filtros y resumen">
+          <div class="head">Filtros & Resumen</div>
+          <div class="body">
+            <div class="kpis" id="kpis">
+              <div class="kpi"><div class="v" id="k_total">0</div><div class="l">Total máquinas</div></div>
+              <div class="kpi"><div class="v" id="k_avail">0%</div><div class="l">% Disponibilidad</div></div>
+              <div class="kpi"><div class="v" id="k_pmsoon">0</div><div class="l">PM ≤ 7 días</div></div>
+              <div class="kpi"><div class="v" id="k_avg">0h</div><div class="l">Horas medias</div></div>
+            </div>
+
+            <div class="filters">
+              <div class="field">
+                <label for="q">Buscar</label>
+                <input id="q" class="input" placeholder="Tractor, Bomba…" />
+              </div>
+
+              <div class="field">
+                <label for="finca">Finca</label>
+                <select id="finca" class="select"></select>
+              </div>
+
+              <div class="field">
+                <label for="parcel">Parcela</label>
+                <select id="parcel" class="select"></select>
+              </div>
+
+              <div class="field">
+                <label>Estado</label>
+                <div class="chips" id="chips-state" role="group" aria-label="Filtrar por estado">
+                  <span data-state="ok"  class="chip active" tabindex="0">Disponible <span class="cnt" id="cnt-ok">0</span></span>
+                  <span data-state="pm"  class="chip active" tabindex="0">Preventivo <span class="cnt" id="cnt-pm">0</span></span>
+                  <span data-state="rep" class="chip active" tabindex="0">En reparación <span class="cnt" id="cnt-rep">0</span></span>
+                  <span data-state="fs"  class="chip active" tabindex="0">Fuera de servicio <span class="cnt" id="cnt-fs">0</span></span>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Criticidad</label>
+                <div class="chips" id="chips-crit" role="group" aria-label="Filtrar por criticidad">
+                  <span data-crit="Baja" class="chip active" tabindex="0">Baja</span>
+                  <span data-crit="Media" class="chip active" tabindex="0">Media</span>
+                  <span data-crit="Alta"  class="chip active" tabindex="0">Alta</span>
+                  <span data-crit="Crítica" class="chip active" tabindex="0">Crítica</span>
+                </div>
+              </div>
+
+              <div class="small" id="resume" aria-live="polite">0 máquinas • 0 en mantenimiento • 0 en reparación</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section class="list-panel" aria-label="Listado de máquinas">
+        <div class="list-head">
+          <div class="toolbar">
+            <label for="sort" class="small">Ordenar por</label>
+            <select id="sort" class="select" aria-label="Ordenar por">
+              <option value="smart">Inteligente (crítico→PM→horas)</option>
+              <option value="proxpm">Próx. PM (asc)</option>
+              <option value="horasdesc">Horas (desc)</option>
+              <option value="nombre">Nombre (A→Z)</option>
+              <option value="criticidad">Criticidad (Alta→Baja)</option>
+              <option value="estado">Estado (rep/fs→pm→ok)</option>
+            </select>
+          </div>
+          <div class="small" id="list-count">0 mostradas</div>
+        </div>
+        <div class="grid" id="grid"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- SVG -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="tractor" viewBox="0 0 64 64">
+      <circle cx="18" cy="50" r="8" fill="#2e7d32"/>
+      <circle cx="46" cy="50" r="10" fill="#2e7d32"/>
+      <rect x="10" y="28" width="44" height="10" rx="4" fill="#1f6f3d"/>
+      <rect x="22" y="16" width="16" height="12" fill="#8fd5a6"/>
+      <rect x="40" y="22" width="10" height="6" fill="#1f6f3d"/>
+      <rect x="8" y="22" width="10" height="6" fill="#1f6f3d"/>
+    </symbol>
+  </svg>
+
+  <script>
+    // === FINCAS con coordenadas reales (centro) ===
+    const FINCAS = {
+      'Fuente del Olmo':      { center: [41.37766823256439, -3.9966727738726884], parcelas:['Parcela 1','Parcela 2','Parcela 3'] },
+      'Milagro Laboratorio':  { center: [42.24170311216621, -1.7306265450014662], parcelas:['Invernadero A','Invernadero B'] },
+      'Huelva I+D':           { center: [37.315924931342835, -7.083621043993349], parcelas:['Sector Norte','Sector Sur'] }
+    };
+
+    // === Mock de máquinas (cada una asignada a una finca/parcela) ===
+    const MACHINES = [
+      {id:'6R',   tipo:'Tractor',      nombre:'Tractor 6R',        finca:'Fuente del Olmo',     parcela:'Parcela 1',      estado:'ok',  horas:3820, proxPM:'2025-10-02', criticidad:'Media'},
+      {id:'22',   tipo:'Bomba',        nombre:'Bomba 22',          finca:'Milagro Laboratorio', parcela:'Invernadero A',  estado:'ok',  horas:760,  proxPM:'2025-12-01', criticidad:'Baja'},
+      {id:'C01',  tipo:'Cinta',        nombre:'Cinta C01',         finca:'Fuente del Olmo',     parcela:'Parcela 2',      estado:'fs',  horas:120,  proxPM:'—',          criticidad:'Crítica'},
+      {id:'B23',  tipo:'Bomba',        nombre:'Bomba B23',         finca:'Fuente del Olmo',     parcela:'Parcela 3',      estado:'pm',  horas:980,  proxPM:'2025-09-25', criticidad:'Media'},
+      {id:'CR15', tipo:'Carretilla',   nombre:'Carretilla CR15',   finca:'Huelva I+D',          parcela:'Sector Norte',   estado:'rep', horas:450,  proxPM:'2025-11-12', criticidad:'Alta'},
+      {id:'PUL1', tipo:'Pulverizador', nombre:'Pulverizador PUL1', finca:'Milagro Laboratorio', parcela:'Invernadero B',  estado:'ok',  horas:1750, proxPM:'2025-12-05', criticidad:'Baja'}
+    ];
+
+    const PM_WINDOW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pm-window')) || 60;
+
+    // ====== DOM ======
+    const grid = document.getElementById('grid');
+    const resume = document.getElementById('resume');
+    const listCount = document.getElementById('list-count');
+    const stateChips = Array.from(document.querySelectorAll('#chips-state .chip'));
+    const critChips  = Array.from(document.querySelectorAll('#chips-crit .chip'));
+    const sortSel    = document.getElementById('sort');
+    const themeBtn   = document.getElementById('theme');
+    const mapResume  = document.getElementById('map-resume');
+    const fincaSel   = document.getElementById('finca');
+    const parcelSel  = document.getElementById('parcel');
+
+    // ===== Helpers generales =====
+    const today0 = () => new Date(new Date().toDateString());
+    function daysTo(dateStr){
+      if (!dateStr || dateStr === '—') return null;
+      const d = new Date(dateStr+'T00:00:00');
+      return Math.round((d - today0())/86400000);
+    }
+    function pmClass(days){
+      if (days === null) return '';
+      if (days < 0) return 'pm-crit';
+      if (days <= 7) return 'pm-warn';
+      return 'pm-ok';
+    }
+    function statusRibbonCls(s){
+      if(s==='ok') return 'ribbon';
+      if(s==='pm') return 'ribbon r-warn';
+      if(s==='rep' || s==='fs') return 'ribbon r-crit';
+      return 'ribbon';
+    }
+    function fmtPct(n){ return (Math.round(n*1000)/10).toFixed(1).replace('.0','')+'%'; }
+
+    // ===== Coordenadas por parcela (offset determinista desde el centro de la finca) =====
+    function parcelCoord(finca, parcela){
+      const base = FINCAS[finca]?.center;
+      if(!base) return null;
+      // hash simple por nombre de parcela
+      let seed = 0;
+      for (const ch of parcela) seed = ((seed<<5)-seed) + ch.charCodeAt(0);
+      const dx = ((seed % 9) - 4) / 5000;   // ~ ±0.0018º (~200 m)
+      const dy = (((seed>>3) % 9) - 4) / 5000;
+      return [base[0]+dx, base[1]+dy];
+    }
+
+    // Jitter leve por máquina para no solapar en la misma parcela
+    function jitterCoord([lat,lng], id){
+      let seed = 0; for (let i=0;i<id.length;i++) seed += id.charCodeAt(i);
+      const r1 = ((seed % 7) - 3)/10000; // ±0.0003
+      const r2 = (((seed>>3) % 7) - 3)/10000;
+      return [lat + r1, lng + r2];
+    }
+
+    function estadoColor(s){
+      if (s==='ok') return '#2e7d32';
+      if (s==='pm') return '#f7b500';
+      if (s==='rep') return '#c62828';
+      if (s==='fs') return '#9e9e9e';
+      return '#1e88e5';
+    }
+
+    function machineCard(m){
+      const d = daysTo(m.proxPM);
+      const clamped = d === null ? 0 : Math.max(0, Math.min(d, PM_WINDOW));
+      const pct = d === null ? 0 : Math.max(0, Math.min(100, 100 - (clamped / PM_WINDOW) * 100));
+      return `
+        <div class="card" data-id="${m.id}" tabindex="0" aria-label="${m.nombre}">
+          <div class="thumb">
+            <div class="${statusRibbonCls(m.estado)}">
+              ${m.estado==='ok'?'Disponible':m.estado==='pm'?'Preventivo':m.estado==='rep'?'En reparación':'Fuera de servicio'}
+            </div>
+            <svg class="tractor"><use href="#tractor"/></svg>
+          </div>
+          <div class="meta">
+            <div class="title">${m.nombre}</div>
+            <div class="badge">${m.tipo}</div>
+            <div class="stats" style="grid-column:1/-1">
+              <span class="stat">Finca: ${m.finca}</span>
+              <span class="stat">Parcela: ${m.parcela}</span>
+              <span class="stat">Horas: ${m.horas.toLocaleString()}</span>
+              <span class="stat">Criticidad: ${m.criticidad}</span>
+              <span class="stat">Próx. PM: ${m.proxPM}${d===null?'':` (${d}d)`}</span>
+            </div>
+            ${d===null? '' : `
+              <div class="pmbar" style="grid-column:1/-1" title="Días hasta PM: ${d}">
+                <span class="${pmClass(d)}" style="width:${pct}%"></span>
+              </div>`}
+          </div>
+        </div>`;
+    }
+
+    function updateKPI(list){
+      const tot = list.length;
+      const ok = list.filter(m=>m.estado==='ok').length;
+      const pmSoon = list.filter(m=>{ const d = daysTo(m.proxPM); return d!==null && d<=7; }).length;
+      const avg = tot? Math.round(list.reduce((a,b)=>a+b.horas,0)/tot) : 0;
+      document.getElementById('k_total').textContent = tot;
+      document.getElementById('k_avail').textContent = tot? fmtPct(ok/tot) : '0%';
+      document.getElementById('k_pmsoon').textContent = pmSoon;
+      document.getElementById('k_avg').textContent = avg.toLocaleString()+'h';
+    }
+
+    function updateChipCounts(baseList){
+      const counts = {ok:0,pm:0,rep:0,fs:0};
+      baseList.forEach(m=>counts[m.estado]++);
+      document.getElementById('cnt-ok').textContent  = counts.ok;
+      document.getElementById('cnt-pm').textContent  = counts.pm;
+      document.getElementById('cnt-rep').textContent = counts.rep;
+      document.getElementById('cnt-fs').textContent  = counts.fs;
+    }
+
+    // ===== Filtros =====
+    function fillFincas(){
+      const all = ['']; // '' = Todas
+      Object.keys(FINCAS).forEach(k=>all.push(k));
+      fincaSel.innerHTML = all.map(v=>`<option value="${v}">${v||'Todas'}</option>`).join('');
+    }
+    function fillParcelas(){
+      const f = fincaSel.value;
+      const opts = [''];
+      if (!f){
+        // Todas las parcelas únicas de todas las fincas
+        const set = new Set();
+        Object.values(FINCAS).forEach(x=>x.parcelas.forEach(p=>set.add(p)));
+        [...set].forEach(p=>opts.push(p));
+      }else{
+        (FINCAS[f]?.parcelas||[]).forEach(p=>opts.push(p));
+      }
+      parcelSel.innerHTML = opts.map(v=>`<option value="${v}">${v||'Todas'}</option>`).join('');
+    }
+
+    function currentFilters(){
+      const q = (document.getElementById('q').value||'').toLowerCase();
+      const finca = fincaSel.value;
+      const parc  = parcelSel.value;
+      const enabledStates = new Set(stateChips.filter(c=>c.classList.contains('active')).map(c=>c.dataset.state));
+      const enabledCrit   = new Set(critChips.filter(c=>c.classList.contains('active')).map(c=>c.dataset.crit));
+      const sort = sortSel.value;
+      return {q,finca,parc,enabledStates,enabledCrit,sort};
+    }
+
+    function sortList(list, how){
+      const arr = [...list];
+      if (how==='proxpm'){
+        arr.sort((a,b)=>{
+          const da = daysTo(a.proxPM); const db = daysTo(b.proxPM);
+          return (da===null?9999:da)-(db===null?9999:db);
+        });
+      } else if (how==='horasdesc'){
+        arr.sort((a,b)=>b.horas - a.horas);
+      } else if (how==='nombre'){
+        arr.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+      } else if (how==='criticidad'){
+        const order = {Crítica:3, Alta:2, Media:1, Baja:0};
+        arr.sort((a,b)=>(order[b.criticidad]??0)-(order[a.criticidad]??0));
+      } else if (how==='estado'){
+        const order = {rep:0, fs:1, pm:2, ok:3};
+        arr.sort((a,b)=> (order[a.estado]??9)-(order[b.estado]??9));
+      } else if (how==='smart'){
+        arr.sort((a,b)=>{
+          const prio = s => (s.estado==='rep'||s.estado==='fs')?0 : (daysTo(s.proxPM)!==null && daysTo(s.proxPM)<=7)?1 : 2;
+          const p = prio(a)-prio(b);
+          if (p!==0) return p;
+          const da = daysTo(a.proxPM)??9999, db = daysTo(b.proxPM)??9999;
+          if (da!==db) return da-db;
+          return b.horas-a.horas;
+        });
+      }
+      return arr;
+    }
+
+    // ===== MAPA (Leaflet) =====
+    let map, tilesLight, tilesDark, markerLayer;
+    const markersById = new Map();
+
+    function initMap(){
+      // Centro inicial: primer centro de finca
+      const firstCenter = Object.values(FINCAS)[0]?.center || [40, -3.7];
+      map = L.map('map', { zoomControl:true, scrollWheelZoom:true, attributionControl:true }).setView(firstCenter, 14);
+
+      tilesLight = L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        { maxZoom:19, attribution:'© OpenStreetMap contributors' }
+      );
+      tilesDark = L.tileLayer(
+        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        { maxZoom:19, attribution:'© OpenStreetMap contributors © CARTO' }
+      );
+
+      markerLayer = L.layerGroup().addTo(map);
+    }
+
+    function clearMarkers(){
+      markersById.clear();
+      markerLayer.clearLayers();
+    }
+
+    function updateMap(list){
+      clearMarkers();
+      const bounds = [];
+      list.forEach(m=>{
+        const pc = parcelCoord(m.finca, m.parcela);
+        if(!pc) return;
+        const pt = jitterCoord(pc, m.id);
+        const mk = L.circleMarker(pt, {
+          radius: 8, weight: 2, color:'#fff',
+          fillColor: estadoColor(m.estado), fillOpacity: 0.9
+        })
+        .bindTooltip(`${m.nombre} • ${m.finca} – ${m.parcela}`, {direction:'top'})
+        .on('click', ()=> { focusCard(m.id); })
+        .addTo(markerLayer);
+        markersById.set(m.id, mk);
+        bounds.push(pt);
+      });
+      mapResume.textContent = `${list.length} marcador${list.length===1?'':'es'}`;
+      if (bounds.length){
+        const b = L.latLngBounds(bounds);
+        map.fitBounds(b.pad(0.3), { animate:true });
+      }
+    }
+
+    function focusMarker(id){
+      const mk = markersById.get(id);
+      if(!mk) return;
+      map.setView(mk.getLatLng(), Math.max(map.getZoom(), 15), {animate:true});
+      mk.openTooltip();
+    }
+
+    // ===== Render =====
+    function render(){
+      const {q,finca,parc,enabledStates,enabledCrit,sort} = currentFilters();
+
+      updateChipCounts(MACHINES);
+
+      const filtered = MACHINES.filter(m=>{
+        const okQ = (m.nombre+' '+m.tipo).toLowerCase().includes(q);
+        const okF = !finca || m.finca===finca;
+        const okParc = !parc || m.parcela===parc;
+        const okState = enabledStates.has(m.estado);
+        const okCrit = enabledCrit.has(m.criticidad);
+        return okQ && okF && okParc && okState && okCrit;
+      });
+
+      const ordered = sortList(filtered, sort);
+
+      grid.innerHTML = ordered.map(machineCard).join('');
+      listCount.textContent = `${ordered.length} mostrada${ordered.length===1?'':'s'}`;
+      resume.textContent = `${filtered.length} máquinas • ${filtered.filter(m=>m.estado==='pm').length} en mantenimiento • ${filtered.filter(m=>m.estado==='rep').length} en reparación`;
+
+      updateKPI(filtered);
+      updateMap(filtered);
+
+      document.querySelectorAll('.card').forEach(c=>{
+        c.addEventListener('click',()=>selectMachine(c.dataset.id,true));
+        c.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); selectMachine(c.dataset.id,true); }});
+      });
+
+      persistState();
+    }
+
+    function selectMachine(id, panToMap=false){
+      const el = document.querySelector(`.card[data-id="${id}"]`);
+      if(!el) return;
+      el.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
+      el.classList.add('highlight');
+      setTimeout(()=>el.classList.remove('highlight'), 800);
+      if (panToMap) focusMarker(id);
+    }
+
+    function focusCard(id){ selectMachine(id,false); }
+
+    // ===== Eventos filtros =====
+    function toggleChip(el){ el.classList.toggle('active'); render(); }
+    stateChips.forEach(ch=>{
+      ch.addEventListener('click',()=>toggleChip(ch));
+      ch.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); toggleChip(ch); }});
+    });
+    critChips.forEach(ch=>{
+      ch.addEventListener('click',()=>toggleChip(ch));
+      ch.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); toggleChip(ch); }});
+    });
+    document.getElementById('q').addEventListener('input', render);
+    fincaSel.addEventListener('change', ()=>{ fillParcelas(); render(); });
+    parcelSel.addEventListener('change', render);
+    sortSel.addEventListener('change', render);
+
+    // ===== Tema (incluye mapa) =====
+    function applyTheme(t){
+      document.body.setAttribute('data-theme', t);
+      themeBtn.setAttribute('aria-pressed', t==='dark');
+      if (!map){ initMap(); }
+      if (t==='dark') {
+        if (map.hasLayer(tilesLight)) map.removeLayer(tilesLight);
+        if (!map.hasLayer(tilesDark)) tilesDark.addTo(map);
+      } else {
+        if (map.hasLayer(tilesDark)) map.removeLayer(tilesDark);
+        if (!map.hasLayer(tilesLight)) tilesLight.addTo(map);
+      }
+    }
+    themeBtn.addEventListener('click', ()=>{
+      const curr = document.body.getAttribute('data-theme')==='dark' ? 'light':'dark';
+      applyTheme(curr);
+      localStorage.setItem('gmao_theme', curr);
+    });
+
+    // ===== Export CSV =====
+    document.getElementById('export').addEventListener('click', ()=>{
+      const {q,finca,parc,enabledStates,enabledCrit} = currentFilters();
+      const filtered = MACHINES.filter(m=>{
+        const okQ = (m.nombre+' '+m.tipo).toLowerCase().includes(q);
+        const okF = !finca || m.finca===finca;
+        const okParc = !parc || m.parcela===parc;
+        return okQ && okF && okParc && enabledStates.has(m.estado) && enabledCrit.has(m.criticidad);
+      });
+      const rows = [['ID','Tipo','Nombre','Finca','Parcela','Estado','Horas','ProxPM','DíasPM','Criticidad','Lat','Lng']];
+      filtered.forEach(m=>{
+        const d = daysTo(m.proxPM);
+        const pc = parcelCoord(m.finca, m.parcela);
+        const pt = pc ? jitterCoord(pc, m.id) : [ '', '' ];
+        rows.push([m.id,m.tipo,m.nombre,m.finca,m.parcela,m.estado,m.horas,(m.proxPM||''),(d??''),m.criticidad, pt[0]||'', pt[1]||'']);
+      });
+      const csv = '\uFEFF'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = 'maquinas_filtradas.csv'; document.body.appendChild(a); a.click(); a.remove();
+    });
+
+    // ===== Persistencia =====
+    function persistState(){
+      const st = {
+        q: document.getElementById('q').value,
+        finca: fincaSel.value,
+        parcela: parcelSel.value,
+        sort: sortSel.value,
+        states: stateChips.map(c=>[c.dataset.state,c.classList.contains('active')]),
+        crits:  critChips.map(c=>[c.dataset.crit, c.classList.contains('active')]),
+      };
+      localStorage.setItem('gmao_machines_ui', JSON.stringify(st));
+    }
+    function restoreState(){
+      const t = localStorage.getItem('gmao_theme') || 'light';
+      applyTheme(t);
+      fillFincas();
+      fillParcelas();
+      const s = localStorage.getItem('gmao_machines_ui'); if(!s) return;
+      try{
+        const st = JSON.parse(s);
+        document.getElementById('q').value = st.q||'';
+        fincaSel.value = st.finca||'';
+        fillParcelas();
+        parcelSel.value = st.parcela||'';
+        sortSel.value = st.sort||'smart';
+        (st.states||[]).forEach(([k,on])=>{
+          const el = stateChips.find(c=>c.dataset.state===k); if(el) el.classList.toggle('active', !!on);
+        });
+        (st.crits||[]).forEach(([k,on])=>{
+          const el = critChips.find(c=>c.dataset.crit===k); if(el) el.classList.toggle('active', !!on);
+        });
+      }catch{}
+    }
+
+    // Init
+    restoreState();
+    render();
+
+    // Pequeño estilo para resalte
+    const style = document.createElement('style');
+    style.innerHTML = `.highlight{outline:3px solid rgba(31,111,61,.45);}`;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

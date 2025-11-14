@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GMAO Planasa – Incidencias</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    :root{
+      --brand:#1f6f3d; --brand-2:#13492a;
+      --bg:#f8faf9; --bg-2:#eef4f1; --muted:#f3f6f5;
+      --card:#ffffff; --txt:#132018; --txt-2:#5c6b62;
+      --border:rgba(0,0,0,.12); --shadow:0 10px 30px rgba(0,0,0,.10);
+      --ok:#2e7d32; --warn:#f7b500; --crit:#c62828; --info:#1e88e5;
+    }
+    [data-theme="dark"]{
+      --bg:#0f1512; --bg-2:#101a15; --muted:#0b1a14;
+      --card:#121a16; --txt:#e7f0ea; --txt-2:#9fb0a6;
+      --border:rgba(255,255,255,.12); --shadow:0 12px 36px rgba(0,0,0,.55);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;background:linear-gradient(180deg,var(--bg) 0%, var(--bg-2) 100%);
+      color:var(--txt);font:15px system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      display:grid;grid-template-columns:300px 1fr;transition:.25s ease background,.25s ease color;
+    }
+    a{color:inherit;text-decoration:none}
+
+    /* === NAVBAR estilo Máquinas === */
+    aside{
+      background:var(--card);border-right:1px solid var(--border);
+      padding:18px;display:flex;flex-direction:column;gap:16px;min-height:100vh
+    }
+    .brand{
+      display:flex;align-items:center;gap:10px;padding:14px;border-radius:14px;
+      background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;font-weight:900;
+      box-shadow:var(--shadow)
+    }
+    .logo{width:28px;height:28px;border-radius:8px;background:#fff}
+    nav{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+    .nav-item{
+      padding:12px;
+      border-radius:12px;
+      color:var(--txt-2);
+      cursor:pointer;
+      font-weight:700;
+      border:1px solid transparent;
+      transition:background .2s,color .2s,border .2s;
+    }
+    .nav-item:hover{background:var(--muted)}
+    .nav-item.active{
+      background:rgba(31,111,61,.12);
+      color:var(--brand);
+      border-color:rgba(31,111,61,.25)
+    }
+
+    /* === HEADER / MAIN === */
+    main{overflow:auto}
+    header{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:16px 20px;color:#fff;font-weight:900;position:sticky;top:0;z-index:2;
+      background:linear-gradient(135deg,var(--brand),var(--brand-2));
+      box-shadow:var(--shadow)
+    }
+    .h-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .btn{
+      border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);
+      color:#fff;padding:8px 12px;border-radius:12px;cursor:pointer;font-weight:800;backdrop-filter:blur(6px)
+    }
+    .btn:hover{background:rgba(255,255,255,.18)}
+
+    .select,.input, select, input, textarea{
+      padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--txt);font:inherit
+    }
+
+    .content{padding:20px;display:grid;grid-template-columns:2fr 1fr;gap:20px}
+    .panel{
+      background:radial-gradient(120% 120% at 0% 0%, rgba(31,111,61,.06) 0%, transparent 60%) , var(--card);
+      border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:200px
+    }
+    .panel .head{
+      padding:12px 14px;border-bottom:1px solid var(--border);font-weight:900;
+      display:flex;align-items:center;justify-content:space-between;gap:16px;color:var(--txt-2);flex-wrap:wrap
+    }
+    .panel .head .title{display:flex;align-items:center;gap:10px}
+    .panel .head .actions{display:flex;gap:8px;align-items:center}
+    .panel .body{padding:16px;color:var(--txt-2);display:flex;flex-direction:column;gap:14px}
+
+    /* Formulario */
+    form#form-inc{display:grid;grid-template-columns:repeat(12, 1fr);gap:12px;align-items:start}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .full{grid-column:1 / -1}
+    .col-3{grid-column:span 3}
+    .col-4{grid-column:span 4}
+    .col-6{grid-column:span 6}
+
+    .urg-card{grid-column:span 3;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.12));
+      border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+    .urg-title{font-weight:900;color:var(--txt-2);font-size:12px}
+    .pill{padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900;width:max-content}
+    .p-low{background:#f1f8e9;color:#33691e}
+    .p-med{background:#fff3cd;color:#7a5d00}
+    .p-high{background:#ffebee;color:#c62828}
+    .p-crit{background:#ffdde0;color:#b71c1c}
+    .hint{font-size:12px;color:var(--txt-2)}
+
+    .checks{grid-column:1 / -1;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+      padding:12px;border:1px dashed var(--border);border-radius:12px;background:var(--muted)}
+
+    .drop{border:2px dashed var(--border);border-radius:12px;padding:16px;text-align:left;background:var(--muted);color:var(--txt-2)}
+    .drop.drag{border-color:var(--brand);background:rgba(31,111,61,.06)}
+    .thumbs{display:flex;flex-wrap:wrap;gap:10px}
+    .thumb{width:88px;height:88px;border:1px solid var(--border);border-radius:10px;overflow:hidden;display:grid;place-items:center;background:#fff}
+    .thumb img, .thumb video{max-width:100%;max-height:100%;display:block}
+
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    thead th{font-size:12px;color:var(--txt-2);text-align:left;padding:6px 10px;cursor:pointer}
+    tbody td{padding:12px;background:#fff;border:1px solid var(--border)}
+    tbody td:first-child{border-top-left-radius:10px;border-bottom-left-radius:10px}
+    tbody td:last-child{border-top-right-radius:10px;border-bottom-right-radius:10px}
+    .status{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800;display:inline-block}
+    .s-open{background:#e3f2fd;color:#1e88e5}
+    .s-review{background:#fff3cd;color:#7a5d00}
+    .s-closed{background:#e8f5e9;color:#2e7d32}
+
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+    .dialog{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);width:min(92vw,620px)}
+    .dialog header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);font-weight:900}
+    .dialog .content{padding:14px}
+    .x{border:none;background:transparent;font-size:22px;cursor:pointer;color:var(--txt-2)}
+    #qrReader{width:100%;height:420px;border:1px dashed var(--border);border-radius:10px;display:grid;place-items:center;color:var(--txt-2)}
+    .qr-hint{font-size:12px;color:var(--txt-2);margin-top:8px}
+
+    @media (max-width:1200px){
+      .content{grid-template-columns:1fr}
+      .checks{grid-template-columns:repeat(2,1fr)}
+      .urg-card{grid-column:1 / -1}
+      .col-3,.col-4,.col-6{grid-column:1 / -1}
+    }
+  </style>
+</head>
+<body>
+  <aside>
+    <div class="brand"><div class="logo"></div>GMAO Planasa</div>
+    <nav role="navigation" aria-label="Menú principal">
+      <a class="nav-item" href="Inicio.html">📊 Inicio</a>
+      <a class="nav-item active" href="Incidencias.html">📝 Incidencias Usuario</a>
+      <a class="nav-item" href="GMO.html">📅 Gestión MO</a>
+      <a class="nav-item" href="Maquinaria.html">🛠️ Gestión Máquinas</a>
+      <a class="nav-item" href="Finanzas.html">💶 Finanzas</a>
+    </nav>
+  </aside>
+  <main>
+    <header>
+      <div>Incidencias · Reporte rápido</div>
+      <div class="h-actions">
+        <button id="theme" class="btn" title="Tema">🌙</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- Columna izquierda: formulario -->
+      <div class="panel">
+        <div class="head">
+          <div class="title">Crear incidencia</div>
+          <div class="actions">
+            <button type="button" id="qrBtnHead" class="btn icon lg" title="Escanear QR de máquina">📷</button>
+          </div>
+        </div>
+        <div class="body">
+          <form id="form-inc">
+            <!-- Urgencia sugerida (arriba izda) -->
+            <div class="urg-card">
+              <div class="urg-title">Urgencia sugerida</div>
+              <span id="urgBadge" class="pill p-med">Media</span>
+              <div class="hint">Se calcula por impacto + criterios (seguridad, parada, ambiental, cliente, crítico, reincidente).</div>
+            </div>
+
+            <!-- Finca / Parcela / Máquina -->
+            <div class="field col-3">
+              <label>Finca</label>
+              <select id="finca" required></select>
+            </div>
+            <div class="field col-3">
+              <label>Parcela</label>
+              <select id="parcela" required></select>
+            </div>
+            <div class="field col-6">
+              <label>Máquina/Equipo</label>
+              <select id="equipoSel">
+                <option value="">— Selecciona equipo —</option>
+              </select>
+              <div id="equipoOtroWrap" style="display:none;margin-top:8px">
+                <input id="equipoOtro" class="input" placeholder="Especifica el equipo" />
+              </div>
+              <span class="hint">Filtrado por finca/parcela. Usa “Otro (especificar)” si no aparece.</span>
+            </div>
+
+            <!-- Tipo + Impacto -->
+            <div class="field col-6">
+              <label>Tipo</label>
+              <select id="tipo">
+                <option selected>Avería</option>
+                <option>Anomalía</option>
+                <option>Solicitud</option>
+                <option>Otro</option>
+              </select>
+            </div>
+            <div class="field col-6">
+              <label>Impacto</label>
+              <select id="impacto">
+                <option>Baja</option>
+                <option selected>Media</option>
+                <option>Alta</option>
+                <option>Crítica</option>
+              </select>
+            </div>
+
+            <!-- Checks -->
+            <div class="checks">
+              <label class="switch"><input type="checkbox" id="chk-seg" /> Riesgo de seguridad</label>
+              <label class="switch"><input type="checkbox" id="chk-stop" /> Parada de máquina / proceso</label>
+              <label class="switch"><input type="checkbox" id="chk-env" /> Riesgo ambiental / derrame</label>
+              <label class="switch"><input type="checkbox" id="chk-cli" /> Impacta a cliente / entrega</label>
+              <label class="switch"><input type="checkbox" id="chk-crit" /> Equipo crítico / sin redundancia</label>
+              <label class="switch"><input type="checkbox" id="chk-rec" /> Reincidente (últimos 7 días)</label>
+            </div>
+
+            <!-- Descripción a ancho completo -->
+            <div class="field full">
+              <label>Descripción</label>
+              <textarea id="desc" class="big" placeholder="Describe lo ocurrido (qué, dónde exacto, cuándo empezó, frecuencia, mensajes de error, etc.)" required></textarea>
+            </div>
+
+            <!-- Adjuntos -->
+            <div class="field full">
+              <label>Adjuntar fotos/vídeos</label>
+              <div id="drop" class="drop" aria-label="Zona para arrastrar archivos">
+                Arrastra aquí o <u>haz clic para seleccionar</u> (máx. 5 archivos, 10MB c/u)
+                <input id="files" type="file" accept="image/*,video/*" multiple style="display:none" />
+              </div>
+              <div id="thumbs" class="thumbs"></div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="full" style="display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:6px">
+              <button class="btn" type="submit" style="background:var(--brand);border:none">➤ Enviar incidencia</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Columna derecha: tabla -->
+      <div class="panel">
+        <div class="head">
+          <div class="title">Mis incidencias enviadas</div>
+          <div class="actions">
+            <div class="toolbar">
+              <input id="filtro" class="search" placeholder="Buscar por ID, finca, parcela, equipo, tipo, impacto…" />
+              <button class="btn" id="exportCSV">Exportar CSV</button>
+            </div>
+          </div>
+        </div>
+        <div class="body">
+          <table>
+            <thead>
+              <tr>
+                <th data-sort="fecha">Fecha ⬍</th>
+                <th data-sort="id">ID ⬍</th>
+                <th data-sort="finca">Finca ⬍</th>
+                <th data-sort="parcela">Parcela ⬍</th>
+                <th data-sort="equipo">Equipo ⬍</th>
+                <th data-sort="tipo">Tipo ⬍</th>
+                <th data-sort="impacto">Impacto ⬍</th>
+                <th data-sort="urgencia">Urgencia ⬍</th>
+                <th data-sort="estado">Estado ⬍</th>
+              </tr>
+            </thead>
+            <tbody id="tabla"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal QR GRANDE -->
+  <div class="modal" id="qrModal" aria-hidden="true">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+      <header>
+        <div id="qrTitle">Escanear QR de máquina</div>
+        <button class="x" id="qrClose" aria-label="Cerrar">×</button>
+      </header>
+      <div class="content">
+        <div id="qrReader">Cámara lista</div>
+        <div class="qr-hint">Enfoca el QR del activo. Al detectar, se rellenará el campo “Máquina/Equipo”.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Tema claro/oscuro =====
+    const themeButton = document.getElementById('theme');
+    function applyTheme(t){
+      document.documentElement.setAttribute('data-theme', t);
+      themeButton.textContent = (t==='dark') ? '🌞' : '🌙';
+      localStorage.setItem('gmao_theme', t);
+    }
+    themeButton.addEventListener('click', ()=>{
+      const next = (document.documentElement.getAttribute('data-theme')==='dark') ? 'light' : 'dark';
+      applyTheme(next);
+    });
+    applyTheme(localStorage.getItem('gmao_theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
+    // ===== Datos base (fincas/parcelas/equipos) =====
+    const SITES = [
+      { id:'FDO', name:'Fuente del Olmo',
+        parcels:[
+          {id:'P1', name:'Parcela 1', assets:['Tractor 6R','Atomizador A1']},
+          {id:'P2', name:'Parcela 2', assets:['Tractor 7M','Bomba 22']},
+          {id:'P3', name:'Parcela 3', assets:['Tractor 5E','Cinta C01']}
+        ]},
+      { id:'CAR', name:'Cartaya I+D',
+        parcels:[
+          {id:'A', name:'Bloque A', assets:['Prototipo P-100','Bomba Test']},
+          {id:'B', name:'Bloque B', assets:['Tractor I+D','Cinta Piloto']},
+          {id:'C', name:'Bloque C', assets:['Sensorial Mob']}
+        ]},
+      { id:'MIL', name:'Laboratorio Milagro',
+        parcels:[
+          {id:'N', name:'Sector Norte', assets:['Generador Lab','HVAC Norte']},
+          {id:'S', name:'Sector Sur', assets:['HVAC Sur','Compresor']}
+        ]}
+    ];
+
+    // ===== Estado =====
+    const form = document.getElementById('form-inc');
+    const selFinca = document.getElementById('finca');
+    const selParcela = document.getElementById('parcela');
+    const equipoSel = document.getElementById('equipoSel');
+    const equipoOtroWrap = document.getElementById('equipoOtroWrap');
+    const equipoOtro = document.getElementById('equipoOtro');
+    const impacto = document.getElementById('impacto');
+    const chkSeg = document.getElementById('chk-seg');
+    const chkStop = document.getElementById('chk-stop');
+    const chkEnv = document.getElementById('chk-env');
+    const chkCli = document.getElementById('chk-cli');
+    const chkCrit = document.getElementById('chk-crit');
+    const chkRec = document.getElementById('chk-rec');
+    const urgBadge = document.getElementById('urgBadge');
+    const filtroInput = document.getElementById('filtro');
+    const tablaBody = document.getElementById('tabla');
+    let sortKey = 'fecha', sortAsc = false;
+
+    // ===== Render selects =====
+    function renderFincas(){
+      selFinca.innerHTML = SITES.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+      selFinca.value = SITES[0].id;
+      renderParcelas();
+    }
+    function renderParcelas(){
+      const s = SITES.find(x=>x.id===selFinca.value);
+      selParcela.innerHTML = s.parcels.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+      renderEquipos();
+    }
+    function renderEquipos(){
+      const s = SITES.find(x=>x.id===selFinca.value);
+      const p = s.parcels.find(q=>q.id===selParcela.value);
+      const assets = p?.assets || [];
+      equipoSel.innerHTML = `<option value="">— Selecciona equipo —</option>` +
+        assets.map(a=>`<option value="${a}">${a}</option>`).join('') +
+        `<option value="__otro__">Otro (especificar)</option>`;
+      equipoOtroWrap.style.display = 'none';
+      equipoOtro.value = '';
+    }
+    selFinca.addEventListener('change', renderParcelas);
+    selParcela.addEventListener('change', renderEquipos);
+    equipoSel.addEventListener('change', ()=>{
+      equipoOtroWrap.style.display = (equipoSel.value==='__otro__') ? 'block' : 'none';
+    });
+
+    // ===== Urgencia sugerida =====
+    function urgencyFromScore(score){
+      if (score >= 7) return 'Crítica';
+      if (score >= 5) return 'Alta';
+      if (score >= 3) return 'Media';
+      return 'Baja';
+    }
+    function computeUrgency(){
+      const baseMap = { 'Baja':1,'Media':2,'Alta':3,'Crítica':4 };
+      let score = baseMap[impacto.value] || 2;
+      if (chkSeg.checked)  score += 2;
+      if (chkStop.checked) score += 2;
+      if (chkEnv.checked)  score += 1;
+      if (chkCli.checked)  score += 1;
+      if (chkCrit.checked) score += 1;
+      if (chkRec.checked)  score += 1;
+
+      const u = urgencyFromScore(score);
+      urgBadge.textContent = u;
+      urgBadge.className = 'pill ' + (u==='Crítica'?'p-crit':u==='Alta'?'p-high':u==='Baja'?'p-low':'p-med');
+      return u;
+    }
+    [impacto, chkSeg, chkStop, chkEnv, chkCli, chkCrit, chkRec].forEach(el=>{
+      el.addEventListener('change', computeUrgency);
+    });
+
+    // ===== Adjuntos (drag & drop) =====
+    const drop = document.getElementById('drop');
+    const fileInput = document.getElementById('files');
+    const thumbs = document.getElementById('thumbs');
+
+    function handleFiles(files){
+      thumbs.innerHTML = '';
+      const arr = Array.from(files).slice(0,5);
+      arr.forEach(f=>{
+        if (f.size > 10*1024*1024) return; // 10MB máx.
+        const url = URL.createObjectURL(f);
+        const div = document.createElement('div'); div.className='thumb';
+        const node = document.createElement(f.type.startsWith('video')?'video':'img');
+        node.src = url;
+        if (node.tagName==='VIDEO'){ node.muted=true; node.loop=true; node.autoplay=true; }
+        div.appendChild(node); thumbs.appendChild(div);
+      });
+    }
+    drop.addEventListener('click', ()=>fileInput.click());
+    fileInput.addEventListener('change', e=>handleFiles(e.target.files));
+    drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('drag'); });
+    drop.addEventListener('dragleave', ()=>drop.classList.remove('drag'));
+    drop.addEventListener('drop', e=>{
+      e.preventDefault(); drop.classList.remove('drag');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    // ===== QR (modal GRANDE, botón en título) =====
+    const qrModal = document.getElementById('qrModal');
+    const qrClose = document.getElementById('qrClose');
+    const qrBtnHead = document.getElementById('qrBtnHead');
+    let qrInstance = null;
+
+    function openQR(){
+      qrModal.style.display='flex';
+      startQR();
+    }
+    function closeQR(){
+      stopQR();
+      qrModal.style.display='none';
+    }
+    qrBtnHead.addEventListener('click', openQR);
+    qrClose.addEventListener('click', closeQR);
+    qrModal.addEventListener('click', (e)=>{ if(e.target===qrModal) closeQR(); });
+
+    function startQR(){
+      const divId = 'qrReader';
+      const container = document.getElementById(divId);
+      container.innerHTML = '';
+      if (window.Html5Qrcode) {
+        qrInstance = new Html5Qrcode(divId);
+        Html5Qrcode.getCameras().then(devs=>{
+          const camId = devs[0]?.id;
+          if(!camId) throw new Error('No hay cámaras disponibles');
+          qrInstance.start(
+            camId,
+            { fps: 10, qrbox: 280 }, // cuadro de escaneo algo mayor
+            (decoded)=>{
+              setEquipoFromQR(decoded);
+              closeQR();
+            },
+            ()=>{}
+          );
+        }).catch(simulateQR);
+      } else {
+        simulateQR();
+      }
+    }
+    function stopQR(){ try{ qrInstance?.stop().then(()=>qrInstance.clear()); }catch{} }
+    function simulateQR(){
+      const container = document.getElementById('qrReader');
+      container.textContent = 'Simulando escaneo...';
+      setTimeout(()=>{
+        const fake = 'Tractor 6R';
+        setEquipoFromQR(fake);
+        closeQR();
+      }, 1100);
+    }
+    function setEquipoFromQR(text){
+      // intenta seleccionar si existe en la lista; si no, usa "Otro"
+      const opt = Array.from(equipoSel.options).find(o=>o.value===text || o.textContent===text);
+      if (opt){ equipoSel.value = opt.value; equipoOtroWrap.style.display='none'; equipoOtro.value=''; }
+      else { equipoSel.value='__otro__'; equipoOtroWrap.style.display='block'; equipoOtro.value=text; }
+    }
+
+    // ===== Incidencias (localStorage) =====
+    const KEY_INC = 'gmao_incidents';
+    let incidents = [];
+    function loadIncidents(){ incidents = JSON.parse(localStorage.getItem(KEY_INC)||'[]'); }
+    function saveIncidents(){ localStorage.setItem(KEY_INC, JSON.stringify(incidents)); }
+
+    // ===== Tabla =====
+    function renderTable(){
+      const q = (filtroInput.value||'').toLowerCase();
+      let data = incidents.filter(r =>
+        r.id.toLowerCase().includes(q) ||
+        r.fincaLabel.toLowerCase().includes(q) ||
+        r.parcelaLabel.toLowerCase().includes(q) ||
+        (r.equipo||'').toLowerCase().includes(q) ||
+        r.tipo.toLowerCase().includes(q) ||
+        r.impacto.toLowerCase().includes(q) ||
+        r.urgencia.toLowerCase().includes(q)
+      );
+      data.sort((a,b)=>{
+        let va=a[sortKey], vb=b[sortKey];
+        if (sortKey==='fecha'){ va=new Date(a.fecha).getTime(); vb=new Date(b.fecha).getTime(); }
+        else { va=(va||'').toString().toLowerCase(); vb=(vb||'').toString().toLowerCase(); }
+        return sortAsc ? (va>vb?1:-1) : (va<vb?1:-1);
+      });
+      tablaBody.innerHTML = '';
+      data.forEach(r=>{
+        const tr=document.createElement('tr');
+        const badge = r.estado==='Cerrada'?'s-closed':(r.estado==='En revisión'?'s-review':'s-open');
+        tr.innerHTML = `
+          <td>${new Date(r.fecha).toLocaleString()}</td>
+          <td>${r.id}</td>
+          <td>${r.fincaLabel}</td>
+          <td>${r.parcelaLabel}</td>
+          <td>${r.equipo||'—'}</td>
+          <td>${r.tipo}</td>
+          <td>${r.impacto}</td>
+          <td>${r.urgencia}</td>
+          <td><span class="status ${badge}">${r.estado}</span></td>
+        `;
+        tablaBody.appendChild(tr);
+      });
+    }
+    document.querySelectorAll('thead th').forEach(th=>{
+      th.addEventListener('click', ()=>{
+        const key = th.getAttribute('data-sort');
+        if (sortKey===key){ sortAsc=!sortAsc; } else { sortKey=key; sortAsc=true; }
+        renderTable();
+      });
+    });
+    document.getElementById('exportCSV').addEventListener('click', ()=>{
+      const rows=[["Fecha","ID","Finca","Parcela","Equipo","Tipo","Impacto","Urgencia","Estado"]]
+        .concat(incidents.map(r=>[
+          new Date(r.fecha).toISOString(), r.id, r.fincaLabel, r.parcelaLabel, r.equipo||'',
+          r.tipo, r.impacto, r.urgencia, r.estado
+        ]));
+      const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob=new Blob([csv],{type:'text/csv'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download='incidencias.csv'; a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // ===== Submit =====
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const fincaId = selFinca.value;
+      const parcId = selParcela.value;
+      const fin = SITES.find(s=>s.id===fincaId);
+      const parc = fin.parcels.find(p=>p.id===parcId);
+
+      let equipoVal = equipoSel.value;
+      if (equipoVal==='__otro__') equipoVal = (equipoOtro.value||'').trim();
+
+      const id = 'INC-'+ new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+      const nuevo = {
+        id,
+        fecha: new Date().toISOString(),
+        finca: fincaId,
+        parcela: parcId,
+        fincaLabel: fin.name,
+        parcelaLabel: parc.name,
+        equipo: equipoVal,
+        tipo: document.getElementById('tipo').value,
+        impacto: impacto.value,
+        seguridad: chkSeg.checked,
+        parada: chkStop.checked,
+        ambiental: chkEnv.checked,
+        cliente: chkCli.checked,
+        critico: chkCrit.checked,
+        reincidente: chkRec.checked,
+        urgencia: computeUrgency(),
+        descripcion: document.getElementById('desc').value.trim(),
+        estado: 'Abierta'
+      };
+      incidents.push(nuevo);
+      localStorage.setItem('gmao_incidents', JSON.stringify(incidents));
+      renderTable();
+      form.reset();
+      renderEquipos();
+      computeUrgency();
+      document.getElementById('thumbs').innerHTML='';
+      alert('Incidencia enviada: ' + id);
+    });
+
+    // ===== Init =====
+    function init(){
+      document.querySelectorAll('.nav-link').forEach(a=>{
+        a.addEventListener('click', ()=>{
+          document.querySelectorAll('.nav-link.active').forEach(x=>x.classList.remove('active'));
+          a.classList.add('active');
+        });
+      });
+      renderFincas();
+      computeUrgency();
+      incidents = JSON.parse(localStorage.getItem('gmao_incidents')||'[]');
+      renderTable();
+    }
+    init();
+  </script>
+</body>
+</html>

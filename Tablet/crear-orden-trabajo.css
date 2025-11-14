@@ -1,0 +1,519 @@
+:root {
+    --planasa-green: rgb(63, 156, 53);
+    --planasa-green-dark: rgb(50, 125, 42);
+    --planasa-green-light: rgb(76, 171, 66);
+    --planasa-green-ultra-light: rgba(63, 156, 53, 0.08);
+    --planasa-white: #ffffff;
+    --planasa-gray-50: #f9fafb;
+    --planasa-gray-100: #f3f4f6;
+    --planasa-gray-200: #e5e7eb;
+    --planasa-gray-300: #d1d5db;
+    --planasa-gray-600: #4b5563;
+    --planasa-gray-700: #374151;
+    --planasa-gray-900: #111827;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--planasa-gray-50);
+    min-height: 100vh;
+    color: var(--planasa-gray-900);
+}
+
+.container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 1rem;
+    min-height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Wizard Container */
+.wizard-container {
+    background: var(--planasa-white);
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    padding: 2rem;
+    width: 100%;
+    border: 1px solid var(--planasa-gray-200);
+    flex: 1;
+}
+
+
+
+/* Header del wizard (mantener para compatibilidad) */
+.wizard-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 2px solid var(--planasa-gray-200);
+}
+
+.wizard-header h1 {
+    color: var(--planasa-green);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.wizard-header p {
+    color: var(--planasa-gray-600);
+    font-size: 1.1rem;
+}
+
+/* Resumen por filas */
+.resumen-filas {
+    margin-bottom: 2rem;
+}
+
+.fila-resumen {
+    display: flex;
+    align-items: center;
+    background: var(--planasa-white);
+    border: 1px solid var(--planasa-gray-200);
+    border-radius: 0.75rem;
+    padding: 1.125rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+}
+
+.fila-resumen.editable {
+    cursor: pointer;
+}
+
+.fila-resumen.editable:hover {
+    background: var(--planasa-green-ultra-light);
+    border-color: var(--planasa-green);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.fila-numero {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: var(--planasa-green);
+    color: var(--planasa-white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.125rem;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.fila-contenido {
+    flex: 1;
+    min-width: 0;
+}
+
+.fila-titulo {
+    font-size: 0.875rem;
+    color: var(--planasa-gray-600);
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+.fila-valor {
+    font-size: 1rem;
+    color: var(--planasa-gray-900);
+    font-weight: 600;
+}
+
+.fila-acciones {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.fila-check {
+    color: var(--planasa-green);
+    font-size: 1.25rem;
+}
+
+.fila-editar {
+    color: var(--planasa-green);
+    font-size: 1.125rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.fila-resumen.editable:hover .fila-editar {
+    opacity: 1;
+}
+
+/* Pasos del wizard */
+.paso-wizard {
+    background: var(--planasa-gray-100);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--planasa-gray-200);
+}
+
+.paso-wizard h4 {
+    color: var(--planasa-green);
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Campos simples (dropdowns) */
+.campo-simple {
+    margin-bottom: 1.25rem;
+}
+
+.campo-simple label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--planasa-gray-900);
+    font-size: 0.875rem;
+}
+
+.campo-simple select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--planasa-gray-200);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    background-color: var(--planasa-white);
+    color: var(--planasa-gray-700);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.campo-simple select:hover {
+    border-color: var(--planasa-green);
+    box-shadow: 0 0 0 3px var(--planasa-green-ultra-light);
+}
+
+.campo-simple select:focus {
+    outline: none;
+    border-color: var(--planasa-green);
+    box-shadow: 0 0 0 4px var(--planasa-green-ultra-light);
+}
+
+.campo-simple textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--planasa-gray-200);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-family: inherit;
+    background-color: var(--planasa-white);
+    color: var(--planasa-gray-700);
+    resize: vertical;
+    min-height: 5rem;
+    transition: all 0.3s ease;
+}
+
+.campo-simple textarea:hover {
+    border-color: var(--planasa-green);
+    box-shadow: 0 0 0 3px var(--planasa-green-ultra-light);
+}
+
+.campo-simple textarea:focus {
+    outline: none;
+    border-color: var(--planasa-green);
+    box-shadow: 0 0 0 4px var(--planasa-green-ultra-light);
+}
+
+.campo-simple textarea::placeholder {
+    color: var(--planasa-gray-600);
+    font-style: italic;
+}
+
+/* Información de tareas */
+.tareas-info {
+    background-color: var(--planasa-green-ultra-light);
+    border: 1px solid var(--planasa-green);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    color: var(--planasa-green-dark);
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tareas-info i {
+    color: var(--planasa-green);
+    font-size: 1rem;
+}
+
+/* Botón continuar descripción */
+.btn-continuar-descripcion {
+    background: var(--planasa-green);
+    color: var(--planasa-white);
+    border: none;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 0.75rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.btn-continuar-descripcion:hover {
+    background: var(--planasa-green-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Botones de acción final */
+.wizard-acciones-finales {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 2px solid var(--planasa-gray-200);
+}
+
+.btn-crear-final,
+.btn-cancelar-final {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 8.75rem;
+}
+
+.btn-crear-final {
+    background: var(--planasa-green);
+    color: var(--planasa-white);
+}
+
+.btn-crear-final:hover {
+    background: var(--planasa-green-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.btn-cancelar-final {
+    background: var(--planasa-gray-600);
+    color: var(--planasa-white);
+}
+
+.btn-cancelar-final:hover {
+    background: var(--planasa-gray-700);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Estados de validación */
+.campo-simple select:invalid {
+    border-color: #dc3545;
+}
+
+.campo-simple select:valid {
+    border-color: #28a745;
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(1.25rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.paso-wizard {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.fila-resumen {
+    animation: fadeInUp 0.3s ease-out;
+    animation-fill-mode: both;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .container {
+        padding: 0.75rem;
+    }
+    
+    .wizard-container {
+        padding: 1.5rem;
+    }
+    
+    .wizard-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .fila-resumen {
+        padding: 1rem;
+    }
+    
+    .fila-numero {
+        width: 2.25rem;
+        height: 2.25rem;
+        font-size: 1rem;
+        margin-right: 0.875rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0.5rem;
+    }
+    
+    .wizard-container {
+        padding: 1.25rem;
+    }
+    
+
+    
+    .wizard-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .wizard-header p {
+        font-size: 1rem;
+    }
+    
+    .fila-resumen {
+        padding: 0.75rem;
+        margin-bottom: 0.625rem;
+    }
+    
+    .fila-numero {
+        width: 2rem;
+        height: 2rem;
+        font-size: 0.875rem;
+        margin-right: 0.75rem;
+    }
+    
+    .fila-titulo {
+        font-size: 0.8rem;
+    }
+    
+    .fila-valor {
+        font-size: 0.9rem;
+    }
+    
+    .paso-wizard {
+        padding: 1.25rem;
+    }
+    
+    .paso-wizard h4 {
+        font-size: 1.25rem;
+    }
+    
+    .campo-simple select,
+    .campo-simple textarea {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.875rem;
+    }
+    
+    .wizard-acciones-finales {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .btn-crear-final,
+    .btn-cancelar-final {
+        width: 100%;
+        max-width: 17.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 0.375rem;
+    }
+    
+    .wizard-container {
+        padding: 1rem;
+    }
+    
+    .wizard-header h1 {
+        font-size: 1.375rem;
+    }
+    
+    .paso-wizard {
+        padding: 1rem;
+    }
+    
+    .campo-simple select,
+    .campo-simple textarea {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Utilidades */
+.hidden {
+    display: none !important;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mb-0 {
+    margin-bottom: 0 !important;
+}
+
+.mt-0 {
+    margin-top: 0 !important;
+}
+
+/* Hover effects para mejor UX */
+.campo-simple select:not(:focus):hover {
+    background-color: var(--planasa-gray-50);
+}
+
+.campo-simple textarea:not(:focus):hover {
+    background-color: var(--planasa-gray-50);
+}
+
+/* Loading state */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: -0.625rem 0 0 -0.625rem;
+    border: 2px solid var(--planasa-gray-200);
+    border-top: 2px solid var(--planasa-green);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

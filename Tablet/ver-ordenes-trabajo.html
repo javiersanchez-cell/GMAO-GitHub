@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ver Órdenes de Trabajo - GMAO</title>
+    <link rel="stylesheet" href="ver-ordenes-trabajo.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <!-- Filtros simples -->
+        <div class="filtros-container">
+            <select id="filtroResponsable" onchange="filtrarOrdenes()">
+                <option value="">Todos los técnicos</option>
+                <option value="Carlos Méndez">Carlos Méndez</option>
+                <option value="Ana García">Ana García</option>
+                <option value="Luis Rodríguez">Luis Rodríguez</option>
+                <option value="María López">María López</option>
+            </select>
+            <select id="filtroPrioridad" onchange="filtrarOrdenes()">
+                <option value="">Todas las prioridades</option>
+                <option value="Crítica">🔴 Crítica</option>
+                <option value="Alta">🟠 Alta</option>
+                <option value="Media">🟡 Media</option>
+                <option value="Baja">🟢 Baja</option>
+            </select>
+        </div>
+
+        <!-- Kanban Board -->
+        <div class="kanban-board">
+            <!-- Columna Por Hacer -->
+            <div class="kanban-column" data-estado="por-hacer">
+                <div class="column-header por-hacer">
+                    <h3><i class="fas fa-clock"></i> Por Hacer</h3>
+                    <span class="counter" id="counter-por-hacer">0</span>
+                </div>
+                <div class="column-content" id="column-por-hacer">
+                    <div class="orden-placeholder">
+                        <i class="fas fa-clipboard-list"></i>
+                        <p>No hay órdenes pendientes</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna En Progreso -->
+            <div class="kanban-column" data-estado="en-progreso">
+                <div class="column-header en-progreso">
+                    <h3><i class="fas fa-play"></i> En Progreso</h3>
+                    <span class="counter" id="counter-en-progreso">0</span>
+                </div>
+                <div class="column-content" id="column-en-progreso">
+                    <div class="orden-placeholder">
+                        <i class="fas fa-wrench"></i>
+                        <p>No hay órdenes en progreso</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Parado -->
+            <div class="kanban-column" data-estado="parado">
+                <div class="column-header parado">
+                    <h3><i class="fas fa-pause"></i> Parado</h3>
+                    <span class="counter" id="counter-parado">0</span>
+                </div>
+                <div class="column-content" id="column-parado">
+                    <div class="orden-placeholder">
+                        <i class="fas fa-hand-paper"></i>
+                        <p>No hay órdenes paradas</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Hecho -->
+            <div class="kanban-column" data-estado="hecho">
+                <div class="column-header hecho">
+                    <h3><i class="fas fa-check"></i> Hecho</h3>
+                    <span class="counter" id="counter-hecho">0</span>
+                </div>
+                <div class="column-content" id="column-hecho">
+                    <div class="orden-placeholder">
+                        <i class="fas fa-check-circle"></i>
+                        <p>No hay órdenes completadas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver detalles de orden -->
+    <div id="modalDetalleOrden" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-titulo">Detalles de Orden</h3>
+                <button onclick="cerrarModalDetalle()" class="btn-cerrar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button onclick="cerrarModalDetalle()" class="btn-cancelar">Cerrar</button>
+                <button id="btn-cambiar-estado" onclick="cambiarEstadoOrden()" class="btn-principal">
+                    Cambiar Estado
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="ver-ordenes-trabajo.js"></script>
+    <script>
+        // Cargar navbar
+        fetch('../Components/navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('navbar-container').innerHTML = html;
+                
+                // Mostrar el botón volver después de cargar la navbar
+                setTimeout(() => {
+                    const btnVolver = document.getElementById('btn-volver-nav');
+                    if (btnVolver) {
+                        btnVolver.style.display = 'flex';
+                    }
+                }, 100);
+            })
+            .catch(error => {
+                console.error('Error cargando navbar:', error);
+            });
+            
+        // Función para volver atrás
+        function volverAtras() {
+            window.history.back();
+        }
+    </script>
+</body>
+</html>

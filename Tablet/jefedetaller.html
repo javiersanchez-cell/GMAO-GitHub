@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLANASA GMAO - Panel Jefe de Taller</title>
+    <link rel="stylesheet" href="jefedetaller.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <div class="buttons-container">
+            <a href="#" class="action-button" onclick="verSolicitudes()">
+                <div class="button-icon">👁️</div>
+                <div class="button-title">Ver Incidencias</div>
+                <div class="button-description">Consultar y revisar todas las incidencias</div>
+            </a>
+
+            <a href="#" class="action-button" onclick="crearSolicitud()">
+                <div class="button-icon">➕</div>
+                <div class="button-title">Crear Órdenes de Trabajo</div>
+                <div class="button-description">Generar una nueva orden de trabajo sin incidencia asociada</div>
+            </a>
+
+            <a href="#" class="action-button" onclick="verOrdenesTrabajo()">
+                <div class="button-icon">👁️</div>
+                <div class="button-title">Ver Órdenes de Trabajo</div>
+                <div class="button-description">Consultar y revisar todas las órdenes de trabajo</div>
+            </a>
+        </div>
+    </div>
+
+    <script src="jefedetaller.js"></script>
+    <script>
+        // Cargar navbar
+        fetch('../Components/navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('navbar-container').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error cargando navbar:', error);
+            });
+    </script>
+</body>
+</html>

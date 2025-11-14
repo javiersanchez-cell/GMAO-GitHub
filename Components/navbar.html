@@ -1,0 +1,127 @@
+<nav class="navbar-green">
+    <div class="navbar-content">
+        <div class="navbar-logo">
+            <button class="btn-volver-navbar" onclick="volverAtras()" id="btn-volver-nav">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <span class="navbar-title">PLANASA GMAO - Sistema de Gestión</span>
+        </div>
+        <div class="navbar-user">
+            <span class="user-info">Jefe de Taller</span>
+            <button class="logout-btn" onclick="cerrarSesion()">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </button>
+        </div>
+    </div>
+</nav>
+
+<style>
+.navbar-green {
+    background: rgb(63, 156, 53);
+    color: white;
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+}
+
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: 40px;
+}
+
+.btn-volver-navbar {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.btn-volver-navbar.show {
+    display: flex;
+}
+
+.btn-volver-navbar:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateX(-2px);
+}
+
+.navbar-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+}
+
+.navbar-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-info {
+    font-weight: 500;
+    padding: 0.5rem;
+}
+
+.logout-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .navbar-content {
+        flex-direction: row;
+        gap: 1rem;
+    }
+    
+    .navbar-title {
+        font-size: 1rem;
+    }
+    
+    .user-info {
+        display: none;
+    }
+    
+    .logout-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+}
+</style>
