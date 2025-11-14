@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Redirigir según el usuario
         if (username === 'jefedetaller') {
-            window.location.href = 'tablet/jefedetaller.html';
+            window.location.href = 'Tablet/jefedetaller.html';
         } else {
             window.location.href = 'Web/index.html';
         }
