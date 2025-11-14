@@ -8,7 +8,7 @@ function handleLogin(event) {
     if (username === 'jefedetaller' && password === 'jefedetaller') {
         localStorage.setItem('gmao_logged_in', 'true');
         localStorage.setItem('gmao_username', username);
-        window.location.href = 'tablet/jefedetaller.html';
+        window.location.href = 'Tablet/jefedetaller.html';
     } else if ((username === 'alberto' || username === 'tecnicos') && password === '123456') {
         localStorage.setItem('gmao_logged_in', 'true');
         localStorage.setItem('gmao_username', username);
