@@ -273,6 +273,18 @@ function editarPaso(numeroPaso) {
     }, 100);
 }
 
+function volverAtras() {
+    window.location.href = '../';
+}
+
+function cerrarSesion() {
+    if (confirm('¿Está seguro que desea cerrar sesión?')) {
+        localStorage.removeItem('gmao_logged_in');
+        localStorage.removeItem('gmao_username');
+        window.location.href = '../index.html';
+    }
+}
+
 // PASO 1: Seleccionar tipo de activo
 function seleccionarTipoActivo() {
     const select = document.getElementById('tipoActivo');

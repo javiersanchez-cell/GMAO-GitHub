@@ -9,6 +9,10 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarContadores();
 });
 
+function volverAtras() {
+    window.location.href = '../';
+}
+
 // Cargar órdenes existentes (simuladas)
 function cargarOrdenesExistentes() {
     const ordenesEjemplo = [

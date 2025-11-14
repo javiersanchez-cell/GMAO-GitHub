@@ -6,6 +6,10 @@ function cerrarSesion() {
     }
 }
 
+function volverAtras() {
+    window.location.href = '../';
+}
+
 function verSolicitudes() {
     // Redirigir a la página de visualización de solicitudes
     window.location.href = 'ver-solicitudes.html';
