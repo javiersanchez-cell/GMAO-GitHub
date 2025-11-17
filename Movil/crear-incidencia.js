@@ -250,7 +250,7 @@ function clearSelectedActivo() {
 
 function setupWizardNavigation() {
     // Configurar botones de cada paso individualmente
-    for (let step = 1; step <= 5; step++) {
+    for (let step = 1; step <= 6; step++) {
         const prevBtn = document.getElementById(`prev-btn-${step}`);
         const nextBtn = document.getElementById(`next-btn-${step}`);
         
@@ -289,6 +289,7 @@ function setupQRScanner() {
 function initializeWizard() {
     showStep(1);
     updateProgress();
+    updateNavbarButton();
 }
 
 function initializeData() {
@@ -309,22 +310,24 @@ function setupOtherStepsListeners() {
         });
     }
     
-    // Paso 3 - Tipo e Importancia (radio buttons)
-    document.querySelectorAll('input[name="tipo-incidencia"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            incidenciaData.tipoIncidencia = this.value;
+    // Paso 3 - Tipo de incidencia
+    document.querySelectorAll('.tipo-card').forEach(card => {
+        card.addEventListener('click', function() {
+            // Desseleccionar todas las tarjetas
+            document.querySelectorAll('.tipo-card').forEach(c => c.classList.remove('selected'));
+            // Seleccionar la tarjeta clickeada
+            this.classList.add('selected');
             
-            // Mostrar la sección de importancia después de seleccionar tipo
-            const importanciaSection = document.getElementById('importancia-section');
-            if (importanciaSection) {
-                importanciaSection.style.display = 'block';
-            }
+            // Seleccionar el radio button correspondiente
+            const input = this.querySelector('input[type="radio"]');
+            input.checked = true;
+            incidenciaData.tipoIncidencia = input.value;
             
             updateNavigationButtons(currentStep);
         });
     });
     
-    // Configurar botones de importancia
+    // Paso 4 - Importancia
     document.querySelectorAll('.importancia-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             // Desmarcar todos los botones
@@ -343,7 +346,7 @@ function setupOtherStepsListeners() {
         });
     });
     
-    // Paso 4 - Descripción
+    // Paso 5 - Descripción
     const descripcionTextarea = document.getElementById('descripcion-textarea');
     if (descripcionTextarea) {
         descripcionTextarea.addEventListener('input', function() {
@@ -379,6 +382,7 @@ function showStep(step) {
     }
     
     updateNavigationButtons(step);
+    updateNavbarButton();
     currentStep = step;
 }
 
@@ -386,7 +390,7 @@ function updateNavigationButtons(step) {
     console.log('🔄 Actualizando botones para paso:', step);
     
     // Ocultar todos los botones primero
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 6; i++) {
         const prevBtn = document.getElementById(`prev-btn-${i}`);
         const nextBtn = document.getElementById(`next-btn-${i}`);
         
@@ -398,7 +402,7 @@ function updateNavigationButtons(step) {
     if (finishBtn) finishBtn.style.display = 'none';
     
     // Mostrar botones del paso actual
-    if (step < 5) {
+    if (step < 6) {
         const prevBtn = document.getElementById(`prev-btn-${step}`);
         const nextBtn = document.getElementById(`next-btn-${step}`);
         
@@ -450,8 +454,8 @@ function updateNextButtonState(step) {
             }
             break;
         case 3:
-            // Paso 3: Necesita tipo e importancia
-            canContinue = incidenciaData.tipoIncidencia !== '' && incidenciaData.importancia !== '';
+            // Paso 3: Necesita solo tipo de incidencia
+            canContinue = incidenciaData.tipoIncidencia !== '';
             const nextBtn3 = document.getElementById('next-btn-3');
             if (nextBtn3) {
                 nextBtn3.disabled = !canContinue;
@@ -459,8 +463,8 @@ function updateNextButtonState(step) {
             }
             break;
         case 4:
-            // Paso 4: Necesita descripción
-            canContinue = incidenciaData.descripcion.trim() !== '';
+            // Paso 4: Necesita importancia
+            canContinue = incidenciaData.importancia !== '';
             const nextBtn4 = document.getElementById('next-btn-4');
             if (nextBtn4) {
                 nextBtn4.disabled = !canContinue;
@@ -468,6 +472,15 @@ function updateNextButtonState(step) {
             }
             break;
         case 5:
+            // Paso 5: Necesita descripción
+            canContinue = incidenciaData.descripcion.trim() !== '';
+            const nextBtn5 = document.getElementById('next-btn-5');
+            if (nextBtn5) {
+                nextBtn5.disabled = !canContinue;
+                nextBtn5.style.opacity = canContinue ? '1' : '0.5';
+            }
+            break;
+        case 6:
             // Último paso - siempre se puede finalizar
             canContinue = true;
             const finishBtn = document.getElementById('finish-btn');
@@ -516,13 +529,20 @@ function nextStep() {
             }
             break;
         case 3:
-            canAdvance = incidenciaData.tipoIncidencia !== '' && incidenciaData.importancia !== '';
+            canAdvance = incidenciaData.tipoIncidencia !== '';
             if (!canAdvance) {
-                alert('Por favor, completa el tipo e importancia de la incidencia.');
+                alert('Por favor, selecciona el tipo de incidencia.');
                 return;
             }
             break;
         case 4:
+            canAdvance = incidenciaData.importancia !== '';
+            if (!canAdvance) {
+                alert('Por favor, selecciona el nivel de importancia.');
+                return;
+            }
+            break;
+        case 5:
             canAdvance = incidenciaData.descripcion.trim() !== '';
             if (!canAdvance) {
                 alert('Por favor, proporciona una descripción de la incidencia.');
@@ -531,7 +551,7 @@ function nextStep() {
             break;
     }
     
-    if (currentStep < 5 && canAdvance) {
+    if (currentStep < 6 && canAdvance) {
         showStep(currentStep + 1);
         updateProgress();
         console.log('✅ Avanzado al paso:', currentStep);
@@ -599,22 +619,28 @@ function restoreStepState(step) {
             }
             break;
         case 3:
-            // Restaurar tipo e importancia
-            if (incidenciaData.tipoIncidencia) {
-                // Mostrar la sección de importancia si ya hay tipo seleccionado
-                const importanciaSection = document.getElementById('importancia-section');
-                if (importanciaSection) {
-                    importanciaSection.style.display = 'block';
-                }
-            }
+            // Restaurar tipo de incidencia
             // Los radio buttons ya mantienen su estado
             break;
         case 4:
+            // Restaurar importancia
+            if (incidenciaData.importancia) {
+                const importanciaBtn = document.querySelector(`.importancia-btn[data-level="${incidenciaData.importancia}"]`);
+                if (importanciaBtn) {
+                    document.querySelectorAll('.importancia-btn').forEach(btn => btn.classList.remove('selected'));
+                    importanciaBtn.classList.add('selected');
+                }
+            }
+            break;
+        case 5:
             // Restaurar descripción
             const descripcionTextarea = document.getElementById('descripcion-textarea');
             if (descripcionTextarea && incidenciaData.descripcion) {
                 descripcionTextarea.value = incidenciaData.descripcion;
             }
+            break;
+        case 6:
+            // Paso de adjuntos - no necesita restauración especial
             break;
     }
 }
@@ -849,5 +875,63 @@ function finishIncidencia() {
     alert('Incidencia creada correctamente');
 }
 
+// Funciones de navegación de la navbar
+function volverAtras() {
+    console.log('🔙 Botón volver presionado, paso actual:', currentStep);
+    
+    // Si estamos en el primer paso, mostrar confirmación antes de salir
+    if (currentStep === 1) {
+        const hasData = selectedActivo || incidenciaData.tipoIncidencia || incidenciaData.descripcion.trim();
+        
+        if (hasData) {
+            const confirmExit = confirm('¿Estás seguro de que quieres salir? Se perderán los datos no guardados.');
+            if (!confirmExit) return;
+        }
+        
+        // Volver a la página anterior o página principal
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = '../index.html';
+        }
+    } else {
+        // Si estamos en cualquier otro paso, retroceder un paso
+        previousStep();
+    }
+}
+
+function updateNavbarButton() {
+    const btnVolver = document.getElementById('btn-volver-nav');
+    if (btnVolver) {
+        // Siempre mostrar el botón
+        btnVolver.style.display = 'flex';
+        btnVolver.classList.add('show');
+        
+        // Cambiar el título del botón según el contexto
+        if (currentStep === 1) {
+            btnVolver.title = 'Volver al menú principal';
+            btnVolver.setAttribute('aria-label', 'Volver al menú principal');
+        } else {
+            btnVolver.title = `Volver al paso anterior (Paso ${currentStep - 1})`;
+            btnVolver.setAttribute('aria-label', `Volver al paso ${currentStep - 1}`);
+        }
+        
+        console.log('🔄 Botón navbar actualizado para paso:', currentStep);
+    }
+}
+
+function cerrarSesion() {
+    if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+        // Limpiar datos locales si los hay
+        localStorage.removeItem('incidenciaData');
+        
+        // Redirigir al login o página principal
+        window.location.href = '../index.html';
+        // O puedes usar: window.location.href = '../login.html';
+    }
+}
+
 // Hacer funciones globales para que sean accesibles desde HTML
 window.cerrarEscanerQR = cerrarEscanerQR;
+window.volverAtras = volverAtras;
+window.cerrarSesion = cerrarSesion;

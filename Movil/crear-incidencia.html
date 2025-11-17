@@ -151,14 +151,18 @@
             </div>
             <div class="progress-step" data-step="3">
                 <div class="step-number">3</div>
-                <div class="step-label">Avería</div>
+                <div class="step-label">Tipo</div>
             </div>
             <div class="progress-step" data-step="4">
                 <div class="step-number">4</div>
-                <div class="step-label">Descripción</div>
+                <div class="step-label">Importancia</div>
             </div>
             <div class="progress-step" data-step="5">
                 <div class="step-number">5</div>
+                <div class="step-label">Descripción</div>
+            </div>
+            <div class="progress-step" data-step="6">
+                <div class="step-number">6</div>
                 <div class="step-label">Adjuntos</div>
             </div>
         </div>
@@ -284,8 +288,24 @@
                     </label>
                 </div>
 
-                <div class="importancia-section" id="importancia-section" style="display: none;">
-                    <h3>Nivel de Importancia</h3>
+                <div class="navigation-buttons">
+                    <button class="btn-prev" id="prev-btn-3">
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    <button class="btn-next" id="next-btn-3">
+                        Siguiente <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Paso 4: Importancia -->
+            <div class="wizard-step" id="step-4">
+                <div class="step-header">
+                    <h2><i class="fas fa-exclamation-triangle"></i> Nivel de Importancia</h2>
+                    <p>Selecciona la importancia de esta incidencia</p>
+                </div>
+
+                <div class="importancia-section" id="importancia-section-step4" style="display: block;">
                     <div class="importancia-buttons">
                         <button class="importancia-btn baja" data-level="baja">
                             <i class="fas fa-circle"></i> Baja
@@ -303,17 +323,17 @@
                 </div>
 
                 <div class="navigation-buttons">
-                    <button class="btn-prev" id="prev-btn-3">
+                    <button class="btn-prev" id="prev-btn-4">
                         <i class="fas fa-arrow-left"></i> Anterior
                     </button>
-                    <button class="btn-next" id="next-btn-3">
+                    <button class="btn-next" id="next-btn-4">
                         Siguiente <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Paso 4: Descripción -->
-            <div class="wizard-step" id="step-4">
+            <!-- Paso 5: Descripción -->
+            <div class="wizard-step" id="step-5">
                 <div class="step-header">
                     <h2><i class="fas fa-edit"></i> Descripción del Problema</h2>
                     <p>Proporciona todos los detalles relevantes</p>
@@ -343,17 +363,17 @@
                 </div>
 
                 <div class="navigation-buttons">
-                    <button class="btn-prev" id="prev-btn-4">
+                    <button class="btn-prev" id="prev-btn-5">
                         <i class="fas fa-arrow-left"></i> Anterior
                     </button>
-                    <button class="btn-next" id="next-btn-4">
+                    <button class="btn-next" id="next-btn-5">
                         Siguiente <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Paso 5: Adjuntos -->
-            <div class="wizard-step" id="step-5">
+            <!-- Paso 6: Adjuntos -->
+            <div class="wizard-step" id="step-6">
                 <div class="step-header">
                     <h2><i class="fas fa-paperclip"></i> Adjuntar Evidencias</h2>
                     <p>Añade fotos, videos o documentos relacionados</p>
@@ -380,7 +400,7 @@
                 </div>
 
                 <div class="navigation-buttons">
-                    <button class="btn-prev" id="prev-btn-5">
+                    <button class="btn-prev" id="prev-btn-6">
                         <i class="fas fa-arrow-left"></i> Anterior
                     </button>
                     <button class="btn-finish" id="finish-btn">
