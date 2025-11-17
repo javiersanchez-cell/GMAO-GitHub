@@ -193,42 +193,46 @@ body {
 
 /* QR Section */
 .qr-section {
-    text-align: center;
-    margin-bottom: 3rem;
-    padding: 2rem;
-    background: var(--planasa-green-ultra-light);
-    border-radius: 15px;
-    border: 2px dashed var(--planasa-green);
+    margin-bottom: 2rem;
 }
 
-.qr-btn {
+.manual-selection-text {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--planasa-gray-700);
+}
+
+.manual-selection-text span {
+    flex: 1;
+}
+
+.qr-icon-btn {
     background: var(--planasa-green);
     color: white;
     border: none;
-    padding: 1.2rem 2rem;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 600;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-bottom: 1rem;
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 0.8rem;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(63, 156, 53, 0.3);
 }
 
-.qr-btn:hover {
+.qr-icon-btn:hover {
     background: var(--planasa-green-dark);
-    transform: translateY(-2px);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(63, 156, 53, 0.4);
 }
 
-.qr-btn i {
-    font-size: 1.3rem;
-}
-
-.qr-help {
-    color: var(--planasa-gray-600);
-    font-style: italic;
+.qr-icon-btn i {
+    font-size: 1.1rem;
 }
 
 .selection-help {
@@ -1067,6 +1071,20 @@ select:focus {
         width: 100%;
     }
     
+    .manual-selection-text {
+        font-size: 1rem;
+        padding: 0.75rem 0;
+    }
+    
+    .qr-icon-btn {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .qr-icon-btn i {
+        font-size: 1rem;
+    }
+    
     .modal-content {
         margin: 1rem;
         max-width: calc(100vw - 2rem);
@@ -1075,5 +1093,28 @@ select:focus {
     .qr-modal-content,
     .camera-modal-content {
         width: auto;
+    }
+}
+
+/* Animaciones para notificaciones QR */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
     }
 }

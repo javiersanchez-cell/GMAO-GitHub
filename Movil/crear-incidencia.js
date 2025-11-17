@@ -274,6 +274,16 @@ function setupQRScanner() {
     if (qrBtn) {
         qrBtn.addEventListener('click', openQRScanner);
     }
+    
+    // Configurar cierre del modal al hacer clic fuera
+    const qrModal = document.getElementById('qr-modal');
+    if (qrModal) {
+        qrModal.addEventListener('click', function(event) {
+            if (event.target === qrModal) {
+                cerrarEscanerQR();
+            }
+        });
+    }
 }
 
 function initializeWizard() {
@@ -609,13 +619,235 @@ function restoreStepState(step) {
     }
 }
 
+let qrScanner = null;
+
 function openQRScanner() {
     console.log('🔍 Abriendo escáner QR...');
-    // Implementar escáner QR aquí
-    alert('Funcionalidad QR en desarrollo');
+    const qrModal = document.getElementById('qr-modal');
+    const qrReader = document.getElementById('qr-reader');
+    
+    if (qrModal && qrReader) {
+        qrModal.style.display = 'block';
+        
+        // Configurar el escáner QR
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
+        };
+        
+        // Crear instancia del escáner
+        qrScanner = new Html5QrcodeScanner('qr-reader', config, false);
+        
+        // Iniciar el escáner
+        qrScanner.render(
+            (decodedText, decodedResult) => {
+                console.log('✅ QR escaneado:', decodedText);
+                processQRData(decodedText);
+                cerrarEscanerQR();
+            },
+            (error) => {
+                // Error de escaneo - no hacer nada para evitar spam de logs
+            }
+        );
+        
+        // Configurar botón de prueba
+        const testBtn = document.getElementById('test-qr-btn');
+        if (testBtn) {
+            testBtn.onclick = () => {
+                const testData = {
+                    "categoria_activo": "maquinaria",
+                    "tipo_activo": "Tractor",
+                    "activo": "12344564"
+                };
+                processQRData(JSON.stringify(testData));
+                cerrarEscanerQR();
+            };
+        }
+    }
+}
+
+function cerrarEscanerQR() {
+    const qrModal = document.getElementById('qr-modal');
+    if (qrModal) {
+        qrModal.style.display = 'none';
+    }
+    
+    // Detener el escáner si existe
+    if (qrScanner) {
+        qrScanner.clear().then(() => {
+            console.log('🛑 Escáner QR detenido');
+        }).catch(error => {
+            console.error('Error al detener escáner:', error);
+        });
+        qrScanner = null;
+    }
+}
+
+function processQRData(qrData) {
+    try {
+        console.log('📊 Procesando datos QR:', qrData);
+        
+        // Intentar parsear como JSON
+        let data;
+        try {
+            data = JSON.parse(qrData);
+        } catch (e) {
+            throw new Error('QR no contiene JSON válido');
+        }
+        
+        // Validar que contiene los campos necesarios
+        if (!data.categoria_activo || !data.tipo_activo || !data.activo) {
+            throw new Error('QR no contiene los campos requeridos (categoria_activo, tipo_activo, activo)');
+        }
+        
+        // Normalizar la categoría al formato esperado
+        const categoriaMap = {
+            'Maquinaria': 'maquinaria',
+            'maquinaria': 'maquinaria',
+            'Infraestructura': 'infraestructura', 
+            'infraestructura': 'infraestructura',
+            'Vehiculos': 'vehiculos',
+            'Vehículos': 'vehiculos',
+            'vehiculos': 'vehiculos',
+            'Equipos': 'equipos',
+            'equipos': 'equipos'
+        };
+        
+        const categoriaNormalizada = categoriaMap[data.categoria_activo];
+        if (!categoriaNormalizada) {
+            throw new Error(`Categoría no reconocida: ${data.categoria_activo}`);
+        }
+        
+        // Rellenar selectores automáticamente
+        fillSelectorsFromQR(categoriaNormalizada, data.tipo_activo, data.activo);
+        
+        // Mostrar mensaje de éxito
+        showQRSuccess(data);
+        
+    } catch (error) {
+        console.error('❌ Error procesando QR:', error);
+        alert(`Error al procesar código QR: ${error.message}`);
+    }
+}
+
+function fillSelectorsFromQR(categoria, tipo, activoId) {
+    console.log('🔄 Rellenando selectores desde QR:', { categoria, tipo, activoId });
+    
+    // 1. Seleccionar categoría
+    const categoriaSelect = document.getElementById('categoria-select');
+    if (categoriaSelect) {
+        categoriaSelect.value = categoria;
+        incidenciaData.categoria = categoria;
+        
+        // Mostrar selector de tipo
+        showTipoSelector(categoria);
+        
+        // 2. Esperar un poco y seleccionar tipo
+        setTimeout(() => {
+            const tipoSelect = document.getElementById('tipo-select');
+            if (tipoSelect) {
+                // Buscar la opción que coincida con el tipo
+                for (let option of tipoSelect.options) {
+                    if (option.textContent.toLowerCase().includes(tipo.toLowerCase()) || 
+                        option.value.toLowerCase().includes(tipo.toLowerCase())) {
+                        tipoSelect.value = option.value;
+                        incidenciaData.tipo = option.value;
+                        
+                        // Mostrar selector de activo
+                        showActivoSelector(categoria, option.value);
+                        
+                        // 3. Esperar un poco más y seleccionar activo específico
+                        setTimeout(() => {
+                            const activoSelect = document.getElementById('activo-select');
+                            if (activoSelect) {
+                                // Buscar el activo por ID
+                                for (let option of activoSelect.options) {
+                                    if (option.value === activoId) {
+                                        activoSelect.value = activoId;
+                                        incidenciaData.activo = activoId;
+                                        
+                                        // Buscar los datos completos del activo
+                                        const activo = findActivoById(activoId);
+                                        if (activo) {
+                                            selectedActivo = activo;
+                                            showActivoInfo(activo);
+                                            updateNavigationButtons(1);
+                                        }
+                                        
+                                        console.log('✅ Activo seleccionado desde QR:', activoId);
+                                        break;
+                                    }
+                                }
+                                
+                                if (!activoSelect.value) {
+                                    console.warn('⚠️ No se encontró el activo en la lista:', activoId);
+                                }
+                            }
+                        }, 200);
+                        
+                        break;
+                    }
+                }
+                
+                if (!tipoSelect.value) {
+                    console.warn('⚠️ No se encontró el tipo en la lista:', tipo);
+                }
+            }
+        }, 200);
+    }
+}
+
+function showQRSuccess(data) {
+    // Crear elemento de notificación temporal
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--success-color);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        font-weight: 500;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    notification.innerHTML = `
+        <i class="fas fa-check-circle"></i> 
+        QR escaneado correctamente<br>
+        <small>${data.tipo_activo} - ${data.activo}</small>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remover después de 3 segundos
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+function findActivoById(activoId) {
+    // Buscar el activo en todas las categorías
+    for (const categoria in ACTIVOS_DATA) {
+        const activo = ACTIVOS_DATA[categoria].find(a => a.Activo === activoId);
+        if (activo) {
+            return activo;
+        }
+    }
+    return null;
 }
 
 function finishIncidencia() {
     console.log('📋 Finalizando incidencia:', incidenciaData);
     alert('Incidencia creada correctamente');
 }
+
+// Hacer funciones globales para que sean accesibles desde HTML
+window.cerrarEscanerQR = cerrarEscanerQR;
