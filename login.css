@@ -79,6 +79,49 @@ body {
     box-shadow: 0 0 0 3px rgba(63, 156, 53, 0.1);
 }
 
+.password-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-container input {
+    padding-right: 50px;
+}
+
+/* Ocultar el icono de mostrar contraseña por defecto del navegador */
+.password-container input::-ms-reveal,
+.password-container input::-ms-clear {
+    display: none;
+}
+
+.password-container input::-webkit-credentials-auto-fill-button,
+.password-container input::-webkit-strong-password-auto-fill-button {
+    display: none !important;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    color: #6b7280;
+    font-size: 16px;
+    transition: color 0.2s;
+    z-index: 1;
+}
+
+.toggle-password:hover {
+    color: rgb(63, 156, 53);
+}
+
+.toggle-password:focus {
+    outline: none;
+    color: rgb(63, 156, 53);
+}
+
 .login-btn {
     width: 100%;
     background: linear-gradient(135deg, rgb(63, 156, 53) 0%, rgba(63, 156, 53, 0.9) 100%);

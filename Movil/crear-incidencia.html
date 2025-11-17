@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLANASA GMAO - Crear Incidencia</title>
+    <link rel="stylesheet" href="crear-incidencia.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+    <!-- Navbar from Components -->
+    <nav class="navbar-green">
+        <div class="navbar-content">
+            <div class="navbar-logo">
+                <button class="btn-volver-navbar show" onclick="volverAtras()" id="btn-volver-nav">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <span class="navbar-title">PLANASA GMAO - Crear Incidencia</span>
+            </div>
+            <div class="navbar-user">
+                <span class="user-info">Usuario Móvil</span>
+                <button class="logout-btn" onclick="cerrarSesion()">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <style>
+    .navbar-green {
+        background: rgb(63, 156, 53);
+        color: white;
+        padding: 1rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 1rem;
+    }
+
+    .navbar-logo {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        min-height: 40px;
+    }
+
+    .btn-volver-navbar {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        padding: 0.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+    }
+
+    .btn-volver-navbar.show {
+        display: flex;
+    }
+
+    .btn-volver-navbar:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: translateX(-2px);
+    }
+
+    .navbar-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: white;
+    }
+
+    .navbar-user {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .user-info {
+        font-weight: 500;
+        padding: 0.5rem;
+    }
+
+    .logout-btn {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .logout-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+        .navbar-content {
+            flex-direction: row;
+            gap: 1rem;
+        }
+        
+        .navbar-title {
+            font-size: 1rem;
+        }
+        
+        .user-info {
+            display: none;
+        }
+        
+        .logout-btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+        }
+    }
+    </style>
+
+    <div class="container">
+        <!-- Progress indicator -->
+        <div class="progress-container">
+            <div class="progress-step active" data-step="1">
+                <div class="step-number">1</div>
+                <div class="step-label">Activo</div>
+            </div>
+            <div class="progress-step" data-step="2">
+                <div class="step-number">2</div>
+                <div class="step-label">Ubicación</div>
+            </div>
+            <div class="progress-step" data-step="3">
+                <div class="step-number">3</div>
+                <div class="step-label">Avería</div>
+            </div>
+            <div class="progress-step" data-step="4">
+                <div class="step-number">4</div>
+                <div class="step-label">Descripción</div>
+            </div>
+            <div class="progress-step" data-step="5">
+                <div class="step-number">5</div>
+                <div class="step-label">Adjuntos</div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Paso 1: Selección de Activo -->
+            <div class="wizard-step active" id="step-1">
+                <div class="step-header">
+                    <h2><i class="fas fa-cogs"></i> Seleccionar Activo</h2>
+                    <p>Identifica el activo donde ocurrió la incidencia</p>
+                </div>
+
+                <div class="qr-section">
+                    <button class="qr-btn" id="qr-btn">
+                        <i class="fas fa-qrcode"></i>
+                        Escanear código QR del activo
+                    </button>
+                    <p class="qr-help">O selecciona manualmente el activo abajo</p>
+                </div>
+
+                <div class="activo-info" id="activo-info" style="display: none;">
+                    <div class="activo-card">
+                        <div class="activo-icon" id="activo-icon">🏭</div>
+                        <div class="activo-details">
+                            <h3 id="activo-nombre">Nombre del Activo</h3>
+                            <p><strong>ID:</strong> <span id="activo-id">-</span></p>
+                            <p><strong>Número:</strong> <span id="activo-numero">-</span></p>
+                            <p><strong>Tipo:</strong> <span id="activo-tipo">-</span></p>
+                        </div>
+                        <button class="clear-btn" onclick="clearSelectedActivo()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-vertical">
+                    <div class="form-group full">
+                        <label for="categoria-select">Categoría de Activo</label>
+                        <select id="categoria-select">
+                            <option value="">Seleccionar categoría...</option>
+                            <option value="maquinaria">Maquinaria</option>
+                            <option value="infraestructura">Infraestructura</option>
+                            <option value="vehiculos">Vehículos</option>
+                            <option value="equipos">Equipos</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group full" id="tipo-group" style="display: none;">
+                        <label for="tipo-select">Tipo de Activo</label>
+                        <select id="tipo-select" disabled>
+                            <option value="">Seleccionar tipo...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group full" id="activo-group" style="display: none;">
+                        <label for="activo-select">Activo Específico</label>
+                        <select id="activo-select" disabled>
+                            <option value="">Seleccionar activo...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="navigation-buttons">
+                    <button class="btn-next" id="next-btn-1">
+                        Siguiente <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Paso 2: Ubicación -->
+            <div class="wizard-step" id="step-2">
+                <div class="step-header">
+                    <h2><i class="fas fa-map-marker-alt"></i> Ubicación de la Incidencia</h2>
+                    <p>Especifica dónde ocurrió el problema</p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label for="finca-select">Finca</label>
+                        <select id="finca-select">
+                            <option value="">Seleccionar finca...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="navigation-buttons">
+                    <button class="btn-prev" id="prev-btn-2">
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    <button class="btn-next" id="next-btn-2">
+                        Siguiente <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Paso 3: Tipo de Incidencia -->
+            <div class="wizard-step" id="step-3">
+                <div class="step-header">
+                    <h2><i class="fas fa-exclamation-circle"></i> Tipo de Incidencia</h2>
+                    <p>Clasifica el tipo de problema reportado</p>
+                </div>
+
+                <div class="selection-grid">
+                    <label class="selection-card tipo-card">
+                        <input type="radio" name="tipo-incidencia" value="averia" style="display: none;">
+                        <div class="card-icon">🔧</div>
+                        <h3>Avería</h3>
+                        <p>Fallo o mal funcionamiento del activo</p>
+                    </label>
+                    <label class="selection-card tipo-card">
+                        <input type="radio" name="tipo-incidencia" value="mantenimiento-preventivo" style="display: none;">
+                        <div class="card-icon">🛠️</div>
+                        <h3>Mantenimiento Preventivo</h3>
+                        <p>Mantenimiento programado y preventivo</p>
+                    </label>
+                    <label class="selection-card tipo-card">
+                        <input type="radio" name="tipo-incidencia" value="construccion" style="display: none;">
+                        <div class="card-icon">🏗️</div>
+                        <h3>Construcción</h3>
+                        <p>Trabajos de construcción e instalación</p>
+                    </label>
+                </div>
+
+                <div class="importancia-section" id="importancia-section" style="display: none;">
+                    <h3>Nivel de Importancia</h3>
+                    <div class="importancia-buttons">
+                        <button class="importancia-btn baja" data-level="baja">
+                            <i class="fas fa-circle"></i> Baja
+                        </button>
+                        <button class="importancia-btn media" data-level="media">
+                            <i class="fas fa-circle"></i> Media
+                        </button>
+                        <button class="importancia-btn alta" data-level="alta">
+                            <i class="fas fa-circle"></i> Alta
+                        </button>
+                        <button class="importancia-btn critica" data-level="critica">
+                            <i class="fas fa-circle"></i> Crítica
+                        </button>
+                    </div>
+                </div>
+
+                <div class="navigation-buttons">
+                    <button class="btn-prev" id="prev-btn-3">
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    <button class="btn-next" id="next-btn-3">
+                        Siguiente <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Paso 4: Descripción -->
+            <div class="wizard-step" id="step-4">
+                <div class="step-header">
+                    <h2><i class="fas fa-edit"></i> Descripción del Problema</h2>
+                    <p>Proporciona todos los detalles relevantes</p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label for="titulo-incidencia">Título de la incidencia</label>
+                        <input type="text" id="titulo-incidencia" placeholder="Resumen breve del problema" maxlength="100">
+                        <div class="char-counter" id="titulo-counter">0/100</div>
+                    </div>
+                    <div class="form-group full">
+                        <label for="descripcion-textarea">Descripción detallada</label>
+                        <textarea id="descripcion-textarea" rows="8" placeholder="Describe detalladamente:
+• ¿Qué ocurrió exactamente?
+• ¿Cuándo empezó el problema?
+• ¿Con qué frecuencia ocurre?
+• ¿Hay mensajes de error?
+• ¿Qué estaba haciendo cuando ocurrió?
+• ¿Hay algo que mejore o empeore la situación?"></textarea>
+                        <div class="char-counter" id="char-counter">0/500</div>
+                    </div>
+                    <div class="form-group full">
+                        <label for="acciones-tomadas">Acciones ya tomadas (opcional)</label>
+                        <textarea id="acciones-tomadas" rows="4" placeholder="¿Has intentado solucionarlo? ¿Qué pasos has seguido?"></textarea>
+                    </div>
+                </div>
+
+                <div class="navigation-buttons">
+                    <button class="btn-prev" id="prev-btn-4">
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    <button class="btn-next" id="next-btn-4">
+                        Siguiente <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Paso 5: Adjuntos -->
+            <div class="wizard-step" id="step-5">
+                <div class="step-header">
+                    <h2><i class="fas fa-paperclip"></i> Adjuntar Evidencias</h2>
+                    <p>Añade fotos, videos o documentos relacionados</p>
+                </div>
+
+                <div class="upload-section">
+                    <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h3>Arrastra archivos aquí o haz clic para seleccionar</h3>
+                        <p>Formatos: JPG, PNG, MP4, PDF (máx. 10MB por archivo)</p>
+                        <input type="file" id="file-input" multiple accept="image/*,video/*,.pdf" style="display: none;">
+                    </div>
+
+                    <div class="files-preview" id="files-preview"></div>
+                </div>
+
+                <div class="camera-section">
+                    <button class="camera-btn" id="camera-btn">
+                        <i class="fas fa-camera"></i>
+                        Tomar foto con la cámara
+                    </button>
+                </div>
+
+                <div class="navigation-buttons">
+                    <button class="btn-prev" id="prev-btn-5">
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    <button class="btn-finish" id="finish-btn">
+                        <i class="fas fa-check"></i> Crear Incidencia
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal QR Scanner -->
+    <div class="modal" id="qr-modal">
+        <div class="modal-content qr-modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-qrcode"></i> Escanear código QR</h3>
+                <button class="modal-close" onclick="cerrarEscanerQR()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="qr-reader"></div>
+                <div class="qr-instructions">
+                    <p>Enfoca la cámara hacia el código QR del activo</p>
+                    <button class="btn-test-qr" id="test-qr-btn">
+                        <i class="fas fa-vial"></i> Simular QR para pruebas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Camera -->
+    <div class="modal" id="camera-modal">
+        <div class="modal-content camera-modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-camera"></i> Tomar foto</h3>
+                <button class="modal-close" onclick="cerrarCamara()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <video id="camera-video" autoplay playsinline></video>
+                <canvas id="camera-canvas" style="display: none;"></canvas>
+                <div class="camera-controls">
+                    <button class="btn-capture" id="capture-btn">
+                        <i class="fas fa-camera"></i> Capturar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../Components/navbar.js"></script>
+    <script src="crear-incidencia.js"></script>
+</body>
+</html>

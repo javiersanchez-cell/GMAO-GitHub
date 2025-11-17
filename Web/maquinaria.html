@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLANASA GMAO - Gestión de Maquinaria</title>
+    
+
+    
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Estilos CSS -->
+    <link rel="stylesheet" href="maquinaria.css">
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Sidebar with filters and stats -->
+        <aside class="sidebar">
+            <div class="stats-section">
+                <h3><i class="fas fa-chart-line"></i> Resumen de Activos</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-machines">0</div>
+                        <div class="stat-label">Total Activos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="available-percentage">0</div>
+                        <div class="stat-label">Operativos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="maintenance-soon">0</div>
+                        <div class="stat-label">En Mantenimiento</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="avg-hours">0</div>
+                        <div class="stat-label">Programadas</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filters-section">
+                <h3><i class="fas fa-filter"></i> Filtros</h3>
+                
+                <div class="filter-group">
+                    <label for="search-filter">Buscar:</label>
+                    <input type="text" id="search-filter" placeholder="Tractor, Bomba, ID..." onkeyup="aplicarFiltros()">
+                </div>
+
+                <div class="filter-group">
+                    <label for="location-filter">Ubicación:</label>
+                    <select id="location-filter" onchange="aplicarFiltros()">
+                        <option value="">Todas las ubicaciones</option>
+                        <option value="Chañe">Chañe</option>
+                        <option value="Fuente el Olmo">Fuente el Olmo</option>
+                        <option value="Toro">Toro</option>
+                        <option value="Almacén Principal">Almacén Principal</option>
+                        <option value="Taller">Taller</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="type-filter">Tipo:</label>
+                    <select id="type-filter" onchange="aplicarFiltros()">
+                        <option value="">Todos los tipos</option>
+                        <option value="Tractor">Tractor</option>
+                        <option value="Pulverizador">Pulverizador</option>
+                        <option value="Infraestructura">Infraestructura</option>
+                        <option value="Sistema de Riego">Sistema de Riego</option>
+                        <option value="Generador">Generador</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="status-filter">Estado:</label>
+                    <select id="status-filter" onchange="aplicarFiltros()">
+                        <option value="">Todos los estados</option>
+                        <option value="operativo">Operativo</option>
+                        <option value="mantenimiento">En Mantenimiento</option>
+                        <option value="programado">Programado</option>
+                        <option value="por-hacer">Por Hacer</option>
+                        <option value="hecho">Completado</option>
+                    </select>
+                </div>
+
+
+
+                <button class="btn-clear-filters" onclick="limpiarFiltros()">
+                    <i class="fas fa-times"></i>
+                    Limpiar Filtros
+                </button>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Machine List Section -->
+            <section class="machine-list-section" id="machine-list-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-cogs"></i> Lista de Maquinaria</h2>
+                </div>
+                <div class="machine-grid" id="machine-grid">
+                    <!-- Las máquinas se cargarán aquí dinámicamente -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal para detalles de máquina -->
+    <div id="machine-detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-machine-title">Detalles de Máquina</h3>
+                <span class="modal-close" onclick="cerrarModalDetalle()">&times;</span>
+            </div>
+            <div class="modal-body" id="modal-machine-body">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="cerrarModalDetalle()">Cerrar</button>
+                <button class="btn-primary" onclick="crearOrdenDesdeModal()">Crear Orden de Trabajo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para historial de mantenimientos -->
+    <div id="maintenance-history-modal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="history-modal-title">Historial de Mantenimientos</h3>
+                <span class="modal-close" onclick="cerrarModalHistorial()">&times;</span>
+            </div>
+            <div class="modal-body" id="history-modal-body">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="cerrarModalHistorial()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="maquinaria.js"></script>
+    <script>
+        // Cargar navbar
+        fetch('../Components/navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('navbar-container').innerHTML = html;
+                // Actualizar el título del navbar y usuario
+                const navbarTitle = document.querySelector('.navbar-title');
+                const userInfo = document.querySelector('.user-info');
+                if (navbarTitle) navbarTitle.textContent = 'PLANASA GMAO - Gestión de Maquinaria';
+                if (userInfo) userInfo.textContent = 'Gestor Taller';
+            })
+            .catch(error => {
+                console.error('Error cargando navbar:', error);
+            });
+    </script>
+</body>
+</html>
