@@ -19,7 +19,7 @@ const solicitudesData = [
         importancia: "alta",
         numeroActivo: "TR-001",
         tipoActivo: "Tractor",
-        ubicacion: "Sector 1",
+        ubicacion: "Fuente el Olmo",
         averia: "Sistema Hidráulico",
         tipoAveria: "Hidráulica",
         importanciaAveria: "Crítica",
@@ -35,7 +35,7 @@ const solicitudesData = [
         importancia: "media",
         numeroActivo: "PV-002",
         tipoActivo: "Pulverizador",
-        ubicacion: "Sector 2",
+        ubicacion: "Fuente el Olmo",
         averia: "Sistema Eléctrico",
         tipoAveria: "Eléctrica",
         importanciaAveria: "Mayor",
@@ -51,7 +51,7 @@ const solicitudesData = [
         importancia: "baja",
         numeroActivo: "CS-003",
         tipoActivo: "Cosechadora",
-        ubicacion: "Campo Norte",
+        ubicacion: "Fuente el Olmo",
         averia: "Revisión General",
         tipoAveria: "Mecánica",
         importanciaAveria: "Menor",
@@ -240,10 +240,6 @@ function abrirDetalle(index) {
                 <div class="modal-info-item">
                     <div class="modal-info-label">Ubicación</div>
                     <div class="modal-info-value">${solicitudSeleccionada.ubicacion}</div>
-                </div>
-                <div class="modal-info-item">
-                    <div class="modal-info-label">Estado del Activo</div>
-                    <div class="modal-info-value">${solicitudSeleccionada.estadoActivo}</div>
                 </div>
             </div>
         </div>
