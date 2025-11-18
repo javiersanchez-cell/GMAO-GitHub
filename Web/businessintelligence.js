@@ -9,6 +9,65 @@ let charts = {};
 let datosOriginales = null;
 let datosFiltrados = null;
 
+// Datos simulados completos con todas las dimensiones
+const DATOS_COMPLETOS = {
+    // Datos por periodo
+    week: { preventivo: 65, correctivo: 30, disponibilidad: 75, costoTotal: 45000 },
+    month: { preventivo: 68, correctivo: 28, disponibilidad: 77.8, costoTotal: 277117 },
+    quarter: { preventivo: 70, correctivo: 26, disponibilidad: 80, costoTotal: 831000 },
+    year: { preventivo: 72, correctivo: 24, disponibilidad: 82, costoTotal: 3324000 },
+    
+    // Datos por lugar
+    lugares: {
+        'todos': { disponibilidad: 77.8, costoTotal: 277117, maquinas: 18 },
+        'fuente-el-olmo': { disponibilidad: 82, costoTotal: 165000, maquinas: 10 },
+        'huelva': { disponibilidad: 75, costoTotal: 78000, maquinas: 5 },
+        'moguer': { disponibilidad: 72, costoTotal: 34117, maquinas: 3 }
+    },
+    
+    // Datos por tipo
+    tipos: {
+        'todos': { preventivo: 68, correctivo: 28, disponibilidad: 77.8, costoPromedio: 15395 },
+        'tractor': { preventivo: 70, correctivo: 26, disponibilidad: 80, costoPromedio: 17895 },
+        'cosechadora': { preventivo: 60, correctivo: 35, disponibilidad: 70, costoPromedio: 28130 },
+        'pulverizador': { preventivo: 65, correctivo: 32, disponibilidad: 73, costoPromedio: 9886 },
+        'riego': { preventivo: 75, correctivo: 20, disponibilidad: 85, costoPromedio: 8089 },
+        'otros': { preventivo: 72, correctivo: 24, disponibilidad: 78, costoPromedio: 10789 }
+    },
+    
+    // Datos por campaña
+    campanas: {
+        'todos': { costoTotal: 277117, ordenes: 145 },
+        '2024-25': { costoTotal: 277117, ordenes: 145 },
+        '2023-24': { costoTotal: 298500, ordenes: 156 },
+        '2022-23': { costoTotal: 285300, ordenes: 138 }
+    }
+};
+
+// (Lógica de filtros eliminada. El dashboard ahora es estático con datos por defecto)
+
+function actualizarKPIs() {
+    if (!datosFiltrados) return;
+    
+    // Actualizar valores en el resumen
+    const kpiCards = document.querySelectorAll('.summary-card .card-value');
+    if (kpiCards.length >= 4) {
+        kpiCards[0].textContent = `${datosFiltrados.disponibilidad.toFixed(1)}%`;
+        kpiCards[1].textContent = `${datosFiltrados.preventivo}%`;
+        kpiCards[2].textContent = `€${datosFiltrados.costoTotal.toLocaleString()}`;
+        kpiCards[3].textContent = `${(datosFiltrados.ordenes / 38).toFixed(1)} días`;
+    }
+}
+
+function destruirGraficos() {
+    Object.values(charts).forEach(chart => {
+        if (chart && typeof chart.destroy === 'function') {
+            chart.destroy();
+        }
+    });
+    charts = {};
+}
+
 // Datos reales de maquinaria (sincronizados con maquinaria.js)
 const DATOS_MAQUINAS = {
     totalMaquinas: 18,
@@ -78,9 +137,12 @@ const DATOS_MAQUINAS = {
 
 // Navegación entre secciones
 document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar datos filtrados con valores por defecto (estático)
+    datosFiltrados = DATOS_COMPLETOS.tipos.todos;
+
     // Cargar sección inicial
     mostrarSeccion('resumen');
-    
+
     // Event listeners para navegación
     const navLinks = document.querySelectorAll('.nav-link');
     navLinks.forEach(link => {
@@ -88,16 +150,262 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const section = this.dataset.section;
             mostrarSeccion(section);
-            
+
             // Actualizar navegación activa
             navLinks.forEach(l => l.classList.remove('active'));
             this.classList.add('active');
         });
     });
-    
+
     // Inicializar todas las gráficas
     inicializarGraficas();
+
+    // Actualizar KPIs iniciales
+    actualizarKPIs();
+
+    // Inicializar tooltips
+    inicializarTooltips();
 });
+
+// Sistema de tooltips personalizado
+function inicializarTooltips() {
+    const tooltipData = {
+        // KPIs de disponibilidad
+        'disponibilidad': {
+            title: 'Disponibilidad Técnica',
+            desc: 'Porcentaje de tiempo que los activos están operativos y disponibles para producción.',
+            source: 'Calculado como: (Horas Operativas / Horas Totales) × 100',
+            comparison: 'Objetivo: >85% | Industria: 75-80%'
+        },
+        'mtbf': {
+            title: 'MTBF (Mean Time Between Failures)',
+            desc: 'Tiempo promedio entre fallos. Indica la fiabilidad del equipo.',
+            source: 'Calculado como: Horas Totales de Operación / Número de Fallos',
+            comparison: 'Mes anterior: 144h | Objetivo: >150h'
+        },
+        'mttr': {
+            title: 'MTTR (Mean Time To Repair)',
+            desc: 'Tiempo promedio de reparación. Mide la eficiencia del mantenimiento.',
+            source: 'Calculado como: Tiempo Total de Reparación / Número de Reparaciones',
+            comparison: 'Mes anterior: 4.7h | Objetivo: <4h'
+        },
+        'preventivo': {
+            title: 'Mantenimiento Preventivo',
+            desc: 'Porcentaje de actividades de mantenimiento planificadas vs correctivas.',
+            source: 'Calculado como: (OTs Preventivas / Total OTs) × 100',
+            comparison: 'Mes anterior: 63% | Objetivo: >70%'
+        },
+        'correctivo': {
+            title: 'Mantenimiento Correctivo',
+            desc: 'Porcentaje de reparaciones no planificadas debido a fallos.',
+            source: 'Calculado como: (OTs Correctivas / Total OTs) × 100',
+            comparison: 'Objetivo: <30% | Crítico: >40%'
+        },
+        'costo-total': {
+            title: 'Costo Total de Mantenimiento',
+            desc: 'Suma de todos los costos de mantenimiento incluyendo mano de obra, repuestos y servicios.',
+            source: 'Incluye: Mano de obra (51%), Repuestos (32%), Externos (17%)',
+            comparison: 'Mes anterior: €288,450 | Reducción: 3.8%',
+            miniChart: {
+                labels: ['MO', 'Rep', 'Ext'],
+                values: [51, 32, 17]
+            }
+        },
+        'rav': {
+            title: 'RAV% (Replacement Asset Value)',
+            desc: 'Porcentaje del costo de mantenimiento respecto al valor de reposición del activo.',
+            source: 'Calculado como: (Costo Anual Mantenimiento / Valor Reposición) × 100',
+            comparison: 'Excelente: <3% | Bueno: 3-5% | Alto: >5%'
+        },
+        'tiempo-resolucion': {
+            title: 'Tiempo Medio de Resolución',
+            desc: 'Tiempo promedio desde la apertura hasta el cierre de una orden de trabajo.',
+            source: 'Incluye: Diagnóstico + Espera de repuestos + Reparación + Verificación',
+            comparison: 'Mes anterior: 4.3 días | Mejora: 0.5 días'
+        },
+        'ordenes-abiertas': {
+            title: 'Órdenes de Trabajo Abiertas',
+            desc: 'Número total de órdenes de trabajo en proceso o pendientes.',
+            source: 'Estado: En progreso (4) + Por hacer (3)',
+            comparison: 'Semana anterior: 9 | Reducción: 2 OTs'
+        },
+        'cumplimiento-plan': {
+            title: 'Cumplimiento del Plan de Mantenimiento',
+            desc: 'Porcentaje de actividades preventivas realizadas según lo programado.',
+            source: 'Calculado como: (Preventivos Realizados / Preventivos Programados) × 100',
+            comparison: 'Mes anterior: 85% | Mejora: 4%'
+        },
+        'rotacion-inventario': {
+            title: 'Rotación de Inventario',
+            desc: 'Número de veces que se renueva el inventario de repuestos en un año.',
+            source: 'Calculado como: Costo Anual Repuestos / Valor Promedio Inventario',
+            comparison: 'Óptimo: 4-6x/año | Bajo: <3x/año'
+        },
+        'stock-outs': {
+            title: 'Stock-outs (Roturas de Stock)',
+            desc: 'Número de veces que un repuesto crítico no estuvo disponible cuando se necesitó.',
+            source: 'Incluye solo repuestos clasificados como críticos',
+            comparison: 'Mes anterior: 9 | Aumento: 3 eventos'
+        }
+    };
+    
+    // Crear elemento de tooltip
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip-custom';
+    document.body.appendChild(tooltip);
+    
+    // Agregar data-tooltip a elementos
+    setTimeout(() => {
+        agregarTooltipAElementos(tooltipData, tooltip);
+    }, 500);
+}
+
+function agregarTooltipAElementos(tooltipData, tooltipElement) {
+    // KPI Cards
+    document.querySelectorAll('.kpi-card').forEach((card, index) => {
+        const label = card.querySelector('.kpi-label')?.textContent.toLowerCase();
+        let tooltipKey = null;
+        
+        if (label?.includes('disponibilidad')) tooltipKey = 'disponibilidad';
+        else if (label?.includes('mtbf')) tooltipKey = 'mtbf';
+        else if (label?.includes('mttr')) tooltipKey = 'mttr';
+        else if (label?.includes('preventivo')) tooltipKey = 'preventivo';
+        else if (label?.includes('correctivo')) tooltipKey = 'correctivo';
+        else if (label?.includes('costo total')) tooltipKey = 'costo-total';
+        else if (label?.includes('rav')) tooltipKey = 'rav';
+        else if (label?.includes('resolución')) tooltipKey = 'tiempo-resolucion';
+        else if (label?.includes('mantenimiento') && card.closest('#ordenes')) tooltipKey = 'ordenes-abiertas';
+        else if (label?.includes('cumplimiento')) tooltipKey = 'cumplimiento-plan';
+        else if (label?.includes('rotación')) tooltipKey = 'rotacion-inventario';
+        else if (label?.includes('stock-out')) tooltipKey = 'stock-outs';
+        
+        if (tooltipKey && tooltipData[tooltipKey]) {
+            card.setAttribute('data-tooltip', tooltipKey);
+            agregarEventosTooltip(card, tooltipData[tooltipKey], tooltipElement);
+        }
+    });
+    
+    // Summary Cards
+    document.querySelectorAll('.summary-card').forEach((card, index) => {
+        const label = card.querySelector('.card-label')?.textContent.toLowerCase();
+        let tooltipKey = null;
+        
+        if (label?.includes('disponibilidad')) tooltipKey = 'disponibilidad';
+        else if (label?.includes('preventivo')) tooltipKey = 'preventivo';
+        else if (label?.includes('costo')) tooltipKey = 'costo-total';
+        else if (label?.includes('resolución')) tooltipKey = 'tiempo-resolucion';
+        
+        if (tooltipKey && tooltipData[tooltipKey]) {
+            card.setAttribute('data-tooltip', tooltipKey);
+            agregarEventosTooltip(card, tooltipData[tooltipKey], tooltipElement);
+        }
+    });
+    
+    // Chart Containers
+    const chartTooltips = {
+        'chartMantenimientoDistribucion': {
+            title: 'Distribución de Mantenimiento',
+            desc: 'Muestra la proporción de actividades preventivas, correctivas y predictivas.',
+            source: 'Basado en el tipo de orden de trabajo registrada en el sistema',
+            comparison: 'Ideal: 70% preventivo, 25% correctivo, 5% predictivo'
+        },
+        'chartDisponibilidadTipo': {
+            title: 'Disponibilidad por Tipo de Máquina',
+            desc: 'Compara la disponibilidad operativa de diferentes tipos de equipos.',
+            source: 'Calculado por tipo: Horas operativas / Horas programadas',
+            comparison: 'Tractores: mejor desempeño | Cosechadoras: requieren atención'
+        },
+        'chartTopMaquinas': {
+            title: 'Top 5 Máquinas por Costo',
+            desc: 'Identifica los activos con mayor costo de mantenimiento acumulado.',
+            source: 'Suma de: Mano de obra + Repuestos + Servicios externos',
+            comparison: 'Cosechadoras representan el 40% del costo total'
+        }
+    };
+    
+    document.querySelectorAll('.chart-container').forEach(container => {
+        const canvas = container.querySelector('canvas');
+        if (canvas && chartTooltips[canvas.id]) {
+            container.setAttribute('data-tooltip', canvas.id);
+            agregarEventosTooltip(container, chartTooltips[canvas.id], tooltipElement);
+        }
+    });
+}
+
+function agregarEventosTooltip(element, data, tooltipElement) {
+    element.addEventListener('mouseenter', (e) => {
+        mostrarTooltip(e, data, tooltipElement);
+    });
+    
+    element.addEventListener('mousemove', (e) => {
+        posicionarTooltip(e, tooltipElement);
+    });
+    
+    element.addEventListener('mouseleave', () => {
+        ocultarTooltip(tooltipElement);
+    });
+}
+
+function mostrarTooltip(event, data, tooltipElement) {
+    let content = `
+        <div class="tooltip-custom-title">${data.title}</div>
+        <div class="tooltip-custom-desc">${data.desc}</div>
+        <div class="tooltip-custom-data">📊 ${data.source}</div>
+    `;
+    
+    if (data.comparison) {
+        content += `
+            <div class="tooltip-custom-comparison">
+                📈 <strong>Comparación:</strong><br>${data.comparison}
+            </div>
+        `;
+    }
+    
+    if (data.miniChart) {
+        content += `<div class="tooltip-custom-mini-chart">`;
+        data.miniChart.labels.forEach((label, i) => {
+            const width = data.miniChart.values[i];
+            content += `
+                <div style="margin: 6px 0;">
+                    <div style="font-size: 10px; margin-bottom: 2px;">${label}</div>
+                    <div class="tooltip-bar" style="width: ${width}%">
+                        <span class="tooltip-bar-label">${width}%</span>
+                    </div>
+                </div>
+            `;
+        });
+        content += `</div>`;
+    }
+    
+    tooltipElement.innerHTML = content;
+    tooltipElement.classList.add('show');
+    posicionarTooltip(event, tooltipElement);
+}
+
+function posicionarTooltip(event, tooltipElement) {
+    const x = event.clientX + 15;
+    const y = event.clientY + 15;
+    const rect = tooltipElement.getBoundingClientRect();
+    
+    // Ajustar si se sale de la pantalla
+    let finalX = x;
+    let finalY = y;
+    
+    if (x + rect.width > window.innerWidth) {
+        finalX = event.clientX - rect.width - 15;
+    }
+    
+    if (y + rect.height > window.innerHeight) {
+        finalY = event.clientY - rect.height - 15;
+    }
+    
+    tooltipElement.style.left = finalX + 'px';
+    tooltipElement.style.top = finalY + 'px';
+}
+
+function ocultarTooltip(tooltipElement) {
+    tooltipElement.classList.remove('show');
+}
 
 function mostrarSeccion(seccionId) {
     // Ocultar todas las secciones
@@ -155,21 +463,12 @@ function crearGraficoDistribucionMantenimiento() {
     const ctx = document.getElementById('chartMantenimientoDistribucion');
     if (!ctx) return;
     
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
+    const preventivo = datosFiltrados?.preventivo || 68;
+    const correctivo = datosFiltrados?.correctivo || 28;
+    const predictivo = 100 - preventivo - correctivo;
     
-    // Datos ajustados según tipo
-    let prevValue = 68;
-    let corrValue = 28;
-    let predValue = 4;
-    
-    if (tipoFiltro === 'cosechadora' || tipoFiltro === 'pulverizador') {
-        prevValue = 60; // Maquinaria más propensa a correctivo
-        corrValue = 35;
-        predValue = 5;
-    } else if (tipoFiltro === 'riego') {
-        prevValue = 75; // Riego más estable
-        corrValue = 20;
-        predValue = 5;
+    if (charts.distribucionMant) {
+        charts.distribucionMant.destroy();
     }
     
     charts.distribucionMant = new Chart(ctx, {
@@ -177,7 +476,7 @@ function crearGraficoDistribucionMantenimiento() {
         data: {
             labels: ['Preventivo', 'Correctivo', 'Predictivo'],
             datasets: [{
-                data: [prevValue, corrValue, predValue],
+                data: [preventivo, correctivo, predictivo],
                 backgroundColor: ['#28a745', '#dc3545', '#ffc107'],
                 borderWidth: 0
             }]
@@ -187,7 +486,11 @@ function crearGraficoDistribucionMantenimiento() {
             maintainAspectRatio: true,
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        font: { size: 11 }
+                    }
                 }
             }
         }
@@ -1509,3 +1812,55 @@ function volverAtras() {
 function volverAtras() {
     window.location.href = 'gestortaller.html';
 }
+
+// ===== FILTRADO Y ACTUALIZACIÓN =====
+function aplicarFiltros() {
+    const periodo = document.getElementById('period-filter').value;
+    const lugar = document.getElementById('lugar-filter').value;
+    const tipo = document.getElementById('tipo-filter').value;
+    const campana = document.getElementById('campana-filter').value;
+
+    // Filtrar datos según los criterios seleccionados
+    datosFiltrados = datosOriginales.filter(dato => {
+        const coincidePeriodo = periodo === 'todos' || dato.periodo === periodo;
+        const coincideLugar = lugar === 'todos' || dato.lugar === lugar;
+        const coincideTipo = tipo === 'todos' || dato.tipo === tipo;
+        const coincideCampana = campana === 'todos' || dato.campana === campana;
+        return coincidePeriodo && coincideLugar && coincideTipo && coincideCampana;
+    });
+
+    // Actualizar gráficos y KPIs
+    actualizarGraficos();
+    actualizarKPIs();
+}
+
+function actualizarGraficos() {
+    // Destruir gráficos existentes
+    Object.values(charts).forEach(chart => chart.destroy());
+
+    // Crear gráficos con datos filtrados
+    inicializarGraficas();
+}
+
+function actualizarKPIs() {
+    // Actualizar valores de los KPIs según los datos filtrados
+    const totalMaquinas = datosFiltrados.length;
+    const operativas = datosFiltrados.filter(d => d.estado === 'operativa').length;
+    const enMantenimiento = datosFiltrados.filter(d => d.estado === 'mantenimiento').length;
+
+    document.querySelector('.kpi-card .kpi-value').textContent = `${operativas}/${totalMaquinas}`;
+    document.querySelector('.kpi-card .kpi-label').textContent = 'Máquinas Operativas';
+}
+
+// ===== EVENTOS =====
+document.addEventListener('DOMContentLoaded', () => {
+    // Guardar datos originales
+    datosOriginales = [...DATOS_MAQUINAS];
+
+    // Agregar eventos a los filtros
+    const filtros = document.querySelectorAll('#period-filter, #lugar-filter, #tipo-filter, #campana-filter');
+    filtros.forEach(filtro => filtro.addEventListener('change', aplicarFiltros));
+
+    // Aplicar filtros iniciales
+    aplicarFiltros();
+});
