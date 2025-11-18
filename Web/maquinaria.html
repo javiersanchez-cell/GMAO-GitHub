@@ -4,156 +4,317 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PLANASA GMAO - Gestión de Maquinaria</title>
-    
-
-    
-    <!-- Font Awesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <!-- Estilos CSS -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 512%22><path fill=%22%233f9c35%22 d=%22M96 64c0-35.3 28.7-64 64-64H266.3c26.2 0 49.7 15.9 59.4 40.2L373.7 160H480V126.2c0-24.8 5.8-49.3 16.9-71.6l2.5-5c7.9-15.8 27.1-22.2 42.9-14.3s22.2 27.1 14.3 42.9l-2.5 5c-6.7 13.3-10.1 28-10.1 42.9V160h56c22.1 0 40 17.9 40 40v45.4c0 16.5-8.5 31.9-22.6 40.7l-43.3 27.1c-14.2-5.9-29.8-9.2-46.1-9.2c-39.3 0-74.1 18.9-96 48H352c0 17.7-14.3 32-32 32h-8.2c-1.7 4.8-3.7 9.5-5.8 14.1l5.8 5.8c12.5 12.5 12.5 32.8 0 45.3l-22.6 22.6c-12.5 12.5-32.8 12.5-45.3 0l-5.8-5.8c-4.6 2.2-9.3 4.1-14.1 5.8V480c0 17.7-14.3 32-32 32H160c-17.7 0-32-14.3-32-32v-8.2c-4.8-1.7-9.5-3.7-14.1-5.8l-5.8 5.8c-12.5 12.5-32.8 12.5-45.3 0L40.2 449.1c-12.5-12.5-12.5-32.8 0-45.3l5.8-5.8c-2.2-4.6-4.1-9.3-5.8-14.1H32c-17.7 0-32-14.3-32-32V320c0-17.7 14.3-32 32-32h8.2c1.7-4.8 3.7-9.5 5.8-14.1l-5.8-5.8c-12.5-12.5-12.5-32.8 0-45.3l22.6-22.6c12.5-12.5 32.8-12.5 45.3 0l5.8 5.8c4.6-2.2 9.3-4.1 14.1-5.8V192c0-17.7 14.3-32 32-32h8.2c1.7-4.8 3.7-9.5 5.8-14.1l-5.8-5.8c-12.5-12.5-12.5-32.8 0-45.3l22.6-22.6c9-9 21.9-11.5 33.1-7.6V64zm368 160a96 96 0 1 1 192 0 96 96 0 1 1 -192 0z%22/></svg>" type="image/svg+xml">
     <link rel="stylesheet" href="maquinaria.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Leaflet.js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 </head>
 <body>
     <div id="navbar-container"></div>
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Sidebar with filters and stats -->
+        <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="stats-section">
-                <h3><i class="fas fa-chart-line"></i> Resumen de Activos</h3>
-                <div class="stats-grid">
-                    <div class="stat-card">
+            <!-- Resumen Section -->
+            <section class="resumen-section">
+                <h3><i class="fas fa-chart-pie"></i> Resumen General</h3>
+                <div class="stats-vertical">
+                    <div class="stat-item">
                         <div class="stat-number" id="total-machines">0</div>
-                        <div class="stat-label">Total Activos</div>
+                        <div class="stat-label">Total Máquinas</div>
+                        <div class="stat-icon"><i class="fas fa-cogs"></i></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="available-percentage">0</div>
-                        <div class="stat-label">Operativos</div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="operativas">0</div>
+                        <div class="stat-label">Operativas</div>
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="maintenance-soon">0</div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="mantenimiento">0</div>
                         <div class="stat-label">En Mantenimiento</div>
+                        <div class="stat-icon"><i class="fas fa-tools"></i></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="avg-hours">0</div>
-                        <div class="stat-label">Programadas</div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="costo-total">€0</div>
+                        <div class="stat-label">Costo Total</div>
+                        <div class="stat-icon"><i class="fas fa-euro-sign"></i></div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="filters-section">
+            <!-- Filtros Section -->
+            <section class="filtros-section">
                 <h3><i class="fas fa-filter"></i> Filtros</h3>
+                <div class="filter-group">
+                    <label for="search-input">Buscar:</label>
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="Buscar máquina..." onkeyup="filtrarMaquinas()">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
                 
                 <div class="filter-group">
-                    <label for="search-filter">Buscar:</label>
-                    <input type="text" id="search-filter" placeholder="Tractor, Bomba, ID..." onkeyup="aplicarFiltros()">
+                    <label for="estado-filter">Estado:</label>
+                    <select id="estado-filter" onchange="filtrarMaquinas()">
+                        <option value="">Todos los estados</option>
+                        <option value="operativo">Operativo</option>
+                        <option value="mantenimiento">En Mantenimiento</option>
+                        <option value="programado">Programado</option>
+                    </select>
                 </div>
-
+                
                 <div class="filter-group">
-                    <label for="location-filter">Ubicación:</label>
-                    <select id="location-filter" onchange="aplicarFiltros()">
+                    <label for="categoria-filter">Categoría:</label>
+                    <select id="categoria-filter" onchange="filtrarMaquinas()">
+                        <option value="">Todas las categorías</option>
+                        <option value="Maquinaria Agrícola">Maquinaria Agrícola</option>
+                        <option value="Equipos de Riego">Equipos de Riego</option>
+                        <option value="Infraestructura">Infraestructura</option>
+                        <option value="Energía">Energía</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="tipo-filter">Tipo de Activo:</label>
+                    <select id="tipo-filter" onchange="filtrarMaquinas()">
+                        <option value="">Todos los tipos</option>
+                        <option value="Tractor">Tractor</option>
+                        <option value="Cosechadora">Cosechadora</option>
+                        <option value="Pulverizador">Pulverizador</option>
+                        <option value="Sistema de Riego">Sistema de Riego</option>
+                        <option value="Cultivador">Cultivador</option>
+                        <option value="Generador">Generador</option>
+                        <option value="Infraestructura">Infraestructura</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="ubicacion-filter">Ubicación:</label>
+                    <select id="ubicacion-filter" onchange="filtrarMaquinas()">
                         <option value="">Todas las ubicaciones</option>
                         <option value="Chañe">Chañe</option>
+                        <option value="Mogán">Mogán</option>
+                        <option value="Arona">Arona</option>
+                        <option value="San Bartolomé">San Bartolomé</option>
+                        <option value="Teguise">Teguise</option>
+                        <option value="Haría">Haría</option>
+                        <option value="Adeje">Adeje</option>
+                        <option value="Granadilla">Granadilla</option>
+                        <option value="Santiago del Teide">Santiago del Teide</option>
                         <option value="Fuente el Olmo">Fuente el Olmo</option>
                         <option value="Toro">Toro</option>
                         <option value="Almacén Principal">Almacén Principal</option>
                         <option value="Taller">Taller</option>
                     </select>
                 </div>
-
-                <div class="filter-group">
-                    <label for="type-filter">Tipo:</label>
-                    <select id="type-filter" onchange="aplicarFiltros()">
-                        <option value="">Todos los tipos</option>
-                        <option value="Tractor">Tractor</option>
-                        <option value="Pulverizador">Pulverizador</option>
-                        <option value="Infraestructura">Infraestructura</option>
-                        <option value="Sistema de Riego">Sistema de Riego</option>
-                        <option value="Generador">Generador</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="status-filter">Estado:</label>
-                    <select id="status-filter" onchange="aplicarFiltros()">
-                        <option value="">Todos los estados</option>
-                        <option value="operativo">Operativo</option>
-                        <option value="mantenimiento">En Mantenimiento</option>
-                        <option value="programado">Programado</option>
-                        <option value="por-hacer">Por Hacer</option>
-                        <option value="hecho">Completado</option>
-                    </select>
-                </div>
-
-
-
+                
                 <button class="btn-clear-filters" onclick="limpiarFiltros()">
                     <i class="fas fa-times"></i>
                     Limpiar Filtros
                 </button>
-            </div>
+            </section>
         </aside>
 
         <!-- Content Area -->
         <div class="content-area">
-            <!-- Machine List Section -->
-            <section class="machine-list-section" id="machine-list-section">
+            <!-- Machine List -->
+            <section class="machine-list-section">
                 <div class="section-header">
-                    <h2><i class="fas fa-cogs"></i> Lista de Maquinaria</h2>
+                    <h2><i class="fas fa-map-marked-alt"></i> Mapa de Ubicación</h2>
+                </div>
+                <div class="map-container" id="map-container">
+                    <!-- El mapa se cargará aquí -->
+                </div>
+                
+                <div class="section-header" style="margin-top: 20px;">
+                    <h2><i class="fas fa-list"></i> Lista de Maquinaria</h2>
+                    <div class="header-controls">
+                        <div class="results-info">
+                            <span id="results-count">0 máquinas</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="machine-grid" id="machine-grid">
-                    <!-- Las máquinas se cargarán aquí dinámicamente -->
+                    <!-- Las máquinas se cargarán aquí -->
                 </div>
             </section>
         </div>
     </main>
 
-    <!-- Modal para detalles de máquina -->
-    <div id="machine-detail-modal" class="modal">
+    <!-- Modal de Detalles de Máquina -->
+    <div id="machine-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modal-machine-title">Detalles de Máquina</h3>
-                <span class="modal-close" onclick="cerrarModalDetalle()">&times;</span>
+                <h3 id="modal-title">Detalles de Máquina</h3>
+                <span class="modal-close" onclick="cerrarModal()">&times;</span>
             </div>
-            <div class="modal-body" id="modal-machine-body">
-                <!-- Contenido dinámico -->
+            <div class="modal-body">
+                <!-- Información General -->
+                <div class="modal-section">
+                    <h4><i class="fas fa-info-circle"></i> Información General</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>ID:</label>
+                            <span id="modal-id"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Nombre:</label>
+                            <span id="modal-nombre"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Tipo:</label>
+                            <span id="modal-tipo"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Modelo:</label>
+                            <span id="modal-modelo"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Ubicación:</label>
+                            <span id="modal-ubicacion"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Estado:</label>
+                            <span id="modal-estado" class="status-badge"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Fecha Adquisición:</label>
+                            <span id="modal-fecha"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Años en Servicio:</label>
+                            <span id="modal-anos"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas de Operación -->
+                <div class="modal-section">
+                    <h4><i class="fas fa-chart-bar"></i> Estadísticas de Operación</h4>
+                    <div class="stats-row">
+                        <div class="stat-box">
+                            <div class="stat-value" id="modal-horas">0</div>
+                            <div class="stat-title">Horas Operación</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="modal-costo">€0</div>
+                            <div class="stat-title">Costo Total Mantenimiento</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="modal-reparaciones">0</div>
+                            <div class="stat-title">Total Reparaciones</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="modal-promedio">€0</div>
+                            <div class="stat-title">Costo Promedio</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historial de Reparaciones -->
+                <div class="modal-section">
+                    <h4><i class="fas fa-history"></i> Historial de Reparaciones</h4>
+                    <div class="historial-container" id="historial-container">
+                        <!-- Se cargarán las reparaciones aquí -->
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" onclick="cerrarModalDetalle()">Cerrar</button>
-                <button class="btn-primary" onclick="crearOrdenDesdeModal()">Crear Orden de Trabajo</button>
+                <button class="btn-secondary" onclick="cerrarModal()">Cerrar</button>
+                <button class="btn-primary" onclick="crearOrdenTrabajo()">Crear Orden de Trabajo</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal para historial de mantenimientos -->
-    <div id="maintenance-history-modal" class="modal">
-        <div class="modal-content large">
+    <!-- Modal para ver detalles completos de incidencia -->
+    <div class="modal" id="incident-modal">
+        <div class="modal-content incident-modal-content">
             <div class="modal-header">
-                <h3 id="history-modal-title">Historial de Mantenimientos</h3>
-                <span class="modal-close" onclick="cerrarModalHistorial()">&times;</span>
+                <h2 id="incident-modal-title">Detalles de la Incidencia</h2>
+                <button class="close-btn" onclick="cerrarModalIncidencia()">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <div class="modal-body" id="history-modal-body">
-                <!-- Contenido dinámico -->
+            <div class="modal-body">
+                <div class="incident-details">
+                    <div class="incident-main-info">
+                        <div class="incident-header">
+                            <div class="incident-date">
+                                <i class="fas fa-calendar"></i>
+                                <span id="incident-fecha"></span>
+                            </div>
+                            <div class="incident-cost">
+                                <i class="fas fa-euro-sign"></i>
+                                <span id="incident-costo"></span>
+                            </div>
+                        </div>
+                        <div class="incident-type-container">
+                            <span class="incident-type" id="incident-tipo"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="incident-description">
+                        <h4><i class="fas fa-file-alt"></i> Descripción</h4>
+                        <p id="incident-descripcion"></p>
+                    </div>
+                    
+                    <div class="incident-technician-info">
+                        <div class="info-row">
+                            <div class="info-item">
+                                <i class="fas fa-user"></i>
+                                <span class="info-label">Técnico responsable:</span>
+                                <span id="incident-tecnico"></span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-clock"></i>
+                                <span class="info-label">Horas de trabajo:</span>
+                                <span id="incident-horas"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="incident-machine-info">
+                        <h4><i class="fas fa-cog"></i> Información de la Máquina</h4>
+                        <div class="machine-info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Máquina:</span>
+                                <span id="incident-maquina-nombre"></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Ubicación:</span>
+                                <span id="incident-maquina-ubicacion"></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Modelo:</span>
+                                <span id="incident-maquina-modelo"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" onclick="cerrarModalHistorial()">Cerrar</button>
+                <button class="btn-secondary" onclick="cerrarModalIncidencia()">Cerrar</button>
+                <button class="btn-primary" onclick="crearOrdenTrabajoDesdeIncidencia()">Nueva Orden Similar</button>
             </div>
         </div>
     </div>
 
     <script src="maquinaria.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
         // Cargar navbar
         fetch('../Components/navbar.html')
             .then(response => response.text())
             .then(html => {
                 document.getElementById('navbar-container').innerHTML = html;
-                // Actualizar el título del navbar y usuario
-                const navbarTitle = document.querySelector('.navbar-title');
-                const userInfo = document.querySelector('.user-info');
-                if (navbarTitle) navbarTitle.textContent = 'PLANASA GMAO - Gestión de Maquinaria';
-                if (userInfo) userInfo.textContent = 'Gestor Taller';
+                
+                // Mostrar botón de volver atrás después de cargar la navbar
+                const btnVolver = document.getElementById('btn-volver-nav');
+                if (btnVolver) {
+                    btnVolver.classList.add('show');
+                }
             })
             .catch(error => {
                 console.error('Error cargando navbar:', error);

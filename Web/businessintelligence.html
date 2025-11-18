@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Intelligence - GMAO Planasa</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 512%22><path fill=%22%233f9c35%22 d=%22M96 64c0-35.3 28.7-64 64-64H266.3c26.2 0 49.7 15.9 59.4 40.2L373.7 160H480V126.2c0-24.8 5.8-49.3 16.9-71.6l2.5-5c7.9-15.8 27.1-22.2 42.9-14.3s22.2 27.1 14.3 42.9l-2.5 5c-6.7 13.3-10.1 28-10.1 42.9V160h56c22.1 0 40 17.9 40 40v45.4c0 16.5-8.5 31.9-22.6 40.7l-43.3 27.1c-14.2-5.9-29.8-9.2-46.1-9.2c-39.3 0-74.1 18.9-96 48H352c0 17.7-14.3 32-32 32h-8.2c-1.7 4.8-3.7 9.5-5.8 14.1l5.8 5.8c12.5 12.5 12.5 32.8 0 45.3l-22.6 22.6c-12.5 12.5-32.8 12.5-45.3 0l-5.8-5.8c-4.6 2.2-9.3 4.1-14.1 5.8V480c0 17.7-14.3 32-32 32H160c-17.7 0-32-14.3-32-32v-8.2c-4.8-1.7-9.5-3.7-14.1-5.8l-5.8 5.8c-12.5 12.5-32.8 12.5-45.3 0L40.2 449.1c-12.5-12.5-12.5-32.8 0-45.3l5.8-5.8c-2.2-4.6-4.1-9.3-5.8-14.1H32c-17.7 0-32-14.3-32-32V320c0-17.7 14.3-32 32-32h8.2c1.7-4.8 3.7-9.5 5.8-14.1l-5.8-5.8c-12.5-12.5-12.5-32.8 0-45.3l22.6-22.6c12.5-12.5 32.8-12.5 45.3 0l5.8 5.8c4.6-2.2 9.3-4.1 14.1-5.8V192c0-17.7 14.3-32 32-32h8.2c1.7-4.8 3.7-9.5 5.8-14.1l-5.8-5.8c-12.5-12.5-12.5-32.8 0-45.3l22.6-22.6c9-9 21.9-11.5 33.1-7.6V64zm368 160a96 96 0 1 1 192 0 96 96 0 1 1 -192 0z%22/></svg>" type="image/svg+xml">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="businessintelligence.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <div class="bi-container">
+        <!-- Sidebar Navigation -->
+        <aside class="bi-sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-chart-line"></i> Business Intelligence</h3>
+            </div>
+            
+            <nav class="section-nav">
+                <a href="#resumen" class="nav-link active" data-section="resumen">
+                    <i class="fas fa-th-large"></i>
+                    <span>Resumen General</span>
+                </a>
+                <a href="#disponibilidad" class="nav-link" data-section="disponibilidad">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>Disponibilidad</span>
+                </a>
+                <a href="#preventivo" class="nav-link" data-section="preventivo">
+                    <i class="fas fa-balance-scale"></i>
+                    <span>Preventivo vs Correctivo</span>
+                </a>
+                <a href="#ordenes" class="nav-link" data-section="ordenes">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Órdenes de Trabajo</span>
+                </a>
+                <a href="#costos" class="nav-link" data-section="costos">
+                    <i class="fas fa-euro-sign"></i>
+                    <span>Costos</span>
+                </a>
+                <a href="#repuestos" class="nav-link" data-section="repuestos">
+                    <i class="fas fa-boxes"></i>
+                    <span>Repuestos</span>
+                </a>
+                <a href="#operativos" class="nav-link" data-section="operativos">
+                    <i class="fas fa-cogs"></i>
+                    <span>Rendimiento</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn-export" onclick="exportarReporte()">
+                    <i class="fas fa-file-export"></i>
+                    Exportar Reporte
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="bi-content">
+            <!-- Resumen General -->
+            <section id="resumen" class="bi-section active">
+                <div class="section-header">
+                    <h2><i class="fas fa-th-large"></i> Resumen General</h2>
+                    <div class="filters-container">
+                        <select id="period-filter" onchange="actualizarDatos()">
+                            <option value="week">Última Semana</option>
+                            <option value="month" selected>Último Mes</option>
+                            <option value="quarter">Último Trimestre</option>
+                            <option value="year">Último Año</option>
+                        </select>
+                        
+                        <select id="lugar-filter" onchange="actualizarDatos()">
+                            <option value="todos">Todos los Lugares</option>
+                            <option value="fuente-el-olmo">Fuente el Olmo</option>
+                            <option value="huelva">Huelva</option>
+                            <option value="moguer">Moguer</option>
+                        </select>
+                        
+                        <select id="tipo-filter" onchange="actualizarDatos()">
+                            <option value="todos">Todos los Tipos</option>
+                            <option value="tractor">Tractores</option>
+                            <option value="cosechadora">Cosechadoras</option>
+                            <option value="pulverizador">Pulverizadores</option>
+                            <option value="riego">Sistema Riego</option>
+                            <option value="otros">Otros</option>
+                        </select>
+                        
+                        <select id="campana-filter" onchange="actualizarDatos()">
+                            <option value="todos">Todas las Campañas</option>
+                            <option value="2024-25">2024-25</option>
+                            <option value="2023-24">2023-24</option>
+                            <option value="2022-23">2022-23</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="kpi-summary-grid">
+                    <div class="summary-card highlight">
+                        <div class="card-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-value">77.8%</div>
+                            <div class="card-label">Disponibilidad</div>
+                            <div class="card-trend positive">
+                                <i class="fas fa-arrow-up"></i> 5.5%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="card-icon" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-value">68%</div>
+                            <div class="card-label">Preventivo</div>
+                            <div class="card-trend positive">
+                                <i class="fas fa-arrow-up"></i> 5%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="card-icon" style="background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);">
+                            <i class="fas fa-euro-sign"></i>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-value">€277,117</div>
+                            <div class="card-label">Costo Total</div>
+                            <div class="card-trend positive">
+                                <i class="fas fa-arrow-down"></i> 3.8%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="card-icon" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-value">3.8 días</div>
+                            <div class="card-label">Tiempo Resolución</div>
+                            <div class="card-trend positive">
+                                <i class="fas fa-arrow-down"></i> 0.5 días
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>Distribución de Mantenimiento</h3>
+                        <canvas id="chartMantenimientoDistribucion"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Evolución Mensual de Costos</h3>
+                        <canvas id="chartCostosEvolucion"></canvas>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>Disponibilidad por Tipo de Máquina</h3>
+                        <canvas id="chartDisponibilidadTipo"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Top 5 Máquinas por Costo</h3>
+                        <canvas id="chartTopMaquinas"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Disponibilidad -->
+            <section id="disponibilidad" class="bi-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-heartbeat"></i> Disponibilidad y Salud del Activo</h2>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card highlight">
+                        <div class="kpi-value">77.8<span>%</span></div>
+                        <div class="kpi-label">Disponibilidad Técnica</div>
+                        <div class="kpi-trend positive"><i class="fas fa-arrow-up"></i> 5.5%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">156<span>h</span></div>
+                        <div class="kpi-label">MTBF</div>
+                        <div class="kpi-trend positive"><i class="fas fa-arrow-up"></i> 12h</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">4.2<span>h</span></div>
+                        <div class="kpi-label">MTTR</div>
+                        <div class="kpi-trend positive"><i class="fas fa-arrow-down"></i> 0.5h</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">2.8</div>
+                        <div class="kpi-label">Averías por Activo</div>
+                        <div class="kpi-trend neutral"><i class="fas fa-minus"></i> Sin cambios</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">7.2<span>/10</span></div>
+                        <div class="kpi-label">Índice de Criticidad</div>
+                        <div class="kpi-trend warning"><i class="fas fa-exclamation-triangle"></i> Alto</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">15.3<span>%</span></div>
+                        <div class="kpi-label">Paradas No Planificadas</div>
+                        <div class="kpi-trend positive"><i class="fas fa-arrow-down"></i> 3.2%</div>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container wide">
+                        <h3>Evolución de Disponibilidad y Tiempos</h3>
+                        <canvas id="chartDisponibilidadEvolucion"></canvas>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>MTBF vs MTTR por Tipo</h3>
+                        <canvas id="chartMTBFMTTR"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Distribución de Averías</h3>
+                        <canvas id="chartAverias"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Preventivo vs Correctivo -->
+            <section id="preventivo" class="bi-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-balance-scale"></i> Preventivo vs Correctivo</h2>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card highlight">
+                        <div class="kpi-value">68<span>%</span></div>
+                        <div class="kpi-label">Mantenimiento Preventivo</div>
+                        <div class="kpi-trend positive"><i class="fas fa-arrow-up"></i> 5%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">32<span>%</span></div>
+                        <div class="kpi-label">Mantenimiento Correctivo</div>
+                        <div class="kpi-trend positive"><i class="fas fa-arrow-down"></i> 5%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">89<span>%</span></div>
+                        <div class="kpi-label">Cumplimiento Plan</div>
+                        <div class="kpi-trend positive"><i class="fas fa-arrow-up"></i> 4%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">8</div>
+                        <div class="kpi-label">Preventivos Retrasados</div>
+                        <div class="kpi-trend warning"><i class="fas fa-arrow-up"></i> 2 más</div>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>Preventivo vs Correctivo (Horas)</h3>
+                        <canvas id="chartPrevCorrecHoras"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Preventivo vs Correctivo (Costos)</h3>
+                        <canvas id="chartPrevCorrecCostos"></canvas>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container wide">
+                        <h3>Evolución Mensual: Preventivo vs Correctivo</h3>
+                        <canvas id="chartEvolucionPrevCorr"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Órdenes de Trabajo -->
+            <section id="ordenes" class="bi-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-clipboard-list"></i> Órdenes de Trabajo</h2>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card highlight">
+                        <div class="kpi-value">3.8<span>días</span></div>
+                        <div class="kpi-label">Tiempo Medio Resolución</div>
+                        <div class="kpi-trend positive"><i class="fas fa-arrow-down"></i> 0.5 días</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">7</div>
+                        <div class="kpi-label">Máquinas en Mantenimiento</div>
+                        <div class="kpi-trend warning"><i class="fas fa-exclamation-triangle"></i> 4 activas</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">78<span>%</span></div>
+                        <div class="kpi-label">OTs Cerradas a Tiempo</div>
+                        <div class="kpi-trend positive"><i class="fas fa-arrow-up"></i> 3%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">12<span>/mes</span></div>
+                        <div class="kpi-label">OTs por Técnico</div>
+                        <div class="kpi-trend neutral"><i class="fas fa-minus"></i> Normal</div>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>Estado de Órdenes de Trabajo</h3>
+                        <canvas id="chartEstadoOT"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Productividad por Técnico</h3>
+                        <canvas id="chartProductividad"></canvas>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container wide">
+                        <h3>Evolución de Backlog</h3>
+                        <canvas id="chartBacklog"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Costos -->
+            <section id="costos" class="bi-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-euro-sign"></i> Costos de Mantenimiento</h2>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card highlight">
+                        <div class="kpi-value">€277,117</div>
+                        <div class="kpi-label">Costo Total</div>
+                        <div class="kpi-trend positive"><i class="fas fa-arrow-down"></i> 3.8%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">€141,520</div>
+                        <div class="kpi-label">Mano de Obra (51%)</div>
+                        <div class="kpi-trend neutral"><i class="fas fa-minus"></i> Estable</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">€88,677</div>
+                        <div class="kpi-label">Repuestos (32%)</div>
+                        <div class="kpi-trend positive"><i class="fas fa-arrow-down"></i> 8%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">3.2<span>%</span></div>
+                        <div class="kpi-label">RAV%</div>
+                        <div class="kpi-trend positive"><i class="fas fa-check"></i> Excelente</div>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>Distribución de Costos</h3>
+                        <canvas id="chartDistribucionCostos"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Costo por Tipo de Máquina</h3>
+                        <canvas id="chartCostoTipo"></canvas>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container wide">
+                        <h3>Evolución Mensual de Costos</h3>
+                        <canvas id="chartEvolucionCostos"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Repuestos -->
+            <section id="repuestos" class="bi-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-boxes"></i> Repuestos y Almacén</h2>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-value">4.2<span>x/año</span></div>
+                        <div class="kpi-label">Rotación Inventario</div>
+                        <div class="kpi-trend positive"><i class="fas fa-check"></i> Buena</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">12</div>
+                        <div class="kpi-label">Stock-outs</div>
+                        <div class="kpi-trend warning"><i class="fas fa-arrow-up"></i> 3 más</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">€18,450</div>
+                        <div class="kpi-label">Stock Inmovilizado</div>
+                        <div class="kpi-trend positive"><i class="fas fa-arrow-down"></i> €2K</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">94<span>%</span></div>
+                        <div class="kpi-label">Repuestos Críticos OK</div>
+                        <div class="kpi-trend positive"><i class="fas fa-check"></i> Bueno</div>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>Consumo de Repuestos</h3>
+                        <canvas id="chartConsumoRepuestos"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Valor del Inventario</h3>
+                        <canvas id="chartValorInventario"></canvas>
+                    </div>
+                </div>
+            </section>
+
+
+
+            <!-- Rendimiento -->
+            <section id="operativos" class="bi-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-cogs"></i> Rendimiento de Activos</h2>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card highlight">
+                        <div class="kpi-value">18</div>
+                        <div class="kpi-label">Total Activos</div>
+                        <div class="kpi-trend neutral"><i class="fas fa-info-circle"></i> Inventario</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">14</div>
+                        <div class="kpi-label">Activos Disponibles</div>
+                        <div class="kpi-trend positive"><i class="fas fa-check"></i> 77.8%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">4</div>
+                        <div class="kpi-label">En Mantenimiento</div>
+                        <div class="kpi-trend warning"><i class="fas fa-wrench"></i> Activas</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">€15,395</div>
+                        <div class="kpi-label">Costo Promedio/Activo</div>
+                        <div class="kpi-trend neutral"><i class="fas fa-euro-sign"></i> Anual</div>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>Estado de los Activos</h3>
+                        <canvas id="chartEstadoActivos"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Horas de Operación por Tipo</h3>
+                        <canvas id="chartHorasOperacion"></canvas>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container wide">
+                        <h3>Utilización de Activos (%)</h3>
+                        <canvas id="chartUtilizacion"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="businessintelligence.js"></script>
+    <script>
+        // Cargar navbar
+        fetch('../Components/navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('navbar-container').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error cargando navbar:', error);
+            });
+    </script>
+</body>
+</html>

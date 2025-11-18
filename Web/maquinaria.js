@@ -1,553 +1,642 @@
-// Variables globales
-let filteredMachines = [];
-let selectedMachine = null;
-
-// Máquinas y Espacios organizados por activo con su historial
-const ACTIVOS = [
+// Base de datos de máquinas
+const MAQUINAS = [
     {
         id: 'TR-001',
         nombre: 'Tractor John Deere 5075E',
-        numeroActivo: 'TR-001-JD',
-        tipoActivo: 'Maquinaria Agrícola',
-        ubicacion: 'Chañe - Almacén Principal',
-        estado: 'en-progreso', // Estado actual basado en la orden más reciente
-        estadoOperativo: 'mantenimiento',
-        fechaInstalacion: '2020-01-15',
-        costoTotalAcumulado: 18650, // 5 años de mantenimientos + reparaciones
-        horasMantenimiento: 145,
-        proximoMantenimiento: '2024-11-20',
-        criticidad: 'Media', // No puede ser alta si está en mantenimiento programado
+        tipo: 'Tractor',
+        categoria: 'Maquinaria Agrícola',
+        subcategoria: 'Tractores',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'operativo',
+        costoTotalMantenimiento: 18650.50,
+        horasOperacion: 2847,
+        fechaAdquisicion: '2020-01-15',
+        modelo: 'John Deere 5075E',
         icon: '🚜',
-        ordenesActivas: ['OT-2024-001'],
-        ultimoMantenimiento: '2024-11-10',
-        historialOrdenes: [
+        lat: 28.3135,
+        lng: -16.5099,
+        historialReparaciones: [
             {
-                id: 'OT-2024-001',
-                tipo: 'correctivo',
-                prioridad: 'Media',
-                estado: 'en-progreso',
-                fecha: '2024-11-13',
-                descripcion: 'Ajuste sistema hidráulico',
-                responsable: 'Carlos Méndez',
-                tareas: ['Revisar presión hidráulica', 'Cambiar filtro hidráulico', 'Calibrar válvulas'],
-                horas: 6,
-                costo: 450
+                fecha: '2024-10-15',
+                descripcion: 'Cambio de aceite y filtros',
+                costo: 285.50,
+                tipo: 'Preventivo',
+                tecnico: 'Carlos Méndez',
+                horas: 2.5
             },
             {
-                id: 'OT-2024-012',
-                tipo: 'preventivo',
-                prioridad: 'Baja',
-                estado: 'hecho',
-                fecha: '2024-11-10',
-                descripcion: 'Mantenimiento preventivo programado',
-                responsable: 'Carlos Méndez',
-                tareas: ['Cambio aceite motor', 'Revisión filtros aire', 'Inspección neumáticos'],
-                horas: 4,
-                costo: 280
+                fecha: '2024-08-22',
+                descripcion: 'Reparación sistema hidráulico',
+                costo: 1250.75,
+                tipo: 'Correctivo',
+                tecnico: 'Ana García',
+                horas: 6.0
             },
             {
-                id: 'OT-2024-008',
-                tipo: 'correctivo',
-                prioridad: 'Alta',
-                estado: 'hecho',
-                fecha: '2024-09-22',
-                descripcion: 'Reparación transmisión',
-                responsable: 'Luis Rodríguez',
-                tareas: ['Desmontar caja cambios', 'Reemplazar sincronizadores', 'Ajustar embrague'],
-                horas: 18,
-                costo: 2850
-            },
-            {
-                id: 'OT-2024-005',
-                tipo: 'preventivo',
-                prioridad: 'Media',
-                estado: 'hecho',
-                fecha: '2024-08-15',
-                descripcion: 'Mantenimiento 500 horas',
-                responsable: 'Ana García',
-                tareas: ['Cambio filtros combustible', 'Revisión sistema eléctrico', 'Lubricación general'],
-                horas: 6,
-                costo: 420
-            },
-            {
-                id: 'OT-2023-045',
-                tipo: 'correctivo',
-                prioridad: 'Media',
-                estado: 'hecho',
-                fecha: '2023-12-10',
+                fecha: '2024-06-10',
                 descripcion: 'Sustitución neumáticos traseros',
-                responsable: 'Carlos Méndez',
-                tareas: ['Desmontaje neumáticos gastados', 'Montaje neumáticos nuevos', 'Equilibrado ruedas'],
-                horas: 3,
-                costo: 1200
+                costo: 950.00,
+                tipo: 'Correctivo',
+                tecnico: 'Luis Rodríguez',
+                horas: 3.5
             },
             {
-                id: 'OT-2023-031',
-                tipo: 'preventivo',
-                prioridad: 'Baja',
-                estado: 'hecho',
-                fecha: '2023-09-18',
-                descripcion: 'Inspección anual obligatoria',
-                responsable: 'Inspector Técnico',
-                tareas: ['Revisión seguridad', 'Verificación emisiones', 'Control documentación'],
-                horas: 2,
-                costo: 150
-            },
-            {
-                id: 'OT-2023-018',
-                tipo: 'correctivo',
-                prioridad: 'Alta',
-                estado: 'hecho',
-                fecha: '2023-06-05',
-                descripcion: 'Avería sistema refrigeración',
-                responsable: 'Luis Rodríguez',
-                tareas: ['Reparar radiador', 'Cambiar termostato', 'Rellenar líquido refrigerante'],
-                horas: 8,
-                costo: 680
-            },
-            {
-                id: 'OT-2022-089',
-                tipo: 'correctivo',
-                prioridad: 'Media',
-                estado: 'hecho',
-                fecha: '2022-11-30',
-                descripcion: 'Reparación sistema de dirección',
-                responsable: 'Ana García',
-                tareas: ['Cambiar rótulas dirección', 'Ajustar convergencia', 'Verificar servo-dirección'],
-                horas: 12,
-                costo: 1450
-            },
-            {
-                id: 'OT-2022-067',
-                tipo: 'preventivo',
-                prioridad: 'Media',
-                estado: 'hecho',
-                fecha: '2022-08-22',
-                descripcion: 'Mantenimiento mayor 1000 horas',
-                responsable: 'Técnico Especializado',
-                tareas: ['Revisión completa motor', 'Cambio correas distribución', 'Actualización software'],
-                horas: 16,
-                costo: 2200
-            },
-            {
-                id: 'OT-2021-123',
-                tipo: 'correctivo',
-                prioridad: 'Crítica',
-                estado: 'hecho',
-                fecha: '2021-03-15',
-                descripcion: 'Avería grave motor - Reconstrucción',
-                responsable: 'Taller Especializado',
-                tareas: ['Desmontaje completo motor', 'Rectificado cilindros', 'Montaje con piezas nuevas'],
-                horas: 45,
-                costo: 8500
+                fecha: '2024-03-18',
+                descripcion: 'Mantenimiento programado 500h',
+                costo: 420.30,
+                tipo: 'Preventivo',
+                tecnico: 'Carlos Méndez',
+                horas: 4.0
             }
         ]
     },
     {
-        id: 'PV-001',
-        nombre: 'Pulverizador Apache AS1220',
-        numeroActivo: 'PV-001-AP',
-        tipoActivo: 'Maquinaria Tratamientos',
-        ubicacion: 'Fuente el Olmo - Sector B',
-        estado: 'por-hacer',
-        estadoOperativo: 'programado',
-        fechaInstalacion: '2020-05-10',
-        costoTotalAcumulado: 24750, // 5 años de mantenimientos
-        horasMantenimiento: 187,
-        proximoMantenimiento: '2024-11-15',
-        criticidad: 'Baja', // Programado no puede ser crítico
-        icon: '💧',
-        ordenesActivas: ['OT-2024-002'],
-        ultimoMantenimiento: '2024-10-20',
-        historialOrdenes: [
+        id: 'CS-002',
+        nombre: 'Cosechadora Claas Lexion 760',
+        tipo: 'Cosechadora',
+        categoria: 'Maquinaria Agrícola',
+        subcategoria: 'Cosechadoras',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'operativo',
+        costoTotalMantenimiento: 28450.90,
+        horasOperacion: 1876,
+        fechaAdquisicion: '2021-09-15',
+        modelo: 'Claas Lexion 760',
+        icon: '🌾',
+        lat: 28.0915,
+        lng: -16.7254,
+        historialReparaciones: [
             {
-                id: 'OT-2024-002',
-                tipo: 'preventivo',
-                prioridad: 'Baja',
-                estado: 'por-hacer',
-                fecha: '2024-11-15',
-                descripcion: 'Calibración sistema de pulverización',
-                responsable: 'Ana García',
-                tareas: ['Cambiar filtros principales', 'Verificar presión bomba', 'Limpiar boquillas'],
-                horas: 4,
-                costo: 280
-            },
-            {
-                id: 'OT-2024-015',
-                tipo: 'preventivo',
-                prioridad: 'Baja',
-                estado: 'hecho',
                 fecha: '2024-10-20',
-                descripcion: 'Mantenimiento preventivo estacional',
-                responsable: 'Ana García',
-                tareas: ['Cambiar filtros secundarios', 'Calibración sistema', 'Limpieza general tanque'],
-                horas: 3,
-                costo: 200
+                descripcion: 'Calibración sistema de corte',
+                costo: 850.30,
+                tipo: 'Preventivo',
+                tecnico: 'Luis Rodríguez',
+                horas: 4.0
             },
             {
-                id: 'OT-2024-009',
-                tipo: 'correctivo',
-                prioridad: 'Media',
-                estado: 'hecho',
-                fecha: '2024-08-12',
-                descripcion: 'Reparación bomba presión',
-                responsable: 'Luis Rodríguez',
-                tareas: ['Desmontar bomba', 'Cambiar sellos', 'Ajustar presión trabajo'],
-                horas: 8,
-                costo: 650
+                fecha: '2024-08-28',
+                descripcion: 'Reparación sistema de limpieza',
+                costo: 1650.75,
+                tipo: 'Correctivo',
+                tecnico: 'Miguel Torres',
+                horas: 7.5
             },
             {
-                id: 'OT-2023-078',
-                tipo: 'correctivo',
-                prioridad: 'Alta',
-                estado: 'hecho',
-                fecha: '2023-09-18',
-                descripcion: 'Sustitución brazos pulverización',
-                responsable: 'Carlos Méndez',
-                tareas: ['Desmontar brazos dañados', 'Instalar brazos nuevos', 'Calibrar sistema'],
-                horas: 12,
-                costo: 2800
-            },
-            {
-                id: 'OT-2023-052',
-                tipo: 'preventivo',
-                prioridad: 'Media',
-                estado: 'hecho',
-                fecha: '2023-04-15',
-                descripcion: 'Mantenimiento mayor anual',
-                responsable: 'Técnico Especializado',
-                tareas: ['Revisión completa hidráulica', 'Cambio mangueras', 'Actualización software'],
-                horas: 14,
-                costo: 1850
-            },
-            {
-                id: 'OT-2022-134',
-                tipo: 'correctivo',
-                prioridad: 'Media',
-                estado: 'hecho',
-                fecha: '2022-11-22',
-                descripcion: 'Reparación tanque principal',
-                responsable: 'Luis Rodríguez',
-                tareas: ['Soldadura grietas', 'Prueba estanqueidad', 'Pintura protectora'],
-                horas: 16,
-                costo: 1200
-            },
-            {
-                id: 'OT-2021-156',
-                tipo: 'correctivo',
-                prioridad: 'Crítica',
-                estado: 'hecho',
-                fecha: '2021-08-05',
-                descripcion: 'Avería grave sistema hidráulico',
-                responsable: 'Taller Especializado',
-                tareas: ['Reconstrucción bomba principal', 'Cambio cilindros hidráulicos', 'Renovación circuito'],
-                horas: 28,
-                costo: 4500
+                fecha: '2024-06-12',
+                descripcion: 'Mantenimiento motor y transmisión',
+                costo: 2250.85,
+                tipo: 'Preventivo',
+                tecnico: 'Carlos Méndez',
+                horas: 9.0
             }
         ]
     },
     {
-        id: 'NV-001',
-        nombre: 'Nave Almacén 1',
-        numeroActivo: 'NV-001-AL',
-        tipoActivo: 'Infraestructura',
-        ubicacion: 'Toro - Zona Industrial',
-        estado: 'hecho',
-        estadoOperativo: 'operativo',
-        fechaInstalacion: '2015-06-20',
-        costoTotalAcumulado: 35600, // 5 años de mantenimientos
-        horasMantenimiento: 89,
-        proximoMantenimiento: '2024-12-10',
-        criticidad: 'Baja',
-        icon: '🏢',
-        ordenesActivas: [],
-        ultimoMantenimiento: '2024-11-10',
-        historialOrdenes: [
+        id: 'CS-003',
+        nombre: 'Cosechadora John Deere S680',
+        tipo: 'Cosechadora',
+        categoria: 'Maquinaria Agrícola',
+        subcategoria: 'Cosechadoras',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'mantenimiento',
+        costoTotalMantenimiento: 31280.65,
+        horasOperacion: 2145,
+        fechaAdquisicion: '2020-10-08',
+        modelo: 'John Deere S680',
+        icon: '🌾',
+        lat: 28.0595,
+        lng: -16.5754,
+        historialReparaciones: [
             {
-                id: 'OT-2024-003',
-                tipo: 'correctivo',
-                prioridad: 'Baja',
-                estado: 'hecho',
-                fecha: '2024-11-10',
-                descripcion: 'Falta de iluminación en sector norte',
-                responsable: 'Luis Rodríguez',
-                tareas: ['Revisar fusibles', 'Cambiar fluorescentes', 'Verificar cableado'],
-                horas: 5,
-                costo: 320
-            }
-        ]
-    },
-    {
-        id: 'SR-001',
-        nombre: 'Sistema Riego Central A',
-        numeroActivo: 'SR-001-RC',
-        tipoActivo: 'Sistema de Riego',
-        ubicacion: 'Chañe - Sector Central',
-        estado: 'hecho',
-        estadoOperativo: 'operativo',
-        fechaInstalacion: '2018-04-12',
-        costoTotalAcumulado: 28950, // 5 años de mantenimientos
-        horasMantenimiento: 156,
-        proximoMantenimiento: '2024-12-08',
-        criticidad: 'Baja', // Operativo no puede ser crítico
-        icon: '💧',
-        ordenesActivas: [],
-        ultimoMantenimiento: '2024-11-08',
-        historialOrdenes: [
-            {
-                id: 'OT-2024-004',
-                tipo: 'preventivo',
-                prioridad: 'Alta',
-                estado: 'hecho',
                 fecha: '2024-11-08',
-                descripcion: 'Mantenimiento preventivo sistema riego',
-                responsable: 'Miguel Torres',
-                tareas: ['Inspección general', 'Limpieza filtros', 'Calibración sensores'],
-                horas: 3,
-                costo: 150
-            }
-        ]
-    },
-    {
-        id: 'GN-006',
-        nombre: 'Generador Caterpillar C15',
-        numeroActivo: 'GN-006-CAT',
-        tipoActivo: 'Grupo Electrógeno',
-        ubicacion: 'Fuente el Olmo - Caseta Técnica',
-        estado: 'hecho',
-        estadoOperativo: 'operativo',
-        fechaInstalacion: '2017-09-08',
-        costoTotalAcumulado: 52100, // 5 años de mantenimientos
-        horasMantenimiento: 234,
-        proximoMantenimiento: '2024-11-25',
-        criticidad: 'Baja', // Operativo no puede ser crítico
-        icon: '⚡',
-        ordenesActivas: [],
-        ultimoMantenimiento: '2024-10-20',
-        historialOrdenes: [
+                descripcion: 'Overhaul completo del motor',
+                costo: 4500.00,
+                tipo: 'Correctivo',
+                tecnico: 'Luis Rodríguez',
+                horas: 16.0
+            },
             {
-                id: 'OT-2024-005',
-                tipo: 'preventivo',
-                prioridad: 'Baja',
-                estado: 'hecho',
-                fecha: '2024-10-20',
-                descripcion: 'Mantenimiento preventivo generador',
-                responsable: 'Carlos Méndez',
-                tareas: ['Cambio aceite motor', 'Revisión filtros aire', 'Test carga completo'],
-                horas: 4,
-                costo: 350
+                fecha: '2024-09-22',
+                descripcion: 'Sustitución cadenas elevadoras',
+                costo: 980.45,
+                tipo: 'Correctivo',
+                tecnico: 'Ana García',
+                horas: 5.5
+            },
+            {
+                fecha: '2024-07-18',
+                descripcion: 'Mantenimiento sistema hidráulico',
+                costo: 720.20,
+                tipo: 'Preventivo',
+                tecnico: 'Miguel Torres',
+                horas: 4.0
             }
         ]
+    },
+    {
+        id: 'CS-004',
+        nombre: 'Cosechadora New Holland CR8.80',
+        tipo: 'Cosechadora',
+        categoria: 'Maquinaria Agrícola',
+        subcategoria: 'Cosechadoras',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'operativo',
+        costoTotalMantenimiento: 24680.40,
+        horasOperacion: 1652,
+        fechaAdquisicion: '2022-02-28',
+        modelo: 'New Holland CR8.80',
+        icon: '🌾',
+        lat: 28.2465,
+        lng: -16.8342,
+        historialReparaciones: [
+            {
+                fecha: '2024-10-15',
+                descripcion: 'Ajuste sistema de separación',
+                costo: 650.80,
+                tipo: 'Preventivo',
+                tecnico: 'Carlos Méndez',
+                horas: 3.5
+            },
+            {
+                fecha: '2024-08-05',
+                descripcion: 'Cambio de cuchillas de corte',
+                costo: 450.30,
+                tipo: 'Correctivo',
+                tecnico: 'Ana García',
+                horas: 2.5
+            },
+            {
+                fecha: '2024-05-22',
+                descripcion: 'Mantenimiento programado 500h',
+                costo: 780.60,
+                tipo: 'Preventivo',
+                tecnico: 'Miguel Torres',
+                horas: 4.5
+            }
+        ]
+    },
+    {
+        id: 'CT-001',
+        nombre: 'Tractor Case IH Maxxum 115',
+        tipo: 'Tractor',
+        categoria: 'Maquinaria Agrícola',
+        subcategoria: 'Tractores',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'operativo',
+        costoTotalMantenimiento: 12340.75,
+        horasOperacion: 1985,
+        fechaAdquisicion: '2021-03-20',
+        modelo: 'Case IH Maxxum 115',
+        icon: '🚜',
+        lat: 27.9258,
+        lng: -15.7356,
+        historialReparaciones: [
+            {
+                fecha: '2024-11-01',
+                descripcion: 'Cambio de filtro de aire y aceite motor',
+                costo: 195.30,
+                tipo: 'Preventivo',
+                tecnico: 'Miguel Torres',
+                horas: 1.5
+            },
+            {
+                fecha: '2024-09-15',
+                descripcion: 'Reparación sistema de dirección',
+                costo: 850.25,
+                tipo: 'Correctivo',
+                tecnico: 'Carlos Méndez',
+                horas: 4.5
+            },
+            {
+                fecha: '2024-07-08',
+                descripcion: 'Mantenimiento transmisión',
+                costo: 675.20,
+                tipo: 'Preventivo',
+                tecnico: 'Ana García',
+                horas: 3.0
+            }
+        ]
+    },
+    {
+        id: 'TR-003',
+        nombre: 'Tractor Fendt 724 Vario',
+        tipo: 'Tractor',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'mantenimiento',
+        costoTotalMantenimiento: 22150.80,
+        horasOperacion: 3420,
+        fechaAdquisicion: '2019-11-15',
+        modelo: 'Fendt 724 Vario',
+        icon: '🚜',
+        lat: 28.0553,
+        lng: -16.6255,
+        historialReparaciones: [
+            {
+                fecha: '2024-10-25',
+                descripcion: 'Reparación mayor del motor',
+                costo: 3200.50,
+                tipo: 'Correctivo',
+                tecnico: 'Luis Rodríguez',
+                horas: 12.0
+            },
+            {
+                fecha: '2024-08-14',
+                descripcion: 'Sustitución embrague',
+                costo: 1850.75,
+                tipo: 'Correctivo',
+                tecnico: 'Miguel Torres',
+                horas: 8.5
+            },
+            {
+                fecha: '2024-05-20',
+                descripcion: 'Mantenimiento 1000h programado',
+                costo: 580.30,
+                tipo: 'Preventivo',
+                tecnico: 'Carlos Méndez',
+                horas: 4.5
+            }
+        ]
+    },
+    {
+        id: 'TR-004',
+        nombre: 'Tractor Massey Ferguson 8740S',
+        tipo: 'Tractor',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'operativo',
+        costoTotalMantenimiento: 15680.45,
+        horasOperacion: 2156,
+        fechaAdquisicion: '2020-08-10',
+        modelo: 'Massey Ferguson 8740S',
+        icon: '🚜',
+        lat: 28.9784,
+        lng: -13.5501,
+        historialReparaciones: [
+            {
+                fecha: '2024-10-30',
+                descripcion: 'Cambio de neumáticos delanteros',
+                costo: 780.90,
+                tipo: 'Correctivo',
+                tecnico: 'Ana García',
+                horas: 2.5
+            },
+            {
+                fecha: '2024-09-08',
+                descripcion: 'Servicio de mantenimiento preventivo',
+                costo: 425.60,
+                tipo: 'Preventivo',
+                tecnico: 'Carlos Méndez',
+                horas: 3.5
+            }
+        ]
+    },
+    {
+        id: 'TR-005',
+        nombre: 'Tractor New Holland T7.315',
+        tipo: 'Tractor',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'operativo',
+        costoTotalMantenimiento: 18920.30,
+        horasOperacion: 2789,
+        fechaAdquisicion: '2020-01-25',
+        modelo: 'New Holland T7.315',
+        icon: '🚜',
+        lat: 29.0456,
+        lng: -13.5501,
+        historialReparaciones: [
+            {
+                fecha: '2024-11-05',
+                descripcion: 'Reparación sistema hidráulico trasero',
+                costo: 1250.80,
+                tipo: 'Correctivo',
+                tecnico: 'Luis Rodríguez',
+                horas: 5.5
+            },
+            {
+                fecha: '2024-08-22',
+                descripcion: 'Cambio de filtros y aceites',
+                costo: 380.25,
+                tipo: 'Preventivo',
+                tecnico: 'Miguel Torres',
+                horas: 2.0
+            }
+        ]
+    },
+    {
+        id: 'TR-006',
+        nombre: 'Tractor Kubota M7173',
+        tipo: 'Tractor',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'inactivo',
+        costoTotalMantenimiento: 8560.15,
+        horasOperacion: 1456,
+        fechaAdquisicion: '2022-04-12',
+        modelo: 'Kubota M7173',
+        icon: '🚜',
+        lat: 29.1738,
+        lng: -13.5802,
+        historialReparaciones: [
+            {
+                fecha: '2024-09-18',
+                descripcion: 'Inspección técnica anual',
+                costo: 150.00,
+                tipo: 'Preventivo',
+                tecnico: 'Ana García',
+                horas: 1.0
+            },
+            {
+                fecha: '2024-06-15',
+                descripcion: 'Cambio de batería',
+                costo: 185.45,
+                tipo: 'Correctivo',
+                tecnico: 'Carlos Méndez',
+                horas: 0.5
+            }
+        ]
+    },
+    {
+        id: 'PV-002',
+        nombre: 'Pulverizador Amazone UX 3200',
+        tipo: 'Pulverizador',
+        categoria: 'Maquinaria Agrícola',
+        subcategoria: 'Pulverizadores',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'mantenimiento',
+        costoTotalMantenimiento: 12890.25,
+        horasOperacion: 1654,
+        fechaAdquisicion: '2019-03-20',
+        modelo: 'Amazone UX 3200',
+        icon: '🚿',
+        historialReparaciones: [
+            {
+                fecha: '2024-11-10',
+                descripcion: 'Reparación bomba principal (EN CURSO)',
+                costo: 1850.00,
+                tipo: 'Correctivo',
+                tecnico: 'Miguel Torres',
+                horas: 8.0
+            },
+            {
+                fecha: '2024-09-05',
+                descripcion: 'Calibración boquillas pulverización',
+                costo: 320.75,
+                tipo: 'Preventivo',
+                tecnico: 'Ana García',
+                horas: 3.0
+            },
+            {
+                fecha: '2024-07-12',
+                descripcion: 'Sustitución mangueras alta presión',
+                costo: 680.50,
+                tipo: 'Correctivo',
+                tecnico: 'Luis Rodríguez',
+                horas: 4.5
+            }
+        ]
+    },
+    {
+        id: 'TR-003',
+        nombre: 'Tractor Case IH Farmall 55A',
+        tipo: 'Tractor',
+        categoria: 'Maquinaria Agrícola',
+        subcategoria: 'Tractores',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'programado',
+        costoTotalMantenimiento: 15420.75,
+        horasOperacion: 3102,
+        fechaAdquisicion: '2018-07-10',
+        modelo: 'Case IH Farmall 55A',
+        icon: '🚜'
+    },
+    {
+        id: 'RI-004',
+        nombre: 'Bomba de Riego Principal',
+        tipo: 'Sistema de Riego',
+        categoria: 'Equipos de Riego',
+        subcategoria: 'Bombas',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'operativo',
+        costoTotalMantenimiento: 8945.30,
+        horasOperacion: 4567,
+        fechaAdquisicion: '2017-05-15',
+        modelo: 'Grundfos CR 32-4',
+        icon: '💧'
+    },
+    {
+        id: 'PV-005',
+        nombre: 'Pulverizador Hardi Navigator 3000',
+        tipo: 'Pulverizador',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'operativo',
+        costoTotalMantenimiento: 9876.40,
+        horasOperacion: 1432,
+        fechaAdquisicion: '2021-02-28',
+        modelo: 'Hardi Navigator 3000',
+        icon: '🚿'
+    },
+    {
+        id: 'GE-006',
+        nombre: 'Generador Diesel Caterpillar',
+        tipo: 'Generador',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'operativo',
+        costoTotalMantenimiento: 22340.80,
+        horasOperacion: 5892,
+        fechaAdquisicion: '2016-11-12',
+        modelo: 'Caterpillar C4.4 DE88E0',
+        icon: '⚡',
+        historialReparaciones: [
+            {
+                fecha: '2024-09-28',
+                descripcion: 'Overhaul motor completo',
+                costo: 8500.00,
+                tipo: 'Correctivo',
+                tecnico: 'Especialista Caterpillar',
+                horas: 24.0
+            },
+            {
+                fecha: '2024-06-15',
+                descripcion: 'Cambio filtros y aceites',
+                costo: 450.80,
+                tipo: 'Preventivo',
+                tecnico: 'Carlos Méndez',
+                horas: 3.0
+            },
+            {
+                fecha: '2024-03-10',
+                descripcion: 'Reparación alternador',
+                costo: 1250.00,
+                tipo: 'Correctivo',
+                tecnico: 'Miguel Torres',
+                horas: 6.5
+            },
+            {
+                fecha: '2023-12-20',
+                descripcion: 'Sustitución batería arranque',
+                costo: 380.50,
+                tipo: 'Correctivo',
+                tecnico: 'Ana García',
+                horas: 1.5
+            },
+            {
+                fecha: '2023-09-14',
+                descripcion: 'Mantenimiento sistema refrigeración',
+                costo: 720.25,
+                tipo: 'Preventivo',
+                tecnico: 'Luis Rodríguez',
+                horas: 4.0
+            }
+        ]
+    },
+    {
+        id: 'IN-007',
+        nombre: 'Sistema de Climatización Invernadero A',
+        tipo: 'Infraestructura',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'mantenimiento',
+        costoTotalMantenimiento: 16789.95,
+        horasOperacion: 8760,
+        fechaAdquisicion: '2019-09-05',
+        modelo: 'Munters Oxycom IntrCooll',
+        icon: '🏭'
+    },
+    {
+        id: 'TR-008',
+        nombre: 'Tractor New Holland T4.75',
+        tipo: 'Tractor',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'operativo',
+        costoTotalMantenimiento: 11567.60,
+        horasOperacion: 1789,
+        fechaAdquisicion: '2022-04-18',
+        modelo: 'New Holland T4.75',
+        icon: '🚜'
+    },
+    {
+        id: 'RI-009',
+        nombre: 'Sistema de Filtrado de Agua',
+        tipo: 'Sistema de Riego',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'programado',
+        costoTotalMantenimiento: 7234.15,
+        horasOperacion: 6123,
+        fechaAdquisicion: '2018-12-03',
+        modelo: 'Netafim SuperNet',
+        icon: '💧'
+    },
+    {
+        id: 'PV-010',
+        nombre: 'Pulverizador Jacto Arbus 2000',
+        tipo: 'Pulverizador',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'mantenimiento',
+        costoTotalMantenimiento: 6892.35,
+        horasOperacion: 987,
+        fechaAdquisicion: '2023-01-25',
+        modelo: 'Jacto Arbus 2000',
+        icon: '🚿'
+    },
+    {
+        id: 'IN-011',
+        nombre: 'Compresor de Aire Industrial',
+        tipo: 'Infraestructura',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'operativo',
+        costoTotalMantenimiento: 4567.80,
+        horasOperacion: 2340,
+        fechaAdquisicion: '2020-08-14',
+        modelo: 'Atlas Copco GA 15',
+        icon: '🔧'
+    },
+    {
+        id: 'TR-012',
+        nombre: 'Tractor Fendt 211 Vario',
+        tipo: 'Tractor',
+        ubicacion: 'Fuente el Olmo',
+        estado: 'programado',
+        costoTotalMantenimiento: 19876.45,
+        horasOperacion: 3456,
+        fechaAdquisicion: '2017-10-22',
+        modelo: 'Fendt 211 Vario',
+        icon: '🚜'
     }
 ];
 
-// Para compatibilidad con funciones existentes
-// const ACTIVOS ya está definido arriba
+let maquinasFiltradas = [...MAQUINAS];
+let maquinaActual = null; // Para almacenar la máquina seleccionada en el modal
 
-// Historial de mantenimiento basado en las órdenes de trabajo reales
-const ORDENES_TRABAJO = [
-    {
-        id: 'OT-2024-001',
-        numeroActivo: 'TR-001',
-        activo: '🚜 Tractor John Deere 5075E',
-        tipoMantenimiento: 'correctivo',
-        tipoAveria: 'Motor',
-        descripcionAveria: 'No arranca por las mañanas, hace ruido extraño',
-        prioridad: 'Alta',
-        responsable: 'Carlos Méndez',
-        fechaInicio: '2024-11-13',
-        fechaFin: '2024-11-14',
-        estado: 'en-progreso',
-        tareas: ['Revisar sistema de encendido', 'Verificar batería', 'Comprobar motor de arranque'],
-        fechaCreacion: '2024-11-13',
-        descripcion: 'Revisión urgente del sistema de arranque',
-        horas: 6,
-        costo: 450
-    },
-    {
-        id: 'OT-2024-002',
-        numeroActivo: 'PV-001',
-        activo: '💧 Pulverizador Apache AS1220',
-        tipoMantenimiento: 'preventivo',
-        tipoAveria: null,
-        descripcionAveria: null,
-        prioridad: 'Media',
-        responsable: 'Ana García',
-        fechaInicio: '2024-11-15',
-        fechaFin: '2024-11-15',
-        estado: 'por-hacer',
-        tareas: ['Cambiar filtros', 'Verificar presión', 'Limpiar boquillas'],
-        fechaCreacion: '2024-11-12',
-        descripcion: 'Mantenimiento programado mensual',
-        horas: 4,
-        costo: 280
-    },
-    {
-        id: 'OT-2024-003',
-        numeroActivo: 'NV-001',
-        activo: '🏢 Nave Almacén 1',
-        tipoMantenimiento: 'correctivo',
-        tipoAveria: 'Eléctrico',
-        descripcionAveria: 'Falta de iluminación en sector norte',
-        prioridad: 'Baja',
-        responsable: 'Luis Rodríguez',
-        fechaInicio: '2024-11-10',
-        fechaFin: '2024-11-10',
-        estado: 'hecho',
-        tareas: ['Revisar fusibles', 'Cambiar fluorescentes', 'Verificar cableado'],
-        fechaCreacion: '2024-11-09',
-        descripcion: 'Reparación sistema eléctrico',
-        horas: 5,
-        costo: 320
-    },
-    {
-        id: 'OT-2024-004',
-        numeroActivo: 'SR-001',
-        activo: '💧 Sistema Riego Central A',
-        tipoMantenimiento: 'preventivo',
-        tipoAveria: null,
-        descripcionAveria: null,
-        prioridad: 'Alta',
-        responsable: 'Miguel Torres',
-        fechaInicio: '2024-11-08',
-        fechaFin: '2024-11-08',
-        estado: 'hecho',
-        tareas: ['Inspección general', 'Limpieza filtros', 'Calibración sensores'],
-        fechaCreacion: '2024-11-05',
-        descripcion: 'Mantenimiento preventivo sistema riego',
-        horas: 3,
-        costo: 150
-    },
-    {
-        id: 'OT-2024-005',
-        numeroActivo: 'GN-006',
-        activo: '⚡ Generador Caterpillar C15',
-        tipoMantenimiento: 'preventivo',
-        tipoAveria: null,
-        descripcionAveria: null,
-        prioridad: 'Crítica',
-        responsable: 'Carlos Méndez',
-        fechaInicio: '2024-10-20',
-        fechaFin: '2024-10-20',
-        estado: 'hecho',
-        tareas: ['Cambio aceite', 'Revisión filtros', 'Test carga'],
-        fechaCreacion: '2024-10-15',
-        descripcion: 'Mantenimiento preventivo generador',
-        horas: 2,
-        costo: 200
-    }
-];
+// Funciones principales
 
-// Solicitudes activas (basadas en ver-solicitudes.js)
-const SOLICITUDES = [
-    {
-        id: "SOL-001",
-        fecha: "2024-11-10",
-        nombre: "Carlos Martínez",
-        tipoMantenimiento: "Mantenimiento Correctivo",
-        importancia: "alta",
-        numeroActivo: "TR-001",
-        tipoActivo: "Tractor",
-        ubicacion: "Sector 1",
-        averia: "Sistema Hidráulico",
-        tipoAveria: "Hidráulica",
-        importanciaAveria: "Crítica",
-        estadoActivo: "Parado",
-        descripcion: "El tractor presenta problemas en el sistema hidráulico. Se requiere revisión completa del sistema y cambio de filtros."
-    },
-    {
-        id: "SOL-002",
-        fecha: "2024-11-09",
-        nombre: "Ana García",
-        tipoMantenimiento: "Mantenimiento Correctivo",
-        importancia: "media",
-        numeroActivo: "PV-002",
-        tipoActivo: "Pulverizador",
-        ubicacion: "Sector 2",
-        averia: "Sistema Eléctrico",
-        tipoAveria: "Eléctrica",
-        importanciaAveria: "Mayor",
-        estadoActivo: "En Mantenimiento",
-        descripcion: "Fallo en el sistema de dosificación del pulverizador. La bomba no mantiene la presión constante."
-    },
-    {
-        id: "SOL-003",
-        fecha: "2024-11-08",
-        nombre: "Miguel Rodriguez",
-        tipoMantenimiento: "Mantenimiento Preventivo",
-        importancia: "baja",
-        numeroActivo: "CS-001",
-        tipoActivo: "Cosechadora",
-        ubicacion: "Campo Norte",
-        averia: "Revisión General",
-        tipoAveria: "Mecánica",
-        importanciaAveria: "Menor",
-        estadoActivo: "Operativo",
-        descripcion: "Inspección rutinaria pre-temporada de la cosechadora. Revisión de todos los sistemas."
-    }
-];
+function cargarMapa() {
+    const mapContainer = document.getElementById('map-container');
+    if (!mapContainer) return;
 
-// Inicialización
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Iniciando aplicación de gestión de activos...');
-    console.log('📊 Activos disponibles:', ACTIVOS.length);
-    
-    // Verificar autenticación (sin bloquear si falla el navbar)
-    try {
-        verificarAutenticacion();
-    } catch (error) {
-        console.warn('⚠️ Error en verificación de autenticación:', error);
-    }
-    
-    // Añadir flecha atrás a la navbar
-    setTimeout(() => {
-        añadirFlechaAtras();
-    }, 100);
-    
-    // Cargar activos inmediatamente
-    console.log('🔧 Cargando activos...');
-    cargarActivos();
-    
-    console.log('📈 Calculando estadísticas...');
-    calcularEstadisticas();
-    
-    console.log('✅ Aplicación inicializada completamente');
-});
+    // Clear previous map content
+    mapContainer.innerHTML = '<div id="map"></div>';
 
-function añadirFlechaAtras() {
-    const headerContent = document.querySelector('.header-content');
-    if (headerContent) {
-        const backBtn = document.createElement('button');
-        backBtn.className = 'back-btn';
-        backBtn.onclick = () => window.history.back();
-        backBtn.innerHTML = '<i class="fas fa-arrow-left"></i>';
+    // Initialize the map
+    const map = L.map('map', {
+        zoomControl: false // Disable default zoom control
+    }).setView([41.3765, -3.9975], 15); // Centered on Planasa coordinates
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Add custom zoom control
+    L.control.zoom({
+        position: 'topright'
+    }).addTo(map);
+
+    // Add scale control
+    L.control.scale({
+        position: 'bottomleft'
+    }).addTo(map);
+
+    // Add markers for all machine locations
+    maquinasFiltradas.forEach((maquina, index) => {
+        const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="background: ${getMarkerColor(maquina.estado)}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`
+        });
+
+        // Distribute markers randomly around the center point
+        const latOffset = (Math.random() * 0.001) - 0.0005;
+        const lngOffset = (Math.random() * 0.001) - 0.0005;
+
+        const marker = L.marker([41.3765 + latOffset, -3.9975 + lngOffset], { icon }).addTo(map);
+        marker.bindPopup(`
+            <div style="min-width: 200px;">
+                <strong style="font-size: 14px;">${maquina.nombre}</strong><br>
+                <span style="color: ${getMarkerColor(maquina.estado)}; font-weight: bold;">● ${maquina.estado.toUpperCase()}</span><br>
+                <small>Tipo: ${maquina.tipo}</small><br>
+                <small>Ubicación: Fuente el Olmo</small>
+            </div>
+        `);
         
-        // Insertarlo después del botón de menú
-        const menuToggle = headerContent.querySelector('.menu-toggle');
-        if (menuToggle) {
-            menuToggle.parentNode.insertBefore(backBtn, menuToggle.nextSibling);
-        }
-    }
+        // Show tooltip on hover
+        marker.bindTooltip(maquina.nombre, {
+            permanent: false,
+            direction: 'top',
+            offset: [0, -10]
+        });
+    });
 }
 
-function verificarAutenticacion() {
-    if (localStorage.getItem('gmao_logged_in') !== 'true') {
-        window.location.href = '../index.html';
-        return;
-    }
-    
-    const username = localStorage.getItem('gmao_username');
-    if (username !== 'gestortaller') {
-        alert('❌ Acceso no autorizado para este usuario');
-        window.location.href = '../index.html';
-        return;
-    }
-    
-    // Mostrar nombre de usuario si el elemento existe
-    const userDisplay = document.getElementById('username-display');
-    if (userDisplay) {
-        userDisplay.textContent = 'Gestor Taller';
-    }
+function getMarkerColor(estado) {
+    // Return color based on machine state
+    const colors = {
+        operativo: 'green',
+        mantenimiento: 'orange',
+        inactivo: 'red'
+    };
+    return colors[estado] || 'gray';
+}
+
+function volverAtras() {
+    window.location.href = 'gestortaller.html';
 }
 
 function cerrarSesion() {
@@ -558,832 +647,361 @@ function cerrarSesion() {
     }
 }
 
-function volverAtras() {
-    window.location.href = '../index.html';
+function filtrarMaquinas() {
+    const busqueda = document.getElementById('search-input').value.toLowerCase();
+    const estadoFiltro = document.getElementById('estado-filter').value;
+    const categoriaFiltro = document.getElementById('categoria-filter').value;
+    const tipoFiltro = document.getElementById('tipo-filter').value;
+    const ubicacionFiltro = document.getElementById('ubicacion-filter').value;
+    
+    maquinasFiltradas = MAQUINAS.filter(maquina => {
+        // Filtro de búsqueda
+        const matchSearch = !busqueda || 
+            maquina.nombre.toLowerCase().includes(busqueda) ||
+            maquina.id.toLowerCase().includes(busqueda) ||
+            maquina.tipo.toLowerCase().includes(busqueda) ||
+            maquina.ubicacion.toLowerCase().includes(busqueda) ||
+            (maquina.categoria && maquina.categoria.toLowerCase().includes(busqueda));
+            
+        // Filtro de estado
+        const matchEstado = !estadoFiltro || maquina.estado === estadoFiltro;
+        
+        // Filtro de categoría
+        const matchCategoria = !categoriaFiltro || (maquina.categoria && maquina.categoria === categoriaFiltro);
+        
+        // Filtro de tipo
+        const matchTipo = !tipoFiltro || maquina.tipo === tipoFiltro;
+        
+        // Filtro de ubicación
+        const matchUbicacion = !ubicacionFiltro || maquina.ubicacion === ubicacionFiltro;
+        
+        return matchSearch && matchEstado && matchCategoria && matchTipo && matchUbicacion;
+    });
+    
+    actualizarContadorResultados();
+    renderizarMaquinas();
+    cargarMapa(); // Actualizar el mapa con las máquinas filtradas
 }
 
-
-
-
-
-function cargarMaquinaria() {
-    filteredMachines = [...MAQUINAS_ESPACIOS];
-    renderizarMaquinaria();
-}
-
-function renderizarActivos() {
+function renderizarMaquinas() {
     const grid = document.getElementById('machine-grid');
-    if (!grid) {
-        console.error('❌ No se encontró elemento machine-grid');
-        return;
-    }
     
-    grid.innerHTML = '';
-    
-    if (filteredMachines.length === 0) {
+    if (maquinasFiltradas.length === 0) {
         grid.innerHTML = `
-            <div class="empty-state" style="text-align: center; padding: 3rem; color: var(--planasa-gray-600);">
-                <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+            <div class="empty-state">
+                <i class="fas fa-search"></i>
                 <h3>No se encontraron máquinas</h3>
-                <p>Ajuste los filtros para ver más resultados</p>
+                <p>Prueba con otros términos de búsqueda</p>
             </div>
         `;
         return;
     }
     
-    filteredMachines.forEach(machine => {
-        const card = createMachineCard(machine);
-        grid.appendChild(card);
-    });
+    grid.innerHTML = maquinasFiltradas.map(maquina => createMachineCard(maquina)).join('');
 }
 
 function createMachineCard(maquina) {
-    const card = document.createElement('div');
-    card.className = 'machine-card';
-    card.onclick = () => mostrarDetalleMaquina(maquina);
+    const estadoTexto = getEstadoTexto(maquina.estado);
+    const estadoIcon = getEstadoIcon(maquina.estado);
+    const añosOperacion = calcularAñosOperacion(maquina.fechaAdquisicion);
     
-    const estadoTexto = getEstadoTexto(maquina.estadoOperativo);
-    const estadoClass = getEstadoClass(maquina.estadoOperativo);
-    const icon = maquina.icon || getMachineIcon(maquina.tipo);
-    
-    // Usar coste acumulado de 5 años y horas de mantenimiento
-    const costoTotal = maquina.costoTotalAcumulado || 0;
-    const horasTotalesMantenimiento = maquina.horasMantenimiento || 0;
-    
-    // Obtener información de la orden activa
-    const ordenActiva = maquina.historialOrdenes.find(orden => orden.estado !== 'hecho');
-    const proximoMantenimiento = calculateDaysTo(maquina.proximoMantenimiento);
-    
-    // Crear indicador de estado con color
-    const estadoIndicador = getEstadoIndicador(maquina.estadoOperativo);
-    
-    // Crear tags informativos
-    const tags = [];
-    if (maquina.horasTotales) tags.push(`${maquina.horasTotales}h operación`);
-    if (maquina.historialOrdenes.length > 0) tags.push(`${maquina.historialOrdenes.length} órdenes`);
-    if (ordenActiva) tags.push('Orden activa');
-    
-    card.innerHTML = `
-        <div class="machine-compact-row">
-            <div class="machine-basic-info">
-                <div class="machine-icon-small">${icon}</div>
-                <div class="machine-name-section">
-                    <h4 class="machine-name">${maquina.nombre}</h4>
-                    <div class="machine-meta">
-                        <span class="machine-id">${maquina.id}</span>
-                        <span class="machine-location"><i class="fas fa-map-marker-alt"></i>${maquina.ubicacion}</span>
+    return `
+        <div class="machine-card" onclick="mostrarDetalleMaquina('${maquina.id}')">
+            <div class="machine-row">
+                <div class="machine-icon">
+                    ${maquina.icon}
+                </div>
+                
+                <div class="machine-info">
+                    <div class="machine-name">${maquina.nombre}</div>
+                    <div class="machine-details">
+                        <div class="machine-detail">
+                            <i class="fas fa-tag"></i>
+                            <span class="machine-id">${maquina.id}</span>
+                        </div>
+                        <div class="machine-detail">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>${maquina.ubicacion}</span>
+                        </div>
+                        <div class="machine-detail">
+                            <i class="fas fa-cog"></i>
+                            <span>${maquina.tipo}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="machine-kpis-compact">
-                <span class="kpi-inline">€${costoTotal.toLocaleString()}</span>
-                <span class="kpi-inline">${horasTotalesMantenimiento}h</span>
-                <span class="kpi-inline">${maquina.historialOrdenes.length} órdenes</span>
-            </div>
-            
-            <div class="machine-status-compact">
-                <div class="status-indicator ${estadoClass}">
-                    <i class="fas fa-circle"></i>
-                    <span>${getEstadoTexto(maquina.estadoOperativo)}</span>
+                
+                <div class="machine-status">
+                    <div class="status-badge ${maquina.estado}">
+                        <i class="fas ${estadoIcon}"></i>
+                        ${estadoTexto}
+                    </div>
                 </div>
-                <div class="criticidad-badge priority-${maquina.criticidad.toLowerCase()}">
-                    ${maquina.criticidad}
+                
+                <div class="machine-kpis">
+                    <div class="kpi-item">
+                        <span class="kpi-value">€${maquina.costoTotalMantenimiento.toLocaleString('es-ES')}</span>
+                        <span class="kpi-label">Costo Total</span>
+                    </div>
+                    <div class="kpi-item">
+                        <span class="kpi-value">${maquina.horasOperacion.toLocaleString()}</span>
+                        <span class="kpi-label">Horas</span>
+                    </div>
+                    <div class="kpi-item">
+                        <span class="kpi-value">${añosOperacion}</span>
+                        <span class="kpi-label">Años</span>
+                    </div>
+                </div>
+                
+                <div class="machine-actions">
+                    <i class="fas fa-chevron-right"></i>
                 </div>
             </div>
-            
-            ${ordenActiva ? `
-                <div class="orden-badge">
-                    <i class="fas fa-wrench"></i>
-                    <span>Orden Activa</span>
-                </div>
-            ` : ''}
         </div>
     `;
+}
+
+function actualizarEstadisticas() {
+    const total = MAQUINAS.length;
+    const operativas = MAQUINAS.filter(m => m.estado === 'operativo').length;
+    const mantenimiento = MAQUINAS.filter(m => m.estado === 'mantenimiento').length;
+    const costoTotal = MAQUINAS.reduce((suma, m) => suma + m.costoTotalMantenimiento, 0);
     
-    return card;
+    document.getElementById('total-machines').textContent = total;
+    document.getElementById('operativas').textContent = operativas;
+    document.getElementById('mantenimiento').textContent = mantenimiento;
+    document.getElementById('costo-total').textContent = `€${costoTotal.toLocaleString('es-ES')}`;
 }
-
-function getMachineIcon(tipo) {
-    const icons = {
-        'Tractor': '🚜',
-        'Pulverizador': '💧',
-        'Cosechadora': '🌾',
-        'Infraestructura': '🏢',
-        'Sistema de Riego': '💧',
-        'Generador': '⚡',
-        'Bomba': '💧',
-        'Cultivador': '🔨'
-    };
-    return icons[tipo] || '⚙️';
-}
-
-
 
 function getEstadoTexto(estado) {
     const textos = {
         'operativo': 'Operativo',
-        'en-progreso': 'En Progreso',
-        'por-hacer': 'Por Hacer',
-        'hecho': 'Completado',
         'mantenimiento': 'En Mantenimiento',
-        'parado': 'Parado',
-        'fuera-servicio': 'Fuera de Servicio'
+        'programado': 'Programado'
     };
     return textos[estado] || estado;
 }
 
-function getEstadoClass(estado) {
-    const classes = {
-        'operativo': 'available',
-        'en-progreso': 'maintenance',
-        'por-hacer': 'repair',
-        'hecho': 'available',
-        'mantenimiento': 'maintenance',
-        'programado': 'scheduled',
-        'parado': 'repair',
-        'fuera-servicio': 'outofservice'
-    };
-    return classes[estado] || 'available';
-}
-
-function getEstadoIndicador(estado) {
-    const indicadores = {
-        'operativo': '<i class="fas fa-check-circle"></i> Operativo',
-        'mantenimiento': '<i class="fas fa-tools"></i> En Mantenimiento',
-        'programado': '<i class="fas fa-calendar-check"></i> Programado',
-        'parado': '<i class="fas fa-stop-circle"></i> Parado',
-        'fuera-servicio': '<i class="fas fa-times-circle"></i> Fuera de Servicio'
-    };
-    return indicadores[estado] || '<i class="fas fa-question-circle"></i> ' + estado;
-}
-
-function getCriticidadIcon(criticidad) {
+function getEstadoIcon(estado) {
     const iconos = {
-        'Crítica': '<i class="fas fa-exclamation-triangle"></i>',
-        'Alta': '<i class="fas fa-exclamation-circle"></i>',
-        'Media': '<i class="fas fa-info-circle"></i>',
-        'Baja': '<i class="fas fa-minus-circle"></i>'
+        'operativo': 'fa-check-circle',
+        'mantenimiento': 'fa-tools',
+        'programado': 'fa-calendar-check'
     };
-    return iconos[criticidad] || '<i class="fas fa-circle"></i>';
+    return iconos[estado] || 'fa-circle';
 }
 
-function getEstadoColor(estado) {
-    const colors = {
-        'operativo': '#2e7d32',
-        'mantenimiento': '#f7b500',
-        'programado': '#2196F3',
-        'parado': '#c62828',
-        'fuera-servicio': '#9e9e9e'
-    };
-    return colors[estado] || '#2e7d32';
-}
-
-function calculateDaysTo(dateString) {
-    if (!dateString || dateString === '—') return null;
-    
-    const targetDate = new Date(dateString);
-    const today = new Date();
-    const diffTime = targetDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays;
-}
-
-function calculatePMProgress(days) {
-    if (days === null) return null;
-    
-    const PM_WINDOW = 60; // Días de ventana para PM
-    const clampedDays = Math.max(0, Math.min(days, PM_WINDOW));
-    const percentage = Math.max(0, Math.min(100, 100 - (clampedDays / PM_WINDOW) * 100));
-    
-    let color = '#388e3c'; // Verde
-    if (percentage > 75) color = '#d32f2f'; // Rojo
-    else if (percentage > 50) color = '#f57c00'; // Naranja
-    else if (percentage > 25) color = '#fbc02d'; // Amarillo
-    
-    return { percentage, color };
-}
-
-function formatearFecha(dateString) {
-    if (!dateString || dateString === '—') return dateString;
-    
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { 
-        day: '2-digit', 
-        month: '2-digit',
-        year: '2-digit'
-    });
-}
-
-function calcularEstadisticas() {
-    const totalMaquinas = ACTIVOS.length;
-    const maquinasOperativas = ACTIVOS.filter(m => m.estadoOperativo === 'operativo').length;
-    const maquinasMantenimiento = ACTIVOS.filter(m => m.estadoOperativo === 'mantenimiento').length;
-    const maquinasProgramadas = ACTIVOS.filter(m => m.estadoOperativo === 'programado').length;
-    
-    // Actualizar UI
-    document.getElementById('total-machines').textContent = totalMaquinas;
-    document.getElementById('available-percentage').textContent = maquinasOperativas;
-    document.getElementById('maintenance-soon').textContent = maquinasMantenimiento;
-    document.getElementById('avg-hours').textContent = maquinasProgramadas;
-}
-
-function aplicarFiltros() {
-    const searchTerm = document.getElementById('search-filter').value.toLowerCase();
-    const locationFilter = document.getElementById('location-filter').value;
-    const typeFilter = document.getElementById('type-filter').value;
-    const statusFilter = document.getElementById('status-filter').value;
-    
-    // Filtrar máquinas/espacios
-    filteredMachines = MAQUINAS_ESPACIOS.filter(maquina => {
-        const matchesSearch = maquina.nombre.toLowerCase().includes(searchTerm) || 
-                            maquina.id.toLowerCase().includes(searchTerm) ||
-                            maquina.tipo.toLowerCase().includes(searchTerm);
-        const matchesLocation = !locationFilter || maquina.ubicacion === locationFilter;
-        const matchesType = !typeFilter || maquina.tipo === typeFilter;
-        const matchesStatus = !statusFilter || maquina.estadoOperativo === statusFilter || maquina.estado === statusFilter;
-        
-        return matchesSearch && matchesLocation && matchesType && matchesStatus;
-    });
-    
-    // Ordenar máquinas por orden inteligente por defecto
-    sortMachines('smart');
-    
-    // Re-renderizar
-    renderizarActivos();
-}
-
-function sortMachines(sortOption) {
-    switch (sortOption) {
-        case 'smart':
-            filteredMachines.sort((a, b) => {
-                // Primero por criticidad
-                const criticidadOrder = { 'Crítica': 4, 'Alta': 3, 'Media': 2, 'Baja': 1 };
-                const critDiff = criticidadOrder[b.criticidad] - criticidadOrder[a.criticidad];
-                if (critDiff !== 0) return critDiff;
-                
-                // Luego por estado operativo
-                const estadoOrder = { 'mantenimiento': 3, 'programado': 2, 'operativo': 1 };
-                const estadoDiff = estadoOrder[b.estadoOperativo] - estadoOrder[a.estadoOperativo];
-                if (estadoDiff !== 0) return estadoDiff;
-                
-                // Finalmente por nombre
-                return a.nombre.localeCompare(b.nombre);
-            });
-            break;
-        case 'proxpm':
-            filteredMachines.sort((a, b) => new Date(a.proximoMantenimiento) - new Date(b.proximoMantenimiento));
-            break;
-        case 'horasdesc':
-            filteredMachines.sort((a, b) => (b.horasTotales || 0) - (a.horasTotales || 0));
-            break;
-        case 'nombre':
-            filteredMachines.sort((a, b) => a.nombre.localeCompare(b.nombre));
-            break;
-        case 'criticidad':
-            const criticidadOrder = { 'Crítica': 4, 'Alta': 3, 'Media': 2, 'Baja': 1 };
-            filteredMachines.sort((a, b) => criticidadOrder[b.criticidad] - criticidadOrder[a.criticidad]);
-            break;
-        case 'estado':
-            filteredMachines.sort((a, b) => a.estadoOperativo.localeCompare(b.estadoOperativo));
-            break;
-    }
+function calcularAñosOperacion(fechaAdquisicion) {
+    const fecha = new Date(fechaAdquisicion);
+    const ahora = new Date();
+    const años = Math.floor((ahora - fecha) / (365.25 * 24 * 60 * 60 * 1000));
+    return años;
 }
 
 function limpiarFiltros() {
-    document.getElementById('search-filter').value = '';
-    document.getElementById('location-filter').value = '';
-    document.getElementById('type-filter').value = '';
-    document.getElementById('status-filter').value = '';
-    document.getElementById('sort-filter').value = 'smart';
+    document.getElementById('search-input').value = '';
+    document.getElementById('estado-filter').value = '';
+    document.getElementById('categoria-filter').value = '';
+    document.getElementById('tipo-filter').value = '';
+    document.getElementById('ubicacion-filter').value = '';
     
-    aplicarFiltros();
+    maquinasFiltradas = [...MAQUINAS];
+    actualizarContadorResultados();
+    renderizarMaquinas();
 }
 
-function mostrarDetalleMaquina(maquina) {
-    selectedMachine = maquina;
-    const modal = document.getElementById('machine-detail-modal');
-    const title = document.getElementById('modal-machine-title');
-    const body = document.getElementById('modal-machine-body');
-    
-    title.textContent = `${maquina.nombre}`;
-    
-    const estadoTexto = getEstadoTexto(maquina.estadoOperativo);
-    const proximoPM = formatearFecha(maquina.proximoMantenimiento);
-    const diasPM = calculateDaysTo(maquina.proximoMantenimiento);
-    const icon = maquina.icon || getMachineIcon(maquina.tipo);
-    
-    // Usar datos actualizados
-    const costoTotal = maquina.costoTotalAcumulado || 0;
-    const horasTotalesMantenimiento = maquina.horasMantenimiento || 0;
-    const ordenesCompletadas = maquina.historialOrdenes.filter(o => o.estado === 'hecho').length;
-    const ordenActiva = maquina.historialOrdenes.find(orden => orden.estado !== 'hecho');
-    
-    // Datos básicos del activo
-    let datosBasicos = `
-        <div class="detail-item">
-            <span class="detail-label">Número de Activo:</span>
-            <span class="detail-value">${maquina.numeroActivo}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Tipo de Activo:</span>
-            <span class="detail-value">${maquina.tipoActivo}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Fecha Instalación:</span>
-            <span class="detail-value">${formatearFecha(maquina.fechaInstalacion)}</span>
-        </div>`;
-    
-    // Calcular estadísticas adicionales
-    const ordenesPorTipo = {
-        preventivo: maquina.historialOrdenes.filter(o => o.tipo === 'preventivo').length,
-        correctivo: maquina.historialOrdenes.filter(o => o.tipo === 'correctivo').length
-    };
-    
-    const ordenesUltimoAño = maquina.historialOrdenes.filter(o => {
-        const fechaOrden = new Date(o.fecha);
-        const haceUnAño = new Date();
-        haceUnAño.setFullYear(haceUnAño.getFullYear() - 1);
-        return fechaOrden >= haceUnAño;
-    });
-    
-    body.innerHTML = `
-        <div class="detail-section">
-            <h4><i class="fas fa-info-circle"></i> Información del Activo</h4>
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <span class="detail-label">ID del Activo:</span>
-                    <span class="detail-value">${icon} ${maquina.id}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Nombre:</span>
-                    <span class="detail-value">${maquina.nombre}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Ubicación:</span>
-                    <span class="detail-value"><i class="fas fa-map-marker-alt"></i> ${maquina.ubicacion}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Estado Operativo:</span>
-                    <span class="detail-value" style="color: ${getEstadoColor(maquina.estadoOperativo)};">
-                        <i class="fas fa-circle"></i> ${estadoTexto}
-                    </span>
-                </div>
-                ${datosBasicos}
-            </div>
-        </div>
-        
-        <div class="detail-section">
-            <h4><i class="fas fa-chart-bar"></i> Estadísticas de Mantenimiento (5 años)</h4>
-            <div class="stats-overview">
-                <div class="stat-box">
-                    <div class="stat-number">€${costoTotal.toLocaleString()}</div>
-                    <div class="stat-label">Coste Total Acumulado</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-number">${horasTotalesMantenimiento}h</div>
-                    <div class="stat-label">Horas Mantenimiento</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-number">${ordenesCompletadas}/${maquina.historialOrdenes.length}</div>
-                    <div class="stat-label">Órdenes Completadas</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-number">${ordenesPorTipo.preventivo}/${ordenesPorTipo.correctivo}</div>
-                    <div class="stat-label">Preventivo/Correctivo</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-number">${ordenesUltimoAño.length}</div>
-                    <div class="stat-label">Órdenes Último Año</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-number">
-                        <span class="criticality-badge ${maquina.criticidad.toLowerCase()}">${maquina.criticidad}</span>
-                    </div>
-                    <div class="stat-label">Criticidad Actual</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="detail-section">
-            <h4><i class="fas fa-clock"></i> Mantenimiento</h4>
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <span class="detail-label">Próximo PM:</span>
-                    <span class="detail-value ${diasPM.class}">${proximoPM} (${diasPM.text})</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Último Mantenimiento:</span>
-                    <span class="detail-value">${formatearFecha(maquina.ultimoMantenimiento)}</span>
-                </div>
-            </div>
-        </div>
-        
-        ${ordenActiva ? `
-            <div class="detail-section">
-                <h4><i class="fas fa-wrench"></i> Orden de Trabajo Activa</h4>
-                <div class="active-order-detail">
-                    <div class="order-header">
-                        <h5>${ordenActiva.id}</h5>
-                        <div class="order-priority priority-${ordenActiva.prioridad.toLowerCase()}">${ordenActiva.prioridad}</div>
-                    </div>
-                    <p><strong>Descripción:</strong> ${ordenActiva.descripcion}</p>
-                    <p><strong>Responsable:</strong> ${ordenActiva.responsable}</p>
-                    <p><strong>Fecha:</strong> ${formatearFecha(ordenActiva.fecha)}</p>
-                    <div class="order-tasks">
-                        <strong>Tareas:</strong>
-                        <ul>
-                            ${ordenActiva.tareas.map(tarea => `<li>${tarea}</li>`).join('')}
-                        </ul>
-                    </div>
-                    <div class="order-costs">
-                        <span><i class="fas fa-clock"></i> ${ordenActiva.horas}h</span>
-                        <span><i class="fas fa-euro-sign"></i> ${ordenActiva.costo}€</span>
-                    </div>
-                </div>
-            </div>
-        ` : ''}
-        
-        <div class="detail-section">
-            <h4><i class="fas fa-wrench"></i> Historial de Mantenimientos</h4>
-            <div class="historial-container">
-                ${maquina.historialOrdenes.slice(0, 5).map(orden => `
-                    <div class="historial-item ${orden.estado}">
-                        <div class="historial-header">
-                            <div class="historial-info">
-                                <span class="historial-id">${orden.id}</span>
-                                <span class="historial-fecha">${formatearFecha(orden.fecha)}</span>
-                            </div>
-                            <div class="historial-badges">
-                                <span class="badge tipo-${orden.tipo}">${orden.tipo}</span>
-                                <span class="badge prioridad-${orden.prioridad.toLowerCase()}">${orden.prioridad}</span>
-                            </div>
-                        </div>
-                        <div class="historial-descripcion">${orden.descripcion}</div>
-                        <div class="historial-detalles">
-                            <span class="detalle-item"><i class="fas fa-user"></i> ${orden.responsable}</span>
-                            <span class="detalle-item"><i class="fas fa-clock"></i> ${orden.horas}h</span>
-                            <span class="detalle-item"><i class="fas fa-euro-sign"></i> €${orden.costo}</span>
-                        </div>
-                        ${orden.tareas && orden.tareas.length > 0 ? `
-                            <div class="historial-tareas">
-                                <strong>Tareas:</strong>
-                                <ul>
-                                    ${orden.tareas.map(tarea => `<li>${tarea}</li>`).join('')}
-                                </ul>
-                            </div>
-                        ` : ''}
-                    </div>
-                `).join('')}
-                ${maquina.historialOrdenes.length > 5 ? `
-                    <div class="ver-mas-historial">
-                        <button class="btn-link" onclick="verHistorialCompleto('${maquina.id}')">
-                            <i class="fas fa-chevron-down"></i> Ver todos los ${maquina.historialOrdenes.length} mantenimientos
-                        </button>
-                    </div>
-                ` : ''}
-            </div>
-        </div>
-        
-
-    `;
-    
-    modal.style.display = 'block';
-}
-
-function cerrarModalDetalle() {
-    document.getElementById('machine-detail-modal').style.display = 'none';
-    selectedMachine = null;
-}
-
-function crearOrdenDesdeModal() {
-    if (selectedMachine) {
-        window.location.href = `crear-orden-trabajo.html?maquina=${selectedMachine.id}`;
+function actualizarContadorResultados() {
+    const count = maquinasFiltradas.length;
+    const resultsElement = document.getElementById('results-count');
+    if (resultsElement) {
+        resultsElement.textContent = `${count} máquina${count !== 1 ? 's' : ''}`;
     }
 }
 
-function verHistorialMantenimiento(activoId) {
-    const modal = document.getElementById('maintenance-history-modal');
-    const title = document.getElementById('history-modal-title');
-    const body = document.getElementById('history-modal-body');
+function mostrarDetalleMaquina(id) {
+    const maquina = MAQUINAS.find(m => m.id === id);
+    if (!maquina) return;
     
-    const activo = ACTIVOS.find(a => a.id === activoId);
-    // Filtrar órdenes de trabajo por activo
-    const historyOrdenes = ORDENES_TRABAJO.filter(ot => ot.numeroActivo === activo.numeroActivo);
-    // Filtrar solicitudes por activo
-    const historySolicitudes = SOLICITUDES.filter(s => s.numeroActivo === activo.numeroActivo);
+    // Almacenar la máquina actual globalmente
+    maquinaActual = maquina;
     
-    title.textContent = `Historial de Mantenimientos - ${activo.nombre}`;
+    // Llenar información general
+    document.getElementById('modal-title').textContent = `Detalles - ${maquina.nombre}`;
+    document.getElementById('modal-id').textContent = maquina.id;
+    document.getElementById('modal-nombre').textContent = maquina.nombre;
+    document.getElementById('modal-tipo').textContent = maquina.tipo;
+    document.getElementById('modal-modelo').textContent = maquina.modelo;
+    document.getElementById('modal-ubicacion').textContent = maquina.ubicacion;
     
-    if (historyOrdenes.length === 0 && historySolicitudes.length === 0) {
-        body.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-history"></i>
-                <h3>Sin historial de mantenimientos</h3>
-                <p>Este activo no tiene registros de mantenimiento previos.</p>
+    // Estado con clase CSS
+    const estadoElement = document.getElementById('modal-estado');
+    estadoElement.textContent = getEstadoTexto(maquina.estado);
+    estadoElement.className = `status-badge ${maquina.estado}`;
+    
+    // Fechas y años
+    const fechaAdquisicion = new Date(maquina.fechaAdquisicion);
+    document.getElementById('modal-fecha').textContent = fechaAdquisicion.toLocaleDateString('es-ES');
+    document.getElementById('modal-anos').textContent = `${calcularAñosOperacion(maquina.fechaAdquisicion)} años`;
+    
+    // Estadísticas
+    document.getElementById('modal-horas').textContent = maquina.horasOperacion.toLocaleString();
+    document.getElementById('modal-costo').textContent = `€${maquina.costoTotalMantenimiento.toLocaleString('es-ES')}`;
+    
+    // Calcular estadísticas del historial
+    const historial = maquina.historialReparaciones || [];
+    const totalReparaciones = historial.length;
+    const costoPromedio = totalReparaciones > 0 ? (maquina.costoTotalMantenimiento / totalReparaciones) : 0;
+    
+    document.getElementById('modal-reparaciones').textContent = totalReparaciones;
+    document.getElementById('modal-promedio').textContent = `€${costoPromedio.toLocaleString('es-ES', {maximumFractionDigits: 0})}`;
+    
+    // Cargar historial
+    cargarHistorialReparaciones(historial);
+    
+    // Mostrar modal
+    document.getElementById('machine-modal').classList.add('show');
+}
+
+function cargarHistorialReparaciones(historial) {
+    const container = document.getElementById('historial-container');
+    
+    if (!historial || historial.length === 0) {
+        container.innerHTML = `
+            <div class="empty-historial">
+                <i class="fas fa-tools"></i>
+                <h3>Sin historial de reparaciones</h3>
+                <p>Esta máquina no tiene reparaciones registradas</p>
             </div>
         `;
-    } else {
-        const totalCosto = historyOrdenes.reduce((sum, h) => sum + (h.costo || 0), 0);
-        const totalHoras = historyOrdenes.reduce((sum, h) => sum + (h.horas || 0), 0);
-        
-        body.innerHTML = `
-            <div class="detail-section">
-                <h4><i class="fas fa-chart-bar"></i> Resumen</h4>
-                <div class="detail-grid">
-                    <div class="detail-item">
-                        <span class="detail-label">Total Órdenes:</span>
-                        <span class="detail-value">${historyOrdenes.length}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Solicitudes Pendientes:</span>
-                        <span class="detail-value">${historySolicitudes.length}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Costo Total:</span>
-                        <span class="detail-value">${totalCosto}€</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Horas Totales:</span>
-                        <span class="detail-value">${totalHoras}h</span>
-                    </div>
-                </div>
-            </div>
-            
-            ${historyOrdenes.length > 0 ? `
-                <div class="detail-section">
-                    <h4><i class="fas fa-wrench"></i> Órdenes de Trabajo</h4>
-                    <table class="maintenance-table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Orden</th>
-                                <th>Tipo</th>
-                                <th>Descripción</th>
-                                <th>Estado</th>
-                                <th>Responsable</th>
-                                <th>Prioridad</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${historyOrdenes.map(ot => `
-                                <tr>
-                                    <td>${formatearFecha(ot.fechaInicio)}</td>
-                                    <td>${ot.id}</td>
-                                    <td>
-                                        <span style="background: ${ot.tipoMantenimiento === 'preventivo' ? '#388e3c' : '#f57c00'}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">
-                                            ${ot.tipoMantenimiento === 'preventivo' ? 'Preventivo' : 'Correctivo'}
-                                        </span>
-                                    </td>
-                                    <td>${ot.descripcion || ot.descripcionAveria || 'Sin descripción'}</td>
-                                    <td>
-                                        <span style="color: ${getEstadoOrdenColor(ot.estado)}; font-weight: 600;">
-                                            ${getEstadoOrdenTexto(ot.estado)}
-                                        </span>
-                                    </td>
-                                    <td>${ot.responsable}</td>
-                                    <td>
-                                        <span class="criticality-badge ${ot.prioridad.toLowerCase()}">${ot.prioridad}</span>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            ` : ''}
-            
-            ${historySolicitudes.length > 0 ? `
-                <div class="detail-section">
-                    <h4><i class="fas fa-clipboard-list"></i> Solicitudes Pendientes</h4>
-                    <table class="maintenance-table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Solicitud</th>
-                                <th>Solicitante</th>
-                                <th>Tipo</th>
-                                <th>Avería</th>
-                                <th>Importancia</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${historySolicitudes.map(sol => `
-                                <tr>
-                                    <td>${formatearFecha(sol.fecha)}</td>
-                                    <td>${sol.id}</td>
-                                    <td>${sol.nombre}</td>
-                                    <td>${sol.tipoMantenimiento}</td>
-                                    <td>${sol.averia}</td>
-                                    <td>
-                                        <span class="criticality-badge ${sol.importancia}">${sol.importancia}</span>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            ` : ''}
-        `;
+        return;
     }
     
-    modal.style.display = 'flex';
+    // Ordenar por fecha descendente
+    const historialOrdenado = [...historial].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    
+    container.innerHTML = historialOrdenado.map(reparacion => {
+        const fecha = new Date(reparacion.fecha);
+        const tipoClass = reparacion.tipo === 'Preventivo' ? 'preventivo' : 'correctivo';
+        
+        return `
+            <div class="reparacion-item clickable" onclick="mostrarDetalleIncidencia(${JSON.stringify(reparacion).replace(/"/g, '&quot;')})">
+                <div class="reparacion-header">
+                    <span class="reparacion-fecha">${fecha.toLocaleDateString('es-ES')}</span>
+                    <span class="reparacion-costo">€${reparacion.costo.toLocaleString('es-ES')}</span>
+                </div>
+                <div class="reparacion-descripcion">${reparacion.descripcion}</div>
+                <div class="reparacion-detalles">
+                    <div class="reparacion-detail">
+                        <i class="fas fa-tag"></i>
+                        <span class="tipo-${tipoClass.toLowerCase()}">${reparacion.tipo}</span>
+                    </div>
+                    <div class="reparacion-detail">
+                        <i class="fas fa-user"></i>
+                        <span>${reparacion.tecnico}</span>
+                    </div>
+                    <div class="reparacion-detail">
+                        <i class="fas fa-clock"></i>
+                        <span>${reparacion.horas}h</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
-function cerrarModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
-}
-
-function getEstadoOrdenColor(estado) {
-    const colors = {
-        'hecho': '#2e7d32',
-        'en-progreso': '#f57c00',
-        'por-hacer': '#1976d2',
-        'parado': '#d32f2f'
-    };
-    return colors[estado] || '#666';
-}
-
-function getEstadoOrdenTexto(estado) {
-    const textos = {
-        'hecho': 'Completado',
-        'en-progreso': 'En Progreso',
-        'por-hacer': 'Por Hacer',
-        'parado': 'Parado'
-    };
-    return textos[estado] || estado;
-}
-
-function getEstadoHistorialColor(estado) {
-    const colors = {
-        'completado': '#2e7d32',
-        'en-progreso': '#f57c00',
-        'pendiente': '#d32f2f'
-    };
-    return colors[estado] || '#666';
-}
-
-function getEstadoHistorialTexto(estado) {
-    const textos = {
-        'completado': 'Completado',
-        'en-progreso': 'En Progreso',
-        'pendiente': 'Pendiente'
-    };
-    return textos[estado] || estado;
-}
-
-function cerrarModalHistorial() {
-    document.getElementById('maintenance-history-modal').style.display = 'none';
+function cerrarModal() {
+    document.getElementById('machine-modal').classList.remove('show');
 }
 
 function crearOrdenTrabajo() {
-    // Redirigir a la página de creación de órdenes de trabajo
-    alert('Funcionalidad de crear orden de trabajo - redirigir a página correspondiente');
-    // window.location.href = '../Tablet/crear-orden-trabajo.html';
-}
-
-// Función para ver historial completo de una máquina
-function verHistorialCompleto(maquinaId) {
-    const maquina = MAQUINAS_ESPACIOS.find(m => m.id === maquinaId);
-    if (!maquina) return;
-    
-    const modal = document.getElementById('maintenance-history-modal');
-    const title = document.getElementById('history-modal-title');
-    const body = document.getElementById('history-modal-body');
-    
-    title.textContent = `Historial de ${maquina.nombre}`;
-    
-    body.innerHTML = `
-        <div class="history-overview">
-            <div class="history-stats">
-                <div class="stat-item">
-                    <div class="stat-number">${maquina.historialOrdenes.length}</div>
-                    <div class="stat-label">Total Órdenes</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">${maquina.historialOrdenes.filter(o => o.estado === 'hecho').length}</div>
-                    <div class="stat-label">Completadas</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">${maquina.historialOrdenes.reduce((total, orden) => total + orden.horas, 0)}h</div>
-                    <div class="stat-label">Total Horas</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">${maquina.historialOrdenes.reduce((total, orden) => total + orden.costo, 0)}€</div>
-                    <div class="stat-label">Total Costo</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="history-timeline">
-            ${maquina.historialOrdenes.map(orden => `
-                <div class="timeline-item ${orden.estado}">
-                    <div class="timeline-marker">
-                        <i class="fas ${orden.tipo === 'preventivo' ? 'fa-calendar-check' : 'fa-tools'}"></i>
-                    </div>
-                    <div class="timeline-content">
-                        <div class="timeline-header">
-                            <h4>${orden.id}</h4>
-                            <div class="order-badges">
-                                <span class="badge badge-${orden.tipo}">${orden.tipo}</span>
-                                <span class="badge badge-priority-${orden.prioridad.toLowerCase()}">${orden.prioridad}</span>
-                                <span class="badge badge-status-${orden.estado}">${getEstadoTexto(orden.estado)}</span>
-                            </div>
-                        </div>
-                        <div class="timeline-description">${orden.descripcion}</div>
-                        <div class="timeline-tasks">
-                            <strong>Tareas realizadas:</strong>
-                            <ul>
-                                ${orden.tareas.map(tarea => `<li>${tarea}</li>`).join('')}
-                            </ul>
-                        </div>
-                        <div class="timeline-footer">
-                            <div class="timeline-details">
-                                <span><i class="fas fa-calendar"></i> ${formatearFecha(orden.fecha)}</span>
-                                <span><i class="fas fa-user"></i> ${orden.responsable}</span>
-                                <span><i class="fas fa-clock"></i> ${orden.horas}h</span>
-                                <span><i class="fas fa-euro-sign"></i> ${orden.costo}€</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-    
-    modal.style.display = 'block';
-}
-
-// Función para calcular días hasta fecha
-function calculateDaysTo(fecha) {
-    const today = new Date();
-    const targetDate = new Date(fecha);
-    const diffTime = targetDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) {
-        return { 
-            text: `Vencido (${Math.abs(diffDays)} días)`, 
-            class: 'overdue',
-            days: diffDays 
-        };
-    } else if (diffDays === 0) {
-        return { 
-            text: 'Hoy', 
-            class: 'today',
-            days: diffDays 
-        };
-    } else if (diffDays <= 7) {
-        return { 
-            text: `En ${diffDays} días`, 
-            class: 'soon',
-            days: diffDays 
-        };
-    } else {
-        return { 
-            text: `En ${diffDays} días`, 
-            class: 'normal',
-            days: diffDays 
-        };
+    if (!maquinaActual) {
+        alert('Error: No se ha seleccionado ninguna máquina');
+        return;
     }
+    
+    // Crear parámetros URL con la información de la máquina
+    const params = new URLSearchParams({
+        maquinaId: maquinaActual.id,
+        maquinaNombre: maquinaActual.nombre,
+        maquinaTipo: maquinaActual.tipo,
+        maquinaModelo: maquinaActual.modelo,
+        maquinaUbicacion: maquinaActual.ubicacion
+    });
+    
+    cerrarModal();
+    window.location.href = `../Tablet/crear-orden-trabajo.html?${params.toString()}`;
 }
 
-// Función para formatear fechas
-function formatearFecha(fecha) {
-    const date = new Date(fecha);
-    return date.toLocaleDateString('es-ES', {
+// Funciones para modal de incidencias
+function mostrarDetalleIncidencia(reparacion) {
+    if (!maquinaActual || !reparacion) return;
+    
+    // Llenar información de la incidencia
+    const fecha = new Date(reparacion.fecha);
+    document.getElementById('incident-fecha').textContent = fecha.toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
     });
-}
-
-// Función para crear orden de trabajo
-function crearOrdenTrabajo(maquinaId) {
-    const maquina = MAQUINAS_ESPACIOS.find(m => m.id === maquinaId);
-    if (!maquina) return;
+    document.getElementById('incident-costo').textContent = `€${reparacion.costo.toLocaleString('es-ES')}`;
+    document.getElementById('incident-descripcion').textContent = reparacion.descripcion;
+    document.getElementById('incident-tecnico').textContent = reparacion.tecnico;
+    document.getElementById('incident-horas').textContent = `${reparacion.horas} horas`;
     
-    // Por ahora, mostrar un alert - en una implementación real abriría un formulario
-    alert(`Crear nueva orden de trabajo para: ${maquina.nombre}\n\nEsta funcionalidad se implementaría con un formulario completo.`);
-}
-
-// Event listeners para cerrar modales con click fuera
-window.onclick = function(event) {
-    const detailModal = document.getElementById('machine-detail-modal');
-    const historyModal = document.getElementById('maintenance-history-modal');
+    // Tipo de reparación con clase CSS
+    const tipoElement = document.getElementById('incident-tipo');
+    tipoElement.textContent = reparacion.tipo;
+    tipoElement.className = `incident-type tipo-${reparacion.tipo.toLowerCase()}`;
     
-    if (event.target === detailModal) {
-        cerrarModalDetalle();
-    }
-    if (event.target === historyModal) {
-        cerrarModalHistorial();
-    }
+    // Información de la máquina
+    document.getElementById('incident-maquina-nombre').textContent = maquinaActual.nombre;
+    document.getElementById('incident-maquina-ubicacion').textContent = maquinaActual.ubicacion;
+    document.getElementById('incident-maquina-modelo').textContent = maquinaActual.modelo;
+    
+    // Mostrar modal de incidencia
+    document.getElementById('incident-modal').classList.add('show');
 }
 
-// Event listeners para teclas
-document.addEventListener('keydown', function(event) {
+function cerrarModalIncidencia() {
+    document.getElementById('incident-modal').classList.remove('show');
+}
+
+function crearOrdenTrabajoDesdeIncidencia() {
+    cerrarModalIncidencia();
+    crearOrdenTrabajo();
+}
+
+// Cerrar modal al hacer click fuera
+window.addEventListener('click', (event) => {
+    const modal = document.getElementById('machine-modal');
+    const incidentModal = document.getElementById('incident-modal');
+    
+    if (event.target === modal) {
+        cerrarModal();
+    }
+    
+    if (event.target === incidentModal) {
+        cerrarModalIncidencia();
+    }
+});
+
+// Cerrar modal con tecla ESC
+document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
-        cerrarModalDetalle();
-        cerrarModalHistorial();
+        const machineModal = document.getElementById('machine-modal');
+        const incidentModal = document.getElementById('incident-modal');
+        
+        if (incidentModal && incidentModal.classList.contains('show')) {
+            cerrarModalIncidencia();
+        } else if (machineModal && machineModal.classList.contains('show')) {
+            cerrarModal();
+        }
     }
+});
+
+// Inicializar cuando se carga la página
+window.addEventListener('load', () => {
+    actualizarEstadisticas();
+    actualizarContadorResultados();
+    renderizarMaquinas();
+    cargarMapa(); // Cargar el mapa automáticamente al inicio
 });

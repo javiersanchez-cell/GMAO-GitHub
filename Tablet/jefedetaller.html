@@ -11,24 +11,51 @@
     <div id="navbar-container"></div>
 
     <div class="container">
-        <div class="buttons-container">
-            <a href="#" class="action-button" onclick="verSolicitudes()">
-                <div class="button-icon">👁️</div>
-                <div class="button-title">Ver Incidencias</div>
-                <div class="button-description">Consultar y revisar todas las incidencias</div>
-            </a>
+        <!-- Main Menu Section -->
+        <div class="menu-section">
+            <div class="menu-options">
+                <!-- Ver Incidencias -->
+                <div class="menu-card solicitudes-card" onclick="verSolicitudes()">
+                    <div class="card-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Ver Incidencias</h3>
+                        <p>Consultar y revisar todas las incidencias</p>
+                        <div class="card-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
 
-            <a href="#" class="action-button" onclick="crearSolicitud()">
-                <div class="button-icon">➕</div>
-                <div class="button-title">Crear Órdenes de Trabajo</div>
-                <div class="button-description">Generar una nueva orden de trabajo sin incidencia asociada</div>
-            </a>
+                <!-- Crear Órdenes de Trabajo -->
+                <div class="menu-card crear-card" onclick="crearSolicitud()">
+                    <div class="card-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Crear Órdenes de Trabajo</h3>
+                        <p>Generar una nueva orden de trabajo sin incidencia asociada</p>
+                        <div class="card-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
 
-            <a href="#" class="action-button" onclick="verOrdenesTrabajo()">
-                <div class="button-icon">👁️</div>
-                <div class="button-title">Ver Órdenes de Trabajo</div>
-                <div class="button-description">Consultar y revisar todas las órdenes de trabajo</div>
-            </a>
+                <!-- Ver Órdenes de Trabajo -->
+                <div class="menu-card ordenes-card" onclick="verOrdenesTrabajo()">
+                    <div class="card-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Ver Órdenes de Trabajo</h3>
+                        <p>Consultar y revisar todas las órdenes de trabajo</p>
+                        <div class="card-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -39,6 +66,12 @@
             .then(response => response.text())
             .then(html => {
                 document.getElementById('navbar-container').innerHTML = html;
+                
+                // Mostrar botón de volver atrás después de cargar la navbar
+                const btnVolver = document.getElementById('btn-volver-nav');
+                if (btnVolver) {
+                    btnVolver.classList.add('show');
+                }
             })
             .catch(error => {
                 console.error('Error cargando navbar:', error);

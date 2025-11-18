@@ -12,12 +12,12 @@ function handleLogin(event) {
     } else if (username === 'gestortaller' && password === 'gestortaller') {
         localStorage.setItem('gmao_logged_in', 'true');
         localStorage.setItem('gmao_username', username);
-        window.location.href = 'Web/maquinaria.html';
+        window.location.href = 'Web/gestortaller.html';
     } else if (username === 'usuarioplanasa' && password === 'usuarioplanasa') {
         localStorage.setItem('gmao_logged_in', 'true');
         localStorage.setItem('gmao_username', username);
         localStorage.setItem('currentUser', JSON.stringify({username: username, role: 'mobile'}));
-        window.location.href = 'Movil/crear-incidencia.html';
+        window.location.href = 'Movil/usuarioplanasa.html';
     } else {
         alert('❌ Credenciales incorrectas. Verifique su usuario y contraseña.');
     }

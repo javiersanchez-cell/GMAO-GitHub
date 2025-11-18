@@ -207,12 +207,122 @@ const tareasPredeterminadas = {
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si viene información de máquina por URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const maquinaId = urlParams.get('maquinaId');
+    
+    if (maquinaId) {
+        // Preseleccionar maquinaria y la máquina específica
+        preseleccionarMaquina(urlParams);
+    }
+    
     mostrarPaso(1);
     // Enfocar el primer campo
     setTimeout(() => {
         document.getElementById('equipo-nuevo').focus();
     }, 300);
 });
+
+// Función para preseleccionar máquina desde URL parameters
+function preseleccionarMaquina(urlParams) {
+    const maquinaId = urlParams.get('maquinaId');
+    const maquinaNombre = urlParams.get('maquinaNombre');
+    const maquinaTipo = urlParams.get('maquinaTipo');
+    const maquinaModelo = urlParams.get('maquinaModelo');
+    const maquinaUbicacion = urlParams.get('maquinaUbicacion');
+    
+    // Buscar si la máquina existe en nuestra lista
+    let maquinaExistente = null;
+    for (const tipo in activosPorTipo) {
+        maquinaExistente = activosPorTipo[tipo].find(activo => 
+            activo.nombre.includes(maquinaNombre) || activo.id === maquinaId
+        );
+        if (maquinaExistente) break;
+    }
+    
+    if (maquinaExistente) {
+        // Si la máquina ya existe, preseleccionarla
+        setTimeout(() => {
+            // Seleccionar tipo de activo: maquinaria
+            ordenWizardData.tipoActivo = 'maquinaria';
+            document.getElementById('valor-tipo-activo').textContent = '🚜 Maquinaria Agrícola';
+            document.getElementById('fila-tipo-activo').style.display = 'flex';
+            
+            // Seleccionar en el campo del formulario
+            const tipoActivoSelect = document.getElementById('tipoActivo');
+            if (tipoActivoSelect) {
+                tipoActivoSelect.value = 'maquinaria';
+                // Cargar activos manualmente sin cambiar de paso
+                cargarActivos('maquinaria');
+            }
+            
+            setTimeout(() => {
+                // Seleccionar la máquina específica
+                ordenWizardData.activo = { id: maquinaExistente.id, nombre: maquinaExistente.nombre };
+                document.getElementById('valor-activo').innerHTML = maquinaExistente.nombre;
+                document.getElementById('fila-activo').style.display = 'flex';
+                
+                // Seleccionar en el campo del formulario
+                const activoEspecificoSelect = document.getElementById('activoEspecifico');
+                if (activoEspecificoSelect) {
+                    activoEspecificoSelect.value = maquinaExistente.id;
+                }
+                
+                // Mostrar paso 3 (tipo de mantenimiento) directamente
+                pasoActual = 3;
+                mostrarPaso(3);
+            }, 200);
+        }, 100);
+    }
+    // Si no existe, añadirla temporalmente a maquinaria
+    else if (!maquinaExistente && maquinaId) {
+        const iconoMaquina = maquinaTipo === 'Tractor' ? '🚜' : 
+                           maquinaTipo === 'Cosechadora' ? '🌾' :
+                           maquinaTipo === 'Pulverizador' ? '💧' : '🔧';
+        
+        const nuevaMaquina = {
+            id: maquinaId,
+            nombre: `${iconoMaquina} ${maquinaNombre}`,
+            info: `${maquinaModelo} - ${maquinaUbicacion}`
+        };
+        
+        activosPorTipo.maquinaria.unshift(nuevaMaquina);
+        
+        // Preseleccionar automáticamente
+        setTimeout(() => {
+            // Seleccionar tipo de activo: maquinaria
+            ordenWizardData.tipoActivo = 'maquinaria';
+            document.getElementById('valor-tipo-activo').textContent = '🚜 Maquinaria Agrícola';
+            document.getElementById('fila-tipo-activo').style.display = 'flex';
+            
+            // Seleccionar en el campo del formulario
+            const tipoActivoSelect = document.getElementById('tipoActivo');
+            if (tipoActivoSelect) {
+                tipoActivoSelect.value = 'maquinaria';
+                // Cargar activos manualmente sin cambiar de paso
+                cargarActivos('maquinaria');
+            }
+            
+            // Esperar para que se carguen los activos
+            setTimeout(() => {
+                // Seleccionar la máquina específica
+                ordenWizardData.activo = { id: maquinaId, nombre: nuevaMaquina.nombre };
+                document.getElementById('valor-activo').innerHTML = nuevaMaquina.nombre;
+                document.getElementById('fila-activo').style.display = 'flex';
+                
+                // Seleccionar en el campo del formulario
+                const activoEspecificoSelect = document.getElementById('activoEspecifico');
+                if (activoEspecificoSelect) {
+                    activoEspecificoSelect.value = maquinaId;
+                }
+                
+                // Mostrar paso 3 (tipo de mantenimiento) directamente
+                pasoActual = 3;
+                mostrarPaso(3);
+            }, 200);
+        }, 100);
+    }
+}
 
 // Función para mostrar un paso específico
 function mostrarPaso(numeroPaso) {

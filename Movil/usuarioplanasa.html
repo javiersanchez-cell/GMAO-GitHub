@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLANASA GMAO - Menú Principal</title>
+    <link rel="stylesheet" href="usuarioplanasa.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar-green">
+        <div class="navbar-content">
+            <div class="navbar-logo">
+                <button class="btn-volver-navbar" onclick="volverAlMenu()" id="btn-volver-nav">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <span class="navbar-title">PLANASA GMAO</span>
+            </div>
+            <div class="navbar-user">
+                <span class="user-info">Usuario Móvil</span>
+                <button class="logout-btn" onclick="cerrarSesion()">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Main Menu Section -->
+        <div class="menu-section">
+            
+            <div class="menu-options">
+                <!-- Crear Incidencia -->
+                <div class="menu-card crear-card" onclick="irACrearIncidencia()">
+                    <div class="card-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Crear Incidencia</h3>
+                        <p>Reportar una nueva avería, mantenimiento o construcción</p>
+                        <div class="card-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ver Incidencias -->
+                <div class="menu-card ver-card" onclick="irAVerIncidencias()">
+                    <div class="card-icon">
+                        <i class="fas fa-list-alt"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Ver Incidencias</h3>
+                        <p>Consultar el estado de incidencias creadas</p>
+                        <div class="card-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="usuarioplanasa.js"></script>
+</body>
+</html>
