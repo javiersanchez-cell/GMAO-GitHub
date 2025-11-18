@@ -539,7 +539,8 @@ body {
 .modal-body {
     padding: 1rem 1.25rem;
     flex: 1;
-    overflow: visible;
+    overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -598,6 +599,24 @@ body {
     resize: vertical;
 }
 
+/* Sección de fotos */
+.modal-fotos-section {
+    background: var(--planasa-white);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--planasa-gray-200);
+    margin-top: 1rem;
+}
+
+.modal-fotos-section .modal-info-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--planasa-green);
+    margin: 0 0 1rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
 /* Item de fotos */
 .fotos-item {
     display: flex;
@@ -607,21 +626,21 @@ body {
 .fotos-container {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 1rem;
     flex: 1;
 }
 
 .fotos-existentes {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
 }
 
 .foto-thumbnail {
-    width: 60px;
-    height: 60px;
-    border-radius: 6px;
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
     object-fit: cover;
     border: 2px solid var(--planasa-gray-200);
     cursor: pointer;
@@ -633,11 +652,18 @@ body {
     transform: scale(1.05);
 }
 
+.subir-fotos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
 .btn-subir-fotos {
     background: linear-gradient(135deg, var(--planasa-green) 0%, var(--planasa-green-dark) 100%);
     color: white;
     border: none;
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1.5rem;
     border-radius: 8px;
     cursor: pointer;
     font-size: 0.9rem;

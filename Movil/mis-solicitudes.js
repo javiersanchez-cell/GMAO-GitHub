@@ -1,12 +1,10 @@
 // Opciones para desplegables
 const opcionesActivos = {
     numeroActivo: ["TR-001", "TR-002", "TR-003", "TR-004", "TR-005", "PV-001", "PV-002", "PV-010", "CS-001", "CS-011", "SR-001", "SR-004", "SR-012", "GN-006", "BM-007", "CV-008"],
+    categoriaActivo: ["Maquinaria", "Instalaciones", "Vehículos", "Equipos"],
     tipoActivo: ["Tractor", "Pulverizador", "Cosechadora", "Sistema de Riego", "Generador", "Bomba", "Cultivador"],
     ubicacion: ["Fuente el Olmo", "Sector 1", "Sector 2", "Sector 3", "Almacén Principal", "Taller", "Campo Norte", "Campo Sur"],
-    averia: ["Sistema Hidráulico", "Motor", "Transmisión", "Sistema Eléctrico", "Frenos", "Neumáticos", "Cabina", "Refrigeración", "Revisión General", "Cambio de Aceite", "Filtros", "Inspección", "Calibración"],
-    tipoAveria: ["Mecánica", "Eléctrica", "Hidráulica", "Neumática", "Estructural", "Software", "Térmica"],
-    importanciaAveria: ["Crítica", "Mayor", "Menor"],
-    estadoActivo: ["Operativo", "Parado", "En Mantenimiento", "Fuera de Servicio"]
+    averia: ["Sistema Hidráulico", "Motor", "Transmisión", "Sistema Eléctrico", "Frenos", "Neumáticos", "Cabina", "Refrigeración", "Revisión General", "Cambio de Aceite", "Filtros", "Inspección", "Calibración"]
 };
 
 // Datos de ejemplo de solicitudes
@@ -18,14 +16,13 @@ const solicitudesData = [
         tipoMantenimiento: "Mantenimiento Correctivo",
         importancia: "alta",
         numeroActivo: "TR-001",
+        categoriaActivo: "Maquinaria",
         tipoActivo: "Tractor",
         ubicacion: "Fuente el Olmo",
         averia: "Sistema Hidráulico",
-        tipoAveria: "Hidráulica",
-        importanciaAveria: "Crítica",
-        estadoActivo: "Parado",
         estado: "pendiente",
-        descripcion: "El tractor presenta problemas en el sistema hidráulico. Se requiere revisión completa del sistema y cambio de filtros."
+        descripcion: "El tractor presenta problemas en el sistema hidráulico. Se requiere revisión completa del sistema y cambio de filtros.",
+        acciones: "Se realizó una inspección visual preliminar y se identificó fuga en la manguera principal."
     },
     {
         id: "SOL-002",
@@ -34,14 +31,13 @@ const solicitudesData = [
         tipoMantenimiento: "Mantenimiento Correctivo",
         importancia: "media",
         numeroActivo: "PV-002",
+        categoriaActivo: "Maquinaria",
         tipoActivo: "Pulverizador",
         ubicacion: "Fuente el Olmo",
         averia: "Sistema Eléctrico",
-        tipoAveria: "Eléctrica",
-        importanciaAveria: "Mayor",
-        estadoActivo: "En Mantenimiento",
         estado: "en-proceso",
-        descripcion: "Fallo en el sistema de dosificación del pulverizador. La bomba no mantiene la presión constante."
+        descripcion: "Fallo en el sistema de dosificación del pulverizador. La bomba no mantiene la presión constante.",
+        acciones: "Se reinició el sistema y se comprobó el estado de la batería."
     },
     {
         id: "SOL-003",
@@ -50,14 +46,13 @@ const solicitudesData = [
         tipoMantenimiento: "Mantenimiento Preventivo",
         importancia: "baja",
         numeroActivo: "CS-003",
+        categoriaActivo: "Maquinaria",
         tipoActivo: "Cosechadora",
         ubicacion: "Fuente el Olmo",
         averia: "Revisión General",
-        tipoAveria: "Mecánica",
-        importanciaAveria: "Menor",
-        estadoActivo: "Operativo",
         estado: "completada",
-        descripcion: "Inspección rutinaria pre-temporada de la cosechadora. Revisión de todos los sistemas."
+        descripcion: "Inspección rutinaria pre-temporada de la cosechadora. Revisión de todos los sistemas.",
+        acciones: "Se lubricaron todas las partes móviles y se comprobó el nivel de líquidos."
     }
 ];
 
@@ -234,6 +229,10 @@ function abrirDetalle(index) {
                     <div class="modal-info-value">${solicitudSeleccionada.numeroActivo}</div>
                 </div>
                 <div class="modal-info-item">
+                    <div class="modal-info-label">Categoría</div>
+                    <div class="modal-info-value">${solicitudSeleccionada.categoriaActivo}</div>
+                </div>
+                <div class="modal-info-item">
                     <div class="modal-info-label">Tipo</div>
                     <div class="modal-info-value">${solicitudSeleccionada.tipoActivo}</div>
                 </div>
@@ -251,27 +250,36 @@ function abrirDetalle(index) {
                 <span>${solicitudSeleccionada.tipoMantenimiento === 'Mantenimiento Preventivo' ? 'Detalles del Mantenimiento' : 'Detalles de la Avería'}</span>
             </div>
             
-            <!-- Primera fila: Avería, Categoría, Severidad -->
+            <!-- Primera fila: Avería -->
             <div class="modal-section-grid primera-fila">
                 <div class="modal-info-item">
                     <div class="modal-info-label">${solicitudSeleccionada.tipoMantenimiento === 'Mantenimiento Preventivo' ? 'Trabajo' : 'Avería'}</div>
                     <div class="modal-info-value">${solicitudSeleccionada.averia}</div>
                 </div>
-                <div class="modal-info-item">
-                    <div class="modal-info-label">Categoría</div>
-                    <div class="modal-info-value">${solicitudSeleccionada.tipoAveria}</div>
-                </div>
-                <div class="modal-info-item">
-                    <div class="modal-info-label">${solicitudSeleccionada.tipoMantenimiento === 'Mantenimiento Preventivo' ? 'Prioridad' : 'Criticidad'}</div>
-                    <div class="modal-info-value">${solicitudSeleccionada.importanciaAveria}</div>
-                </div>
             </div>
             
-            <!-- Segunda fila: Descripción -->
+            <!-- Segunda fila: Descripción y Acciones tomadas -->
             <div class="modal-section-grid segunda-fila">
                 <div class="modal-info-item descripcion-item">
                     <div class="modal-info-label">Descripción Detallada</div>
                     <div class="descripcion-text">${solicitudSeleccionada.descripcion}</div>
+                </div>
+                <div class="modal-info-item descripcion-item">
+                    <div class="modal-info-label">Acciones ya Tomadas</div>
+                    <div class="descripcion-text">${solicitudSeleccionada.acciones || 'No se han registrado acciones aún.'}</div>
+                </div>
+            </div>
+            
+            <!-- Tercera fila: Fotos -->
+            <div class="modal-fotos-section">
+                <div class="modal-info-label">Fotografías</div>
+                <div class="fotos-container">
+                    <div class="fotos-existentes" id="fotos-existentes">
+                        <!-- Fotos existentes se cargarán aquí -->
+                    </div>
+                    <div class="subir-fotos">
+                        <p class="fotos-info-text">No hay fotografías adjuntas</p>
+                    </div>
                 </div>
             </div>
         </div>

@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function volverAtras() {
-    window.location.href = '../';
+    window.location.href = 'jefedetaller.html';
 }
 
 // Cargar órdenes existentes (simuladas)
@@ -234,97 +234,266 @@ function formatearFecha(fecha) {
 // Mostrar detalle de orden
 function mostrarDetalleOrden(orden) {
     ordenSeleccionada = orden;
-    const modal = document.getElementById('modalDetalleOrden');
+    const modal = document.getElementById('modal-detalle');
     const titulo = document.getElementById('modal-titulo');
-    const body = document.getElementById('modal-body');
-    const btnCambiar = document.getElementById('btn-cambiar-estado');
-
-    titulo.textContent = `${orden.id} - ${orden.activo}`;
+    const contenido = document.getElementById('modal-contenido');
     
-    const tipoTexto = orden.tipoMantenimiento === 'preventivo' ? 
-        'Mantenimiento Preventivo' : 
-        `Mantenimiento Correctivo - ${orden.tipoAveria || 'General'}`;
+    titulo.textContent = `Orden ${orden.id}`;
 
-    body.innerHTML = `
-        <div class="detalle-orden">
-            <div class="detail-section">
-                <h4><i class="fas fa-cog"></i> Tipo de Mantenimiento</h4>
-                <p>${tipoTexto}</p>
+    // Obtener datos del activo
+    const activoTexto = orden.activo || '';
+    const categoriaActivo = orden.activoDetalle?.CatActivo || orden.categoriaActivo || '';
+    const tipoActivo = orden.activoDetalle?.NomActivo || orden.tipoActivo || '';
+    const ubicacionActivo = orden.activoDetalle?.ubicacion || orden.ubicacion?.nombre || orden.ubicacion || '';
+    
+    contenido.innerHTML = `
+        <!-- Información Principal -->
+        <div class="modal-section seccion-usuario">
+            <div class="modal-section-title">
+                <i class="fas fa-info-circle"></i>
+                Información Principal
             </div>
-            
-            ${orden.descripcionAveria ? `
-                <div class="detail-section">
-                    <h4><i class="fas fa-exclamation-triangle"></i> Problema Reportado</h4>
-                    <p style="font-style: italic; background: #f8f9fa; padding: 10px; border-radius: 6px;">"${orden.descripcionAveria}"</p>
+            <div class="modal-section-grid">
+                <div class="modal-info-item">
+                    <div class="modal-info-label">Fecha</div>
+                    <input type="date" class="modal-input" id="edit-fecha" value="${orden.fechaCreacion ? new Date(orden.fechaCreacion).toISOString().split('T')[0] : ''}">
                 </div>
-            ` : ''}
-            
-            <div class="detail-section">
-                <h4><i class="fas fa-flag"></i> Prioridad</h4>
-                <p><span class="orden-prioridad ${getPrioridadClass(orden.prioridad)}">${getPrioridadIcon(orden.prioridad)} ${orden.prioridad}</span></p>
-            </div>
-            
-            <div class="detail-section">
-                <h4><i class="fas fa-user"></i> Responsable</h4>
-                <p>${orden.responsable}</p>
-            </div>
-            
-            <div class="detail-section">
-                <h4><i class="fas fa-calendar"></i> Fechas</h4>
-                <p><strong>Inicio:</strong> ${new Date(orden.fechaInicio).toLocaleDateString('es-ES')}</p>
-                <p><strong>Fin:</strong> ${new Date(orden.fechaFin).toLocaleDateString('es-ES')}</p>
-            </div>
-            
-            ${orden.tareas && orden.tareas.length > 0 ? `
-                <div class="detail-section">
-                    <h4><i class="fas fa-tasks"></i> Tareas Programadas</h4>
-                    <ul style="margin-left: 20px;">
-                        ${orden.tareas.map(tarea => `<li>${tarea}</li>`).join('')}
-                    </ul>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">Solicitante</div>
+                    <input type="text" class="modal-input" id="edit-solicitante" value="${orden.solicitante || orden.responsable || 'Sistema'}">
                 </div>
-            ` : ''}
-            
-            ${orden.descripcion ? `
-                <div class="detail-section">
-                    <h4><i class="fas fa-file-text"></i> Descripción Adicional</h4>
-                    <p>${orden.descripcion}</p>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">Tipo de Mantto.</div>
+                    <div class="tipo-mantenimiento-badge ${orden.tipoMantenimiento === 'mantenimiento-preventivo' || orden.tipoMantenimiento === 'preventivo' ? 'preventivo' : orden.tipoMantenimiento === 'construccion' ? 'construccion' : 'correctivo'}">
+                        ${orden.tipoMantenimiento === 'mantenimiento-preventivo' || orden.tipoMantenimiento === 'preventivo' ? 'PREVENTIVO' : orden.tipoMantenimiento === 'construccion' ? 'CONSTRUCCIÓN' : 'CORRECTIVO'}
+                        <i class="fas ${orden.tipoMantenimiento === 'mantenimiento-preventivo' || orden.tipoMantenimiento === 'preventivo' ? 'fa-calendar-check' : orden.tipoMantenimiento === 'construccion' ? 'fa-hammer' : 'fa-wrench'}"></i>
+                    </div>
+                    <input type="hidden" id="edit-tipoMantenimiento" value="${orden.tipoMantenimiento}">
                 </div>
-            ` : ''}
+                <div class="modal-info-item">
+                    <div class="modal-info-label">Prioridad</div>
+                    <select class="modal-select" id="edit-prioridad">
+                        <option value="Crítica" ${orden.prioridad === 'Crítica' ? 'selected' : ''}>Crítica</option>
+                        <option value="Alta" ${orden.prioridad === 'Alta' ? 'selected' : ''}>Alta</option>
+                        <option value="Media" ${orden.prioridad === 'Media' ? 'selected' : ''}>Media</option>
+                        <option value="Baja" ${orden.prioridad === 'Baja' ? 'selected' : ''}>Baja</option>
+                    </select>
+                </div>
+            </div>
         </div>
-        
-        <style>
-            .detail-section {
-                margin-bottom: 20px;
-                padding-bottom: 15px;
-                border-bottom: 1px solid #eee;
-            }
-            .detail-section:last-child {
-                border-bottom: none;
-            }
-            .detail-section h4 {
-                color: rgb(63, 156, 53);
-                margin-bottom: 8px;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            .detail-section p, .detail-section ul {
-                margin-bottom: 5px;
-                line-height: 1.5;
-            }
-        </style>
+
+        <!-- Activo y Ubicación -->
+        <div class="modal-section seccion-activo">
+            <div class="modal-section-title">
+                <i class="fas fa-cogs"></i>
+                Activo y Ubicación
+            </div>
+            <div class="modal-section-grid">
+                <div class="modal-info-item">
+                    <div class="modal-info-label">Activo</div>
+                    <input type="text" class="modal-input" id="edit-activo" value="${activoTexto}">
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">Categoría</div>
+                    <input type="text" class="modal-input" id="edit-categoria" value="${categoriaActivo}">
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">Tipo</div>
+                    <input type="text" class="modal-input" id="edit-tipo" value="${tipoActivo}">
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">Ubicación</div>
+                    <input type="text" class="modal-input" id="edit-ubicacion" value="${ubicacionActivo}">
+                </div>
+            </div>
+        </div>
+
+        <!-- Detalles del Trabajo/Avería -->
+        <div class="modal-section seccion-averia ${orden.tipoMantenimiento === 'mantenimiento-preventivo' || orden.tipoMantenimiento === 'preventivo' ? 'mantenimiento-preventivo' : ''}">
+            <div class="modal-section-title">
+                <i class="fas ${orden.tipoMantenimiento === 'mantenimiento-preventivo' || orden.tipoMantenimiento === 'preventivo' ? 'fa-tools' : 'fa-exclamation-triangle'}"></i>
+                <span id="seccion-trabajo-titulo">${orden.tipoMantenimiento === 'mantenimiento-preventivo' || orden.tipoMantenimiento === 'preventivo' ? 'Detalles del Mantenimiento' : orden.tipoMantenimiento === 'construccion' ? 'Detalles de la Construcción' : 'Detalles de la Avería'}</span>
+            </div>
+            
+            <!-- Primera fila: Avería/Trabajo -->
+            <div class="modal-section-grid primera-fila">
+                <div class="modal-info-item">
+                    <div class="modal-info-label" id="label-trabajo">${orden.tipoMantenimiento === 'mantenimiento-preventivo' || orden.tipoMantenimiento === 'preventivo' ? 'Trabajo' : 'Avería'}</div>
+                    <input type="text" class="modal-input" id="edit-averia" value="${orden.tipoAveria || orden.titulo || 'No especificado'}">
+                </div>
+            </div>
+            
+            <!-- Segunda fila: Descripción y Acciones tomadas -->
+            <div class="modal-section-grid segunda-fila">
+                <div class="modal-info-item descripcion-item">
+                    <div class="modal-info-label">Descripción Detallada</div>
+                    <textarea class="modal-textarea" id="edit-descripcion" rows="3" placeholder="Describe detalladamente el trabajo o problema...">${orden.descripcionAveria || orden.descripcion || ''}</textarea>
+                </div>
+                <div class="modal-info-item descripcion-item">
+                    <div class="modal-info-label">Acciones ya Tomadas</div>
+                    <textarea class="modal-textarea" id="edit-acciones" rows="3" placeholder="Describe las acciones realizadas hasta ahora...">${orden.acciones || 'Ninguna acción registrada aún'}</textarea>
+                </div>
+            </div>
+            
+            <!-- Tercera fila: Fotos -->
+            <div class="modal-fotos-section">
+                <div class="modal-info-label">Fotografías</div>
+                <div class="fotos-container">
+                    <div class="fotos-existentes" id="fotos-existentes">
+                        ${orden.archivos && orden.archivos.length > 0 ? orden.archivos.map((archivo, idx) => `
+                            <div class="foto-item">
+                                <i class="fas ${archivo.type?.includes('image') ? 'fa-image' : 'fa-file'}"></i>
+                                <span>${archivo.name || `Archivo ${idx + 1}`}</span>
+                            </div>
+                        `).join('') : '<p style="color: #9ca3af; font-size: 0.85rem; margin: 0;">No hay fotografías adjuntas</p>'}
+                    </div>
+                    <div class="subir-fotos">
+                        <input type="file" id="input-fotos" accept="image/*" multiple style="display: none;">
+                        <button type="button" class="btn-subir-fotos" onclick="document.getElementById('input-fotos').click()">
+                            <i class="fas fa-camera"></i>
+                            Subir Fotos
+                        </button>
+                        <div class="fotos-info">
+                            <small>Máximo 5 fotos - JPG, PNG</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
 
-    // Configurar botón de cambiar estado
-    const siguienteEstado = getSiguienteEstado(orden.estado);
-    if (siguienteEstado) {
-        btnCambiar.textContent = `Mover a ${getEstadoTexto(siguienteEstado)}`;
-        btnCambiar.style.display = 'inline-block';
-    } else {
-        btnCambiar.style.display = 'none';
-    }
+    // Parte de la orden de trabajo - CONTINUAR EN EL MISMO contenido.innerHTML
+    contenido.innerHTML += `
+        <!-- Información de la Orden de Trabajo -->
+        <div class="modal-section seccion-orden">
+            <div class="modal-section-title">
+                <i class="fas fa-clipboard-check"></i>
+                Programación de la Orden de Trabajo
+            </div>
+            
+            <!-- Estado -->
+            <div class="modal-section-grid">
+                <div class="modal-info-item">
+                    <div class="modal-info-label">Estado Actual</div>
+                    <div class="estado-badge ${orden.estado}">${getEstadoTexto(orden.estado)}</div>
+                </div>
+            </div>
+        </div>
 
-    modal.style.display = 'flex';
+        <!-- Fechas Programadas -->
+        <div class="modal-section seccion-fechas">
+            <div class="modal-section-title">
+                <i class="fas fa-calendar-alt"></i>
+                📅 Fechas Programadas
+            </div>
+            <div class="modal-section-grid">
+                <div class="modal-info-item">
+                    <div class="modal-info-label">Fecha de inicio</div>
+                    <div class="modal-input-readonly">${orden.fechaInicio ? new Date(orden.fechaInicio).toLocaleDateString('es-ES') : 'No definida'}</div>
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">Fecha de finalización</div>
+                    <div class="modal-input-readonly">${orden.fechaFin ? new Date(orden.fechaFin).toLocaleDateString('es-ES') : 'No definida'}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Responsable -->
+        <div class="modal-section seccion-responsable">
+            <div class="modal-section-title">
+                <i class="fas fa-user-tie"></i>
+                👤 ¿Quién lo va a hacer?
+            </div>
+            <div class="modal-section-grid">
+                <div class="modal-info-item">
+                    <div class="modal-info-label">Técnico responsable</div>
+                    <div class="modal-input-readonly responsable-badge">
+                        <i class="fas fa-user-circle"></i> ${orden.responsable}
+                    </div>
+                </div>
+                ${orden.equipoApoyo && orden.equipoApoyo.length > 0 ? `
+                <div class="modal-info-item full-width">
+                    <div class="modal-info-label">Equipo de apoyo</div>
+                    <div class="equipo-apoyo-list">
+                        ${orden.equipoApoyo.map(tecnico => `
+                            <span class="tecnico-badge-small"><i class="fas fa-user"></i> ${tecnico}</span>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                ${orden.notasResponsable ? `
+                <div class="modal-info-item full-width">
+                    <div class="modal-info-label">Notas para el responsable</div>
+                    <div class="modal-textarea-readonly">${orden.notasResponsable}</div>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+
+        <!-- Tareas y Descripción -->
+        ${(orden.plantillaTareas || orden.tareas?.length > 0 || orden.descripcionTareas) ? `
+        <div class="modal-section seccion-tareas">
+            <div class="modal-section-title">
+                <i class="fas fa-tasks"></i>
+                📝 Tareas y Descripción
+            </div>
+            
+            ${orden.plantillaTareas ? `
+            <div class="tipo-selector-wrapper">
+                <div class="modal-info-label">Tipo de trabajo</div>
+                <div class="plantilla-seleccionada">
+                    <i class="fas fa-clipboard-list"></i> ${orden.plantillaTareas}
+                </div>
+            </div>
+            ` : ''}
+
+            ${(orden.tareas?.length > 0 || orden.descripcionTareas) ? `
+            <div class="contenido-dos-columnas">
+                ${orden.tareas && orden.tareas.length > 0 ? `
+                <div class="columna-tareas">
+                    <div class="tareas-editables-container">
+                        <div class="tareas-header">
+                            <h5>Tareas programadas (${orden.tareas.length})</h5>
+                        </div>
+                        <div class="lista-tareas-readonly">
+                            ${orden.tareas.map((tarea, idx) => `
+                                <div class="tarea-item-readonly">
+                                    <span class="tarea-numero">${idx + 1}</span>
+                                    <input type="checkbox" ${tarea.completada ? 'checked' : ''} disabled>
+                                    <span class="tarea-text">${tarea.descripcion || tarea}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+                ` : '<div></div>'}
+                
+                ${orden.descripcionTareas ? `
+                <div class="columna-descripcion">
+                    <div class="descripcion-adicional">
+                        <h5>Descripción adicional</h5>
+                        <div class="descripcion-readonly">${orden.descripcionTareas}</div>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            ` : ''}
+        </div>
+        ` : ''}
+    `;
+
+    // Abrir modal
+    modal.classList.add('show');
+}
+
+function getEstadoIcon(estado) {
+    const iconos = {
+        'por-hacer': 'fa-clock',
+        'en-progreso': 'fa-spinner',
+        'parado': 'fa-pause',
+        'hecho': 'fa-check-circle'
+    };
+    return iconos[estado] || 'fa-question';
 }
 
 // Obtener clase de prioridad
@@ -381,9 +550,17 @@ function cambiarEstadoOrden() {
 }
 
 // Cerrar modal de detalle
-function cerrarModalDetalle() {
-    document.getElementById('modalDetalleOrden').style.display = 'none';
+function cerrarModal() {
+    const modal = document.getElementById('modal-detalle');
+    modal.classList.remove('show');
     ordenSeleccionada = null;
+}
+
+function guardarCambios() {
+    if (ordenSeleccionada) {
+        alert('✅ Cambios guardados correctamente');
+        cerrarModal();
+    }
 }
 
 // Actualizar contadores

@@ -14,7 +14,13 @@ let incidenciaData = {
     titulo: '',
     descripcion: '',
     archivos: [],
-    timestamp: null
+    timestamp: null,
+    responsable: '',
+    equipoApoyo: [],
+    notasResponsable: '',
+    plantillaTareas: '',
+    tareas: [],
+    descripcionTareas: ''
 };
 
 // Datos de activos
@@ -79,6 +85,45 @@ const TITULOS_MANTENIMIENTO = [
     'Otro'
 ];
 
+const PLANTILLAS_TAREAS = {
+    'revision-general': [
+        'Inspección visual del equipo',
+        'Verificar niveles de fluidos',
+        'Comprobar estado de conexiones',
+        'Limpiar componentes principales',
+        'Verificar funcionamiento general'
+    ],
+    'mantenimiento-preventivo': [
+        'Lubricar partes móviles',
+        'Cambiar filtros',
+        'Ajustar tensiones y presiones',
+        'Comprobar desgaste de componentes',
+        'Actualizar registro de mantenimiento'
+    ],
+    'reparacion-electrica': [
+        'Verificar continuidad de circuitos',
+        'Comprobar tensiones y corrientes',
+        'Revisar conexiones eléctricas',
+        'Sustituir componentes defectuosos',
+        'Probar funcionamiento post-reparación'
+    ],
+    'reparacion-mecanica': [
+        'Desmontar componente averiado',
+        'Inspeccionar piezas relacionadas',
+        'Sustituir o reparar pieza',
+        'Montar y ajustar componente',
+        'Realizar pruebas de funcionamiento'
+    ],
+    'instalacion': [
+        'Preparar área de instalación',
+        'Verificar requisitos previos',
+        'Instalar equipo o componente',
+        'Realizar conexiones necesarias',
+        'Configurar y poner en marcha'
+    ],
+    'personalizada': []
+};
+
 // Inicialización cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Inicializando aplicación...');
@@ -99,6 +144,216 @@ function initializeEventListeners() {
     
     // Configurar QR
     setupQRScanner();
+    
+    // Configurar upload de archivos y cámara
+    setupFileUpload();
+    
+    // Configurar listeners de fechas y responsable
+    setupFechasYResponsable();
+    
+    // Configurar equipo de apoyo
+    setupEquipoApoyo();
+    
+    // Configurar tareas
+    setupTareas();
+}
+
+function setupFechasYResponsable() {
+    // Listeners para fechas (Paso 7)
+    const fechaInicio = document.getElementById('fecha-inicio');
+    const fechaFin = document.getElementById('fecha-fin');
+    
+    if (fechaInicio) {
+        fechaInicio.addEventListener('change', function() {
+            console.log('📅 Fecha inicio cambiada:', this.value);
+            updateNextButtonState(7);
+        });
+    }
+    
+    if (fechaFin) {
+        fechaFin.addEventListener('change', function() {
+            console.log('📅 Fecha fin cambiada:', this.value);
+            updateNextButtonState(7);
+        });
+    }
+    
+    // Listener para responsable (Paso 8)
+    const responsableSelect = document.getElementById('responsable-select');
+    if (responsableSelect) {
+        responsableSelect.addEventListener('change', function() {
+            console.log('👤 Responsable seleccionado:', this.value);
+            updateNextButtonState(8);
+        });
+    }
+}
+
+function setupEquipoApoyo() {
+    const equipoApoyoSelect = document.getElementById('equipo-apoyo-select');
+    const equipoApoyoList = document.getElementById('equipo-apoyo-list');
+    
+    if (!equipoApoyoSelect || !equipoApoyoList) return;
+    
+    equipoApoyoSelect.addEventListener('change', function() {
+        const selectedValue = this.value;
+        const selectedText = this.options[this.selectedIndex].text;
+        
+        if (selectedValue && !incidenciaData.equipoApoyo.includes(selectedValue)) {
+            // Añadir al array
+            incidenciaData.equipoApoyo.push(selectedValue);
+            
+            // Crear tag visual
+            const tag = document.createElement('div');
+            tag.className = 'tecnico-tag';
+            tag.dataset.value = selectedValue;
+            tag.innerHTML = `
+                ${selectedText}
+                <span class="remove-tecnico" onclick="removeTecnico('${selectedValue}')">×</span>
+            `;
+            
+            equipoApoyoList.appendChild(tag);
+            console.log('👥 Técnico añadido al equipo:', selectedText);
+        }
+        
+        // Resetear selector
+        this.value = '';
+    });
+}
+
+function removeTecnico(value) {
+    // Eliminar del array
+    const index = incidenciaData.equipoApoyo.indexOf(value);
+    if (index > -1) {
+        incidenciaData.equipoApoyo.splice(index, 1);
+    }
+    
+    // Eliminar tag visual
+    const equipoApoyoList = document.getElementById('equipo-apoyo-list');
+    const tag = equipoApoyoList.querySelector(`[data-value="${value}"]`);
+    if (tag) {
+        tag.remove();
+    }
+    
+    console.log('👥 Técnico eliminado del equipo:', value);
+}
+
+function setupTareas() {
+    const plantillaTareas = document.getElementById('plantilla-tareas');
+    const tareasContainer = document.getElementById('tareas-container');
+    const descripcionTareasGroup = document.getElementById('descripcion-tareas-group');
+    const btnAddTarea = document.getElementById('btn-add-tarea');
+    
+    if (!plantillaTareas) return;
+    
+    // Listener para cambio de plantilla
+    plantillaTareas.addEventListener('change', function() {
+        const plantilla = this.value;
+        incidenciaData.plantillaTareas = plantilla;
+        
+        console.log('📋 Plantilla seleccionada:', plantilla);
+        
+        if (plantilla) {
+            tareasContainer.style.display = 'block';
+            descripcionTareasGroup.style.display = 'block';
+            
+            // Cargar tareas de la plantilla
+            const tareas = PLANTILLAS_TAREAS[plantilla] || [];
+            cargarTareasPlantilla(tareas);
+            
+            updateNextButtonState(9);
+        } else {
+            tareasContainer.style.display = 'none';
+            descripcionTareasGroup.style.display = 'none';
+        }
+    });
+    
+    // Listener para añadir tarea
+    if (btnAddTarea) {
+        btnAddTarea.addEventListener('click', function() {
+            agregarTarea('');
+        });
+    }
+    
+    // Listener para descripción
+    const descripcionTareas = document.getElementById('descripcion-tareas');
+    if (descripcionTareas) {
+        descripcionTareas.addEventListener('input', function() {
+            incidenciaData.descripcionTareas = this.value;
+        });
+    }
+}
+
+function cargarTareasPlantilla(tareas) {
+    const tareasList = document.getElementById('tareas-list');
+    if (!tareasList) return;
+    
+    tareasList.innerHTML = '';
+    incidenciaData.tareas = [];
+    
+    tareas.forEach(tarea => {
+        agregarTarea(tarea);
+    });
+}
+
+function agregarTarea(textoTarea = '') {
+    const tareasList = document.getElementById('tareas-list');
+    if (!tareasList) return;
+    
+    const tareaItem = document.createElement('div');
+    tareaItem.className = 'tarea-item';
+    
+    const tareaId = Date.now() + Math.random();
+    tareaItem.dataset.id = tareaId;
+    
+    tareaItem.innerHTML = `
+        <input type="checkbox" class="tarea-checkbox" ${textoTarea ? '' : 'checked'}>
+        <input type="text" class="tarea-input" value="${textoTarea}" placeholder="Descripción de la tarea...">
+        <button class="tarea-remove" onclick="eliminarTarea('${tareaId}')">
+            <i class="fas fa-trash"></i>
+        </button>
+    `;
+    
+    tareasList.appendChild(tareaItem);
+    
+    // Añadir al array
+    incidenciaData.tareas.push({
+        id: tareaId,
+        descripcion: textoTarea,
+        completada: false
+    });
+    
+    // Listener para el input
+    const input = tareaItem.querySelector('.tarea-input');
+    input.addEventListener('input', function() {
+        const tarea = incidenciaData.tareas.find(t => t.id == tareaId);
+        if (tarea) {
+            tarea.descripcion = this.value;
+        }
+    });
+    
+    // Listener para el checkbox
+    const checkbox = tareaItem.querySelector('.tarea-checkbox');
+    checkbox.addEventListener('change', function() {
+        const tarea = incidenciaData.tareas.find(t => t.id == tareaId);
+        if (tarea) {
+            tarea.completada = this.checked;
+        }
+    });
+}
+
+function eliminarTarea(tareaId) {
+    // Eliminar del array
+    const index = incidenciaData.tareas.findIndex(t => t.id == tareaId);
+    if (index > -1) {
+        incidenciaData.tareas.splice(index, 1);
+    }
+    
+    // Eliminar del DOM
+    const tareaItem = document.querySelector(`[data-id="${tareaId}"]`);
+    if (tareaItem) {
+        tareaItem.remove();
+    }
+    
+    console.log('🗑️ Tarea eliminada');
 }
 
 function setupActivoSelectors() {
@@ -279,7 +534,7 @@ function clearSelectedActivo() {
 
 function setupWizardNavigation() {
     // Configurar botones de cada paso individualmente
-    for (let step = 1; step <= 6; step++) {
+    for (let step = 1; step <= 9; step++) {
         const prevBtn = document.getElementById(`prev-btn-${step}`);
         const nextBtn = document.getElementById(`next-btn-${step}`);
         
@@ -456,14 +711,14 @@ function updateTituloField(tipoIncidencia) {
     tituloInput.parentNode.replaceChild(newTituloInput, tituloInput);
     tituloSelect.parentNode.replaceChild(newTituloSelect, tituloSelect);
     
-    if (tipoIncidencia === 'averia') {
-        // Mostrar desplegable para avería
+    if (tipoIncidencia === 'mantenimiento-correctivo') {
+        // Mostrar desplegable para mantenimiento correctivo
         newTituloInput.style.display = 'none';
         newTituloSelect.style.display = 'block';
-        labelTitulo.textContent = 'Tipo de Avería';
+        labelTitulo.textContent = 'Tipo de Problema';
         
         // Poblar opciones
-        newTituloSelect.innerHTML = '<option value="">Seleccionar tipo de avería...</option>';
+        newTituloSelect.innerHTML = '<option value="">Seleccionar tipo de problema...</option>';
         TITULOS_AVERIA.forEach(titulo => {
             const option = document.createElement('option');
             option.value = titulo;
@@ -478,7 +733,7 @@ function updateTituloField(tipoIncidencia) {
         });
         
     } else if (tipoIncidencia === 'mantenimiento-preventivo') {
-        // Mostrar desplegable para mantenimiento
+        // Mostrar desplegable para mantenimiento preventivo
         newTituloInput.style.display = 'none';
         newTituloSelect.style.display = 'block';
         labelTitulo.textContent = 'Tipo de Mantenimiento';
@@ -502,7 +757,7 @@ function updateTituloField(tipoIncidencia) {
         // Para construcción u otros, mostrar input de texto libre
         newTituloInput.style.display = 'block';
         newTituloSelect.style.display = 'none';
-        labelTitulo.textContent = 'Título de la incidencia';
+        labelTitulo.textContent = 'Título de la orden';
         
         // Event listener para el input
         newTituloInput.addEventListener('input', function() {
@@ -563,7 +818,7 @@ function updateNavigationButtons(step) {
     console.log('🔄 Actualizando botones para paso:', step);
     
     // Ocultar todos los botones primero
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 8; i++) {
         const prevBtn = document.getElementById(`prev-btn-${i}`);
         const nextBtn = document.getElementById(`next-btn-${i}`);
         
@@ -575,7 +830,7 @@ function updateNavigationButtons(step) {
     if (finishBtn) finishBtn.style.display = 'none';
     
     // Mostrar botones del paso actual
-    if (step < 6) {
+    if (step < 9) {
         const prevBtn = document.getElementById(`prev-btn-${step}`);
         const nextBtn = document.getElementById(`next-btn-${step}`);
         
@@ -664,12 +919,42 @@ function updateNextButtonState(step) {
             }
             break;
         case 6:
-            // Último paso - siempre se puede finalizar
+            // Adjuntos es opcional - siempre se puede continuar
             canContinue = true;
+            const nextBtn6 = document.getElementById('next-btn-6');
+            if (nextBtn6) {
+                nextBtn6.disabled = false;
+                nextBtn6.style.opacity = '1';
+            }
+            break;
+        case 7:
+            // Validar que al menos la fecha de inicio esté seleccionada
+            const fechaInicio = document.getElementById('fecha-inicio');
+            canContinue = fechaInicio && fechaInicio.value !== '';
+            const nextBtn7 = document.getElementById('next-btn-7');
+            if (nextBtn7) {
+                nextBtn7.disabled = !canContinue;
+                nextBtn7.style.opacity = canContinue ? '1' : '0.5';
+            }
+            break;
+        case 8:
+            // Paso 8 - validar que haya responsable
+            const responsable = document.getElementById('responsable-select');
+            canContinue = responsable && responsable.value !== '';
+            const nextBtn8 = document.getElementById('next-btn-8');
+            if (nextBtn8) {
+                nextBtn8.disabled = !canContinue;
+                nextBtn8.style.opacity = canContinue ? '1' : '0.5';
+            }
+            break;
+        case 9:
+            // Último paso - validar que haya plantilla seleccionada
+            const plantillaTareas = document.getElementById('plantilla-tareas');
+            canContinue = plantillaTareas && plantillaTareas.value !== '';
             const finishBtn = document.getElementById('finish-btn');
             if (finishBtn) {
-                finishBtn.disabled = false;
-                finishBtn.style.opacity = '1';
+                finishBtn.disabled = !canContinue;
+                finishBtn.style.opacity = canContinue ? '1' : '0.5';
             }
             break;
     }
@@ -727,22 +1012,53 @@ function nextStep() {
             break;
         case 5:
             canAdvance = incidenciaData.descripcion.trim() !== '';
-            // También verificar título si es avería o mantenimiento preventivo
-            if (incidenciaData.tipoIncidencia === 'averia' || incidenciaData.tipoIncidencia === 'mantenimiento-preventivo') {
+            // También verificar título si es mantenimiento correctivo o preventivo
+            if (incidenciaData.tipoIncidencia === 'mantenimiento-correctivo' || incidenciaData.tipoIncidencia === 'mantenimiento-preventivo') {
                 canAdvance = canAdvance && incidenciaData.titulo !== '';
             }
             if (!canAdvance) {
-                if (incidenciaData.tipoIncidencia === 'averia' || incidenciaData.tipoIncidencia === 'mantenimiento-preventivo') {
-                    alert('Por favor, selecciona el tipo y proporciona una descripción de la incidencia.');
+                if (incidenciaData.tipoIncidencia === 'mantenimiento-correctivo' || incidenciaData.tipoIncidencia === 'mantenimiento-preventivo') {
+                    alert('Por favor, selecciona el tipo y proporciona una descripción del trabajo.');
                 } else {
-                    alert('Por favor, proporciona un título y descripción de la incidencia.');
+                    alert('Por favor, proporciona un título y descripción del trabajo.');
                 }
+                return;
+            }
+            break;
+        case 6:
+            // Adjuntos es opcional
+            canAdvance = true;
+            break;
+        case 7:
+            // Validar fechas
+            const fechaInicio = document.getElementById('fecha-inicio');
+            canAdvance = fechaInicio && fechaInicio.value !== '';
+            if (!canAdvance) {
+                alert('Por favor, selecciona al menos la fecha de inicio.');
+                return;
+            }
+            break;
+        case 8:
+            // Validar responsable
+            const responsable = document.getElementById('responsable-select');
+            canAdvance = responsable && responsable.value !== '';
+            if (!canAdvance) {
+                alert('Por favor, selecciona un técnico responsable.');
+                return;
+            }
+            break;
+        case 9:
+            // Validar plantilla de tareas
+            const plantillaTareas = document.getElementById('plantilla-tareas');
+            canAdvance = plantillaTareas && plantillaTareas.value !== '';
+            if (!canAdvance) {
+                alert('Por favor, selecciona una plantilla de tareas.');
                 return;
             }
             break;
     }
     
-    if (currentStep < 6 && canAdvance) {
+    if (currentStep < 9 && canAdvance) {
         showStep(currentStep + 1);
         updateProgress();
         console.log('✅ Avanzado al paso:', currentStep);
@@ -1090,8 +1406,79 @@ function findActivoById(activoId) {
 }
 
 function finishIncidencia() {
-    console.log('📋 Finalizando incidencia:', incidenciaData);
-    alert('Incidencia creada correctamente');
+    console.log('📋 Finalizando orden de mantenimiento:', incidenciaData);
+    
+    // Recopilar todos los datos del formulario
+    const responsableSelect = document.getElementById('responsable-select');
+    const notasResponsable = document.getElementById('notas-responsable');
+    const plantillaTareas = document.getElementById('plantilla-tareas');
+    const descripcionTareas = document.getElementById('descripcion-tareas');
+    
+    // Recopilar tareas del DOM
+    const tareasElements = document.querySelectorAll('.tarea-item');
+    const tareasArray = [];
+    tareasElements.forEach(item => {
+        const input = item.querySelector('.tarea-input');
+        const checkbox = item.querySelector('.tarea-checkbox');
+        if (input && input.value.trim()) {
+            tareasArray.push({
+                descripcion: input.value.trim(),
+                completada: checkbox ? checkbox.checked : false
+            });
+        }
+    });
+    
+    // Generar ID único para la orden
+    const ordenId = 'OT-' + new Date().getFullYear() + '-' + 
+                    String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+    
+    // Determinar el ícono según el tipo de activo
+    let iconoActivo = '🔧';
+    if (selectedActivo) {
+        const categoria = selectedActivo.CatActivo?.toLowerCase() || '';
+        if (categoria.includes('tractor')) iconoActivo = '🚜';
+        else if (categoria.includes('cosecha')) iconoActivo = '🌾';
+        else if (categoria.includes('pulverizador')) iconoActivo = '💧';
+        else if (categoria.includes('vehículo') || categoria.includes('vehiculo')) iconoActivo = '🚗';
+        else if (categoria.includes('nave') || categoria.includes('almacén')) iconoActivo = '🏢';
+        else if (categoria.includes('sistema')) iconoActivo = '⚙️';
+    }
+    
+    // Crear objeto de orden completo
+    const nuevaOrden = {
+        id: ordenId,
+        activo: selectedActivo ? `${iconoActivo} ${selectedActivo.NomActivo}` : 'Sin activo',
+        activoDetalle: selectedActivo,
+        tipoMantenimiento: incidenciaData.tipoIncidencia || 'mantenimiento-correctivo',
+        titulo: incidenciaData.titulo || '',
+        descripcion: incidenciaData.descripcion || '',
+        prioridad: incidenciaData.urgencia || 'Media',
+        responsable: responsableSelect ? responsableSelect.options[responsableSelect.selectedIndex]?.text : '',
+        equipoApoyo: incidenciaData.equipoApoyo || [],
+        notasResponsable: notasResponsable ? notasResponsable.value : '',
+        fechaInicio: document.getElementById('fecha-inicio')?.value || '',
+        fechaFin: document.getElementById('fecha-fin')?.value || '',
+        plantillaTareas: plantillaTareas ? plantillaTareas.options[plantillaTareas.selectedIndex]?.text : '',
+        tareas: tareasArray,
+        descripcionTareas: descripcionTareas ? descripcionTareas.value : '',
+        archivos: incidenciaData.archivos || [],
+        estado: 'por-hacer',
+        fechaCreacion: new Date().toISOString(),
+        ubicacion: incidenciaData.ubicacion || {}
+    };
+    
+    console.log('✅ Orden creada:', nuevaOrden);
+    
+    // Guardar en localStorage
+    let ordenesGuardadas = JSON.parse(localStorage.getItem('nuevasOrdenesCreadas') || '[]');
+    ordenesGuardadas.push(nuevaOrden);
+    localStorage.setItem('nuevasOrdenesCreadas', JSON.stringify(ordenesGuardadas));
+    
+    // Mostrar mensaje de éxito
+    alert(`✅ Orden de Mantenimiento ${ordenId} creada correctamente`);
+    
+    // Redirigir a ver órdenes de trabajo
+    window.location.href = 'ver-ordenes-trabajo.html';
 }
 
 // Funciones de navegación de la navbar
@@ -1108,11 +1495,7 @@ function volverAtras() {
         }
         
         // Volver a la página anterior o página principal
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            window.location.href = '../index.html';
-        }
+        window.location.href = 'jefedetaller.html';
     } else {
         // Si estamos en cualquier otro paso, retroceder un paso
         previousStep();
@@ -1145,8 +1528,7 @@ function cerrarSesion() {
         localStorage.removeItem('incidenciaData');
         
         // Redirigir al login o página principal
-        window.location.href = '../index.html';
-        // O puedes usar: window.location.href = '../login.html';
+        window.location.href = 'jefedetaller.html';
     }
 }
 
@@ -1154,3 +1536,170 @@ function cerrarSesion() {
 window.cerrarEscanerQR = cerrarEscanerQR;
 window.volverAtras = volverAtras;
 window.cerrarSesion = cerrarSesion;
+
+// ===== FUNCIONALIDAD DE CÁMARA Y ARCHIVOS =====
+function setupFileUpload() {
+    const fileInput = document.getElementById('file-input');
+    const uploadArea = document.getElementById('upload-area');
+    const cameraBtn = document.getElementById('camera-btn');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelect);
+    }
+    
+    if (uploadArea) {
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--planasa-green)';
+            uploadArea.style.background = 'var(--planasa-green-ultra-light)';
+        });
+        
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
+    }
+    
+    if (cameraBtn) {
+        cameraBtn.addEventListener('click', openCamera);
+    }
+}
+
+function handleFileSelect(e) {
+    const files = e.target.files;
+    handleFiles(files);
+}
+
+function handleFiles(files) {
+    const filesPreview = document.getElementById('files-preview');
+    if (!filesPreview) return;
+    
+    Array.from(files).forEach(file => {
+        // Validar tamaño (10MB máximo)
+        if (file.size > 10 * 1024 * 1024) {
+            alert(`El archivo ${file.name} es demasiado grande. Máximo 10MB.`);
+            return;
+        }
+        
+        // Añadir archivo al array de datos
+        incidenciaData.archivos.push(file);
+        
+        // Crear preview
+        const fileCard = document.createElement('div');
+        fileCard.className = 'file-card';
+        
+        if (file.type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.className = 'file-preview-img';
+            fileCard.appendChild(img);
+        } else {
+            const icon = document.createElement('div');
+            icon.className = 'file-icon';
+            icon.innerHTML = '<i class="fas fa-file"></i>';
+            fileCard.appendChild(icon);
+        }
+        
+        const fileName = document.createElement('div');
+        fileName.className = 'file-name';
+        fileName.textContent = file.name;
+        fileCard.appendChild(fileName);
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'file-remove';
+        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+        removeBtn.onclick = () => {
+            const index = incidenciaData.archivos.indexOf(file);
+            if (index > -1) {
+                incidenciaData.archivos.splice(index, 1);
+            }
+            fileCard.remove();
+        };
+        fileCard.appendChild(removeBtn);
+        
+        filesPreview.appendChild(fileCard);
+    });
+}
+
+function openCamera() {
+    const modal = document.getElementById('camera-modal');
+    const video = document.getElementById('camera-video');
+    
+    if (!modal || !video) return;
+    
+    modal.style.display = 'flex';
+    
+    navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' },
+        audio: false 
+    })
+    .then(stream => {
+        video.srcObject = stream;
+        window.currentStream = stream;
+    })
+    .catch(err => {
+        console.error('Error al acceder a la cámara:', err);
+        alert('No se pudo acceder a la cámara. Verifica los permisos.');
+        modal.style.display = 'none';
+    });
+    
+    // Configurar botón de captura
+    const captureBtn = document.getElementById('capture-btn');
+    if (captureBtn) {
+        captureBtn.onclick = capturePhoto;
+    }
+}
+
+function capturePhoto() {
+    const video = document.getElementById('camera-video');
+    const canvas = document.getElementById('camera-canvas');
+    
+    if (!video || !canvas) return;
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const context = canvas.getContext('2d');
+    context.drawImage(video, 0, 0);
+    
+    canvas.toBlob(blob => {
+        const file = new File([blob], `foto_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        handleFiles([file]);
+        cerrarCamara();
+    }, 'image/jpeg', 0.8);
+}
+
+function cerrarCamara() {
+    const modal = document.getElementById('camera-modal');
+    const video = document.getElementById('camera-video');
+    
+    if (window.currentStream) {
+        window.currentStream.getTracks().forEach(track => track.stop());
+        window.currentStream = null;
+    }
+    
+    if (video) {
+        video.srcObject = null;
+    }
+    
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Exportar funciones de cámara globalmente
+window.cerrarCamara = cerrarCamara;
+
+// Exportar funciones de equipo y tareas globalmente
+window.removeTecnico = removeTecnico;
+window.eliminarTarea = eliminarTarea;

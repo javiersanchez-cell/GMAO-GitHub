@@ -2,12 +2,14 @@ function cerrarSesion() {
     if (confirm('¿Está seguro que desea cerrar sesión?')) {
         localStorage.removeItem('gmao_logged_in');
         localStorage.removeItem('gmao_username');
+        localStorage.removeItem('currentUser');
         window.location.href = '../index.html';
     }
 }
 
 function volverAtras() {
-    window.location.href = '../';
+    // Volver al menú principal o login
+    window.location.href = '../index.html';
 }
 
 function verSolicitudes() {
@@ -16,8 +18,8 @@ function verSolicitudes() {
 }
 
 function crearSolicitud() {
-    // Redirigir a la página de creación de órdenes de trabajo
-    window.location.href = 'crear-orden-trabajo.html';
+    // Redirigir a la página de creación de órdenes de mantenimiento
+    window.location.href = 'crear-orden-mantenimiento.html';
 }
 
 function verOrdenesTrabajo() {

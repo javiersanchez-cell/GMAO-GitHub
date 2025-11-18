@@ -1,12 +1,10 @@
 // Opciones para desplegables
 const opcionesActivos = {
     numeroActivo: ["TR-001", "TR-002", "TR-003", "TR-004", "TR-005", "PV-001", "PV-002", "PV-010", "CS-001", "CS-011", "SR-001", "SR-004", "SR-012", "GN-006", "BM-007", "CV-008"],
+    categoriaActivo: ["Maquinaria", "Instalaciones", "Vehículos", "Equipos"],
     tipoActivo: ["Tractor", "Pulverizador", "Cosechadora", "Sistema de Riego", "Generador", "Bomba", "Cultivador"],
     ubicacion: ["Fuente el Olmo", "Sector 1", "Sector 2", "Sector 3", "Almacén Principal", "Taller", "Campo Norte", "Campo Sur"],
-    averia: ["Sistema Hidráulico", "Motor", "Transmisión", "Sistema Eléctrico", "Frenos", "Neumáticos", "Cabina", "Refrigeración", "Revisión General", "Cambio de Aceite", "Filtros", "Inspección", "Calibración"],
-    tipoAveria: ["Mecánica", "Eléctrica", "Hidráulica", "Neumática", "Estructural", "Software", "Térmica"],
-    importanciaAveria: ["Crítica", "Mayor", "Menor"],
-    estadoActivo: ["Operativo", "Parado", "En Mantenimiento", "Fuera de Servicio"]
+    averia: ["Sistema Hidráulico", "Motor", "Transmisión", "Sistema Eléctrico", "Frenos", "Neumáticos", "Cabina", "Refrigeración", "Revisión General", "Cambio de Aceite", "Filtros", "Inspección", "Calibración"]
 };
 
 // Datos de ejemplo de solicitudes
@@ -18,13 +16,12 @@ const solicitudesData = [
         tipoMantenimiento: "Mantenimiento Correctivo",
         importancia: "alta",
         numeroActivo: "TR-001",
+        categoriaActivo: "Maquinaria",
         tipoActivo: "Tractor",
-        ubicacion: "Sector 1",
+        ubicacion: "Fuente el Olmo",
         averia: "Sistema Hidráulico",
-        tipoAveria: "Hidráulica",
-        importanciaAveria: "Crítica",
-        estadoActivo: "Parado",
-        descripcion: "El tractor presenta problemas en el sistema hidráulico. Se requiere revisión completa del sistema y cambio de filtros."
+        descripcion: "El tractor presenta problemas en el sistema hidráulico. Se requiere revisión completa del sistema y cambio de filtros.",
+        acciones: "Se realizó una inspección visual preliminar y se identificó fuga en la manguera principal."
     },
     {
         id: "SOL-002",
@@ -33,13 +30,12 @@ const solicitudesData = [
         tipoMantenimiento: "Mantenimiento Correctivo",
         importancia: "media",
         numeroActivo: "PV-002",
+        categoriaActivo: "Maquinaria",
         tipoActivo: "Pulverizador",
-        ubicacion: "Sector 2",
+        ubicacion: "Fuente el Olmo",
         averia: "Sistema Eléctrico",
-        tipoAveria: "Eléctrica",
-        importanciaAveria: "Mayor",
-        estadoActivo: "En Mantenimiento",
-        descripcion: "Fallo en el sistema de dosificación del pulverizador. La bomba no mantiene la presión constante."
+        descripcion: "Fallo en el sistema de dosificación del pulverizador. La bomba no mantiene la presión constante.",
+        acciones: "Se reinició el sistema y se comprobó el estado de la batería."
     },
     {
         id: "SOL-003",
@@ -48,13 +44,12 @@ const solicitudesData = [
         tipoMantenimiento: "Mantenimiento Preventivo",
         importancia: "baja",
         numeroActivo: "CS-003",
+        categoriaActivo: "Maquinaria",
         tipoActivo: "Cosechadora",
-        ubicacion: "Campo Norte",
+        ubicacion: "Fuente el Olmo",
         averia: "Revisión General",
-        tipoAveria: "Mecánica",
-        importanciaAveria: "Menor",
-        estadoActivo: "Operativo",
-        descripcion: "Inspección rutinaria pre-temporada de la cosechadora. Revisión de todos los sistemas."
+        descripcion: "Inspección rutinaria pre-temporada de la cosechadora. Revisión de todos los sistemas.",
+        acciones: "Se lubricaron todas las partes móviles y se comprobó el nivel de líquidos."
     }
 ];
 
@@ -150,7 +145,7 @@ function getEstadoTexto(estado) {
 }
 
 function volverAtras() {
-    window.location.href = '../';
+    window.location.href = 'jefedetaller.html';
 }
 
 // Hacer la función volverAtras disponible globalmente
@@ -160,6 +155,7 @@ function cerrarSesion() {
     if (confirm('¿Está seguro que desea cerrar sesión?')) {
         localStorage.removeItem('gmao_logged_in');
         localStorage.removeItem('gmao_username');
+        localStorage.removeItem('currentUser');
         window.location.href = '../index.html';
     }
 }
@@ -235,6 +231,12 @@ function abrirDetalle(index) {
                     </select>
                 </div>
                 <div class="modal-info-item">
+                    <div class="modal-info-label">Categoría</div>
+                    <select class="modal-select" id="edit-categoriaActivo">
+                        ${generarOpciones(opcionesActivos.categoriaActivo, solicitudSeleccionada.categoriaActivo)}
+                    </select>
+                </div>
+                <div class="modal-info-item">
                     <div class="modal-info-label">Tipo</div>
                     <select class="modal-select" id="edit-tipoActivo">
                         ${generarOpciones(opcionesActivos.tipoActivo, solicitudSeleccionada.tipoActivo)}
@@ -244,12 +246,6 @@ function abrirDetalle(index) {
                     <div class="modal-info-label">Ubicación</div>
                     <select class="modal-select" id="edit-ubicacion">
                         ${generarOpciones(opcionesActivos.ubicacion, solicitudSeleccionada.ubicacion)}
-                    </select>
-                </div>
-                <div class="modal-info-item">
-                    <div class="modal-info-label">Estado</div>
-                    <select class="modal-select" id="edit-estadoActivo">
-                        ${generarOpciones(opcionesActivos.estadoActivo, solicitudSeleccionada.estadoActivo)}
                     </select>
                 </div>
             </div>
@@ -262,7 +258,7 @@ function abrirDetalle(index) {
                 <span id="seccion-trabajo-titulo">Detalles del Mantenimiento</span>
             </div>
             
-            <!-- Primera fila: Avería, Categoría, Severidad -->
+            <!-- Primera fila: Avería -->
             <div class="modal-section-grid primera-fila">
                 <div class="modal-info-item">
                     <div class="modal-info-label" id="label-trabajo">Trabajo/Avería</div>
@@ -270,41 +266,35 @@ function abrirDetalle(index) {
                         ${generarOpciones(opcionesActivos.averia, solicitudSeleccionada.averia)}
                     </select>
                 </div>
-                <div class="modal-info-item">
-                    <div class="modal-info-label">Categoría</div>
-                    <select class="modal-select" id="edit-tipoAveria">
-                        ${generarOpciones(opcionesActivos.tipoAveria, solicitudSeleccionada.tipoAveria)}
-                    </select>
-                </div>
-                <div class="modal-info-item">
-                    <div class="modal-info-label" id="label-importancia">Criticidad</div>
-                    <select class="modal-select" id="edit-importanciaAveria">
-                        ${generarOpciones(opcionesActivos.importanciaAveria, solicitudSeleccionada.importanciaAveria)}
-                    </select>
-                </div>
             </div>
             
-            <!-- Segunda fila: Descripción y Fotos -->
+            <!-- Segunda fila: Descripción y Acciones tomadas -->
             <div class="modal-section-grid segunda-fila">
                 <div class="modal-info-item descripcion-item">
                     <div class="modal-info-label">Descripción Detallada</div>
                     <textarea class="modal-textarea" id="edit-descripcion" rows="3" placeholder="Describe detalladamente el trabajo o problema...">${solicitudSeleccionada.descripcion}</textarea>
                 </div>
-                <div class="modal-info-item fotos-item">
-                    <div class="modal-info-label">Fotografías</div>
-                    <div class="fotos-container">
-                        <div class="fotos-existentes" id="fotos-existentes">
-                            <!-- Fotos existentes se cargarán aquí -->
-                        </div>
-                        <div class="subir-fotos">
-                            <input type="file" id="input-fotos" accept="image/*" multiple style="display: none;">
-                            <button type="button" class="btn-subir-fotos" onclick="document.getElementById('input-fotos').click()">
-                                <i class="fas fa-camera"></i>
-                                Subir Fotos
-                            </button>
-                            <div class="fotos-info">
-                                <small>Máximo 5 fotos - JPG, PNG</small>
-                            </div>
+                <div class="modal-info-item descripcion-item">
+                    <div class="modal-info-label">Acciones ya Tomadas</div>
+                    <textarea class="modal-textarea" id="edit-acciones" rows="3" placeholder="Describe las acciones realizadas hasta ahora...">${solicitudSeleccionada.acciones || ''}</textarea>
+                </div>
+            </div>
+            
+            <!-- Tercera fila: Fotos -->
+            <div class="modal-fotos-section">
+                <div class="modal-info-label">Fotografías</div>
+                <div class="fotos-container">
+                    <div class="fotos-existentes" id="fotos-existentes">
+                        <!-- Fotos existentes se cargarán aquí -->
+                    </div>
+                    <div class="subir-fotos">
+                        <input type="file" id="input-fotos" accept="image/*" multiple style="display: none;">
+                        <button type="button" class="btn-subir-fotos" onclick="document.getElementById('input-fotos').click()">
+                            <i class="fas fa-camera"></i>
+                            Subir Fotos
+                        </button>
+                        <div class="fotos-info">
+                            <small>Máximo 5 fotos - JPG, PNG</small>
                         </div>
                     </div>
                 </div>
@@ -328,7 +318,6 @@ function actualizarLabelsSegunTipo() {
     const seccionAveria = document.querySelector('.seccion-averia');
     const tituloSeccion = document.getElementById('seccion-trabajo-titulo');
     const labelTrabajo = document.getElementById('label-trabajo');
-    const labelImportancia = document.getElementById('label-importancia');
     const iconoSeccion = document.querySelector('.seccion-averia .modal-section-title i');
     
     const esPreventivo = hiddenTipo && hiddenTipo.value === 'Mantenimiento Preventivo';
@@ -336,7 +325,6 @@ function actualizarLabelsSegunTipo() {
     if (esPreventivo) {
         if (tituloSeccion) tituloSeccion.textContent = 'Detalles del Mantenimiento';
         if (labelTrabajo) labelTrabajo.textContent = 'Trabajo';
-        if (labelImportancia) labelImportancia.textContent = 'Prioridad';
         if (iconoSeccion) iconoSeccion.className = 'fas fa-tools';
         if (seccionAveria) {
             seccionAveria.classList.add('mantenimiento-preventivo');
@@ -344,7 +332,6 @@ function actualizarLabelsSegunTipo() {
     } else {
         if (tituloSeccion) tituloSeccion.textContent = 'Detalles de la Avería';
         if (labelTrabajo) labelTrabajo.textContent = 'Avería';
-        if (labelImportancia) labelImportancia.textContent = 'Severidad';
         if (iconoSeccion) iconoSeccion.className = 'fas fa-exclamation-triangle';
         if (seccionAveria) {
             seccionAveria.classList.remove('mantenimiento-preventivo');
@@ -366,13 +353,12 @@ function guardarCambios() {
         const nuevoTipoMantenimiento = document.getElementById('edit-tipoMantenimiento').value;
         const nuevaImportancia = document.getElementById('edit-importancia').value;
         const nuevoNumeroActivo = document.getElementById('edit-numeroActivo').value;
+        const nuevaCategoriaActivo = document.getElementById('edit-categoriaActivo').value;
         const nuevoTipoActivo = document.getElementById('edit-tipoActivo').value;
         const nuevaUbicacion = document.getElementById('edit-ubicacion').value;
         const nuevaAveria = document.getElementById('edit-averia').value;
-        const nuevoTipoAveria = document.getElementById('edit-tipoAveria').value;
-        const nuevaImportanciaAveria = document.getElementById('edit-importanciaAveria').value;
-        const nuevoEstadoActivo = document.getElementById('edit-estadoActivo').value;
         const nuevaDescripcion = document.getElementById('edit-descripcion').value;
+        const nuevasAcciones = document.getElementById('edit-acciones').value;
         
         // Validar que los campos obligatorios no estén vacíos
         if (!nuevoNombre || !nuevaDescripcion) {
@@ -388,13 +374,12 @@ function guardarCambios() {
             solicitudesData[index].tipoMantenimiento = nuevoTipoMantenimiento;
             solicitudesData[index].importancia = nuevaImportancia;
             solicitudesData[index].numeroActivo = nuevoNumeroActivo;
+            solicitudesData[index].categoriaActivo = nuevaCategoriaActivo;
             solicitudesData[index].tipoActivo = nuevoTipoActivo;
             solicitudesData[index].ubicacion = nuevaUbicacion;
             solicitudesData[index].averia = nuevaAveria;
-            solicitudesData[index].tipoAveria = nuevoTipoAveria;
-            solicitudesData[index].importanciaAveria = nuevaImportanciaAveria;
-            solicitudesData[index].estadoActivo = nuevoEstadoActivo;
             solicitudesData[index].descripcion = nuevaDescripcion;
+            solicitudesData[index].acciones = nuevasAcciones;
             
             // Actualizar también la solicitud seleccionada
             solicitudSeleccionada = solicitudesData[index];
@@ -538,13 +523,13 @@ function eliminarTarea(boton) {
     const tareaDiv = boton.closest('.tarea-editable');
     const listaContainer = document.getElementById('lista-tareas-editables');
     
-    // No permitir eliminar si es la última tarea
-    if (listaContainer.children.length <= 1) {
-        alert('Debe mantener al menos una tarea en la lista');
-        return;
-    }
-    
+    // Permitir eliminar todas las tareas si se desea (opcional es opcional)
     tareaDiv.remove();
+    
+    // Si no quedan tareas, mostrar mensaje
+    if (listaContainer.children.length === 0) {
+        listaContainer.innerHTML = '<p class="sin-tareas">No hay tareas. Puedes añadir tareas o dejar vacío si no son necesarias.</p>';
+    }
 }
 
 function crearOrdenTrabajo() {
@@ -740,6 +725,7 @@ function editarPaso(numeroPaso) {
 
 function validarResponsable() {
     const responsable = document.getElementById('responsable').value;
+    const btnResponsable = document.getElementById('btnSiguienteResponsable');
     
     if (responsable) {
         ordenWizardData.responsable = responsable;
@@ -748,10 +734,20 @@ function validarResponsable() {
         document.getElementById('fila-responsable').style.display = 'flex';
         document.getElementById('valor-responsable').textContent = responsable;
         
+        // Habilitar botón de continuar
+        if (btnResponsable) {
+            btnResponsable.disabled = false;
+        }
+        
         // Continuar automáticamente más rápido
         setTimeout(() => {
             mostrarPaso(4);
         }, 300);
+    } else {
+        // Deshabilitar botón si no hay responsable
+        if (btnResponsable) {
+            btnResponsable.disabled = true;
+        }
     }
 }
 
@@ -841,8 +837,9 @@ function crearOrden() {
 📋 Tareas: ${ordenWizardData.tareas.length > 0 ? ordenWizardData.tareas.length + ' programadas' : 'Sin tareas específicas'}
 🔧 Tipo: ${document.getElementById('tipoTrabajo').options[document.getElementById('tipoTrabajo').selectedIndex]?.text || 'No especificado'}`);
     
-    // Cerrar modal y limpiar
+    // Cerrar ambos modales
     cerrarModalOrden();
+    cerrarModal();
 }
 
 function cancelarOrden() {
@@ -857,13 +854,28 @@ function cerrarModalOrden() {
         btn.classList.remove('selected');
     });
     
-    document.getElementById('fechaCalendario').value = '';
-    document.getElementById('responsable').value = '';
-    document.getElementById('descripcionOrden').value = '';
-    document.getElementById('tipoTrabajo').value = '';
+    const fechaInicio = document.getElementById('fechaInicio');
+    const fechaFin = document.getElementById('fechaFin');
+    const fechaCalendario = document.getElementById('fechaCalendario');
+    
+    if (fechaInicio) fechaInicio.value = '';
+    if (fechaFin) fechaFin.value = '';
+    if (fechaCalendario) fechaCalendario.value = '';
+    
+    const responsable = document.getElementById('responsable');
+    if (responsable) responsable.value = '';
+    
+    const descripcionOrden = document.getElementById('descripcionOrden');
+    if (descripcionOrden) descripcionOrden.value = '';
+    
+    const tipoTrabajo = document.getElementById('tipoTrabajo');
+    if (tipoTrabajo) tipoTrabajo.value = '';
     
     // Limpiar lista de tareas
-    document.getElementById('lista-tareas-editables').innerHTML = '<p class="sin-tareas">Selecciona un tipo de trabajo para cargar las tareas predeterminadas</p>';
+    const listaTareas = document.getElementById('lista-tareas-editables');
+    if (listaTareas) {
+        listaTareas.innerHTML = '<p class="sin-tareas">Puedes seleccionar un tipo de trabajo para cargar tareas predeterminadas o dejar vacío</p>';
+    }
     
     // Ocultar resúmenes
     document.getElementById('fila-criticidad').style.display = 'none';

@@ -1242,3 +1242,216 @@ select:focus {
         opacity: 0;
     }
 }
+
+/* Estilos para equipo de apoyo */
+.equipo-apoyo-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.equipo-apoyo-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 40px;
+    padding: 8px;
+    background-color: #f5f5f5;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.equipo-apoyo-list:empty::before {
+    content: 'No hay técnicos seleccionados';
+    color: #999;
+    font-style: italic;
+}
+
+.tecnico-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background-color: rgb(63, 156, 53);
+    color: white;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.tecnico-tag .remove-tecnico {
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.tecnico-tag .remove-tecnico:hover {
+    opacity: 1;
+}
+
+.equipo-apoyo-select {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: white;
+}
+
+/* Estilos para paso 9 - Tareas */
+#tareas-container {
+    margin-top: 25px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+#tareas-container label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    display: block;
+}
+
+#descripcion-tareas-group {
+    margin-top: 25px;
+}
+
+#descripcion-tareas-group label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    display: block;
+}
+
+#descripcion-tareas {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: white;
+    font-family: inherit;
+    resize: vertical;
+    transition: all 0.2s;
+}
+
+#descripcion-tareas:focus {
+    outline: none;
+    border-color: rgb(63, 156, 53);
+    box-shadow: 0 0 0 3px rgba(63, 156, 53, 0.1);
+}
+
+/* Estilos para tareas */
+.tareas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 0;
+}
+
+.tarea-item {
+    display: grid;
+    grid-template-columns: 24px 1fr 40px;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.tarea-item:hover {
+    background-color: #f8f9fa;
+    border-color: rgb(63, 156, 53);
+    box-shadow: 0 2px 5px rgba(63, 156, 53, 0.1);
+}
+
+.tarea-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    margin: 0;
+    accent-color: rgb(63, 156, 53);
+}
+
+.tarea-input {
+    padding: 10px 12px;
+    font-size: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background-color: white;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.tarea-input:focus {
+    outline: none;
+    border-color: rgb(63, 156, 53);
+    box-shadow: 0 0 0 3px rgba(63, 156, 53, 0.1);
+}
+
+.tarea-input::placeholder {
+    color: #999;
+}
+
+.tarea-remove {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tarea-remove:hover {
+    background-color: #c82333;
+    transform: scale(1.05);
+}
+
+.btn-add-tarea {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 24px;
+    background-color: white;
+    color: rgb(63, 156, 53);
+    border: 2px dashed rgb(63, 156, 53);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-add-tarea:hover {
+    background-color: rgba(63, 156, 53, 0.05);
+    border-color: rgb(63, 156, 53);
+    border-style: solid;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(63, 156, 53, 0.15);
+}
+
+.btn-add-tarea span {
+    font-size: 20px;
+    font-weight: bold;
+}
