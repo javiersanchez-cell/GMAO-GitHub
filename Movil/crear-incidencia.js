@@ -655,18 +655,20 @@ function openQRScanner() {
     if (qrModal && qrReader) {
         qrModal.style.display = 'block';
         
-        // Configurar el escáner QR
+        // Crear instancia del escáner con cámara trasera
+        qrScanner = new Html5Qrcode('qr-reader');
+        
+        // Configuración para cámara trasera
         const config = {
             fps: 10,
             qrbox: { width: 250, height: 250 },
             aspectRatio: 1.0
         };
         
-        // Crear instancia del escáner
-        qrScanner = new Html5QrcodeScanner('qr-reader', config, false);
-        
-        // Iniciar el escáner
-        qrScanner.render(
+        // Intentar usar cámara trasera primero, si no existe usar la disponible
+        qrScanner.start(
+            { facingMode: "environment" }, // Cámara trasera
+            config,
             (decodedText, decodedResult) => {
                 console.log('✅ QR escaneado:', decodedText);
                 processQRData(decodedText);
@@ -675,7 +677,11 @@ function openQRScanner() {
             (error) => {
                 // Error de escaneo - no hacer nada para evitar spam de logs
             }
-        );
+        ).catch(err => {
+            console.error('Error al iniciar cámara:', err);
+            alert('No se pudo acceder a la cámara. Verifica los permisos.');
+            cerrarEscanerQR();
+        });
         
         // Configurar botón de prueba
         const testBtn = document.getElementById('test-qr-btn');

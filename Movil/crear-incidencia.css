@@ -929,6 +929,12 @@ select:focus {
 /* QR Modal specific */
 .qr-modal-content {
     width: 500px;
+    max-width: 90vw;
+    margin: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 #qr-reader {
