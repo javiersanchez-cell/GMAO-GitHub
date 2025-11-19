@@ -1,89 +1,132 @@
-// Verificar autenticación
+// =========================
+//  Business Intelligence GMAO - JS Limpio
+// =========================
+
+// --- Verificar autenticación ---
 if (localStorage.getItem('gmao_logged_in') !== 'true') {
     alert('Debe iniciar sesión para acceder al sistema');
     window.location.href = '../index.html';
 }
 
-// Variables globales para los charts
+// --- Estado global ---
 let charts = {};
-let datosOriginales = null;
-let datosFiltrados = null;
+let currentMetrics = null;
 
-// Datos simulados completos con todas las dimensiones
-const DATOS_COMPLETOS = {
-    // Datos por periodo
-    week: { preventivo: 65, correctivo: 30, disponibilidad: 75, costoTotal: 45000 },
-    month: { preventivo: 68, correctivo: 28, disponibilidad: 77.8, costoTotal: 277117 },
-    quarter: { preventivo: 70, correctivo: 26, disponibilidad: 80, costoTotal: 831000 },
-    year: { preventivo: 72, correctivo: 24, disponibilidad: 82, costoTotal: 3324000 },
-    
-    // Datos por lugar
-    lugares: {
-        'todos': { disponibilidad: 77.8, costoTotal: 277117, maquinas: 18 },
-        'fuente-el-olmo': { disponibilidad: 82, costoTotal: 165000, maquinas: 10 },
-        'huelva': { disponibilidad: 75, costoTotal: 78000, maquinas: 5 },
-        'moguer': { disponibilidad: 72, costoTotal: 34117, maquinas: 3 }
+const STATE = {
+    period: 'month',
+    lugar: 'todos',
+    tipo: 'todos',
+    campana: '2024-25'
+};
+
+// --- Datos base por tipo de activo (anuales, para "todos los lugares / 2024-25") ---
+const BASE_TIPO = {
+    todos: {
+        activos: 18,
+        disponibilidad: 77.8,
+        preventivoPct: 68,
+        costoAnual: 277117,
+        mtbf: 156,
+        mttr: 4.2,
+        averiasPorActivo: 2.8,
+        rotacionInventario: 4.2,
+        stockouts: 12
     },
-    
-    // Datos por tipo
-    tipos: {
-        'todos': { preventivo: 68, correctivo: 28, disponibilidad: 77.8, costoPromedio: 15395 },
-        'tractor': { preventivo: 70, correctivo: 26, disponibilidad: 80, costoPromedio: 17895 },
-        'cosechadora': { preventivo: 60, correctivo: 35, disponibilidad: 70, costoPromedio: 28130 },
-        'pulverizador': { preventivo: 65, correctivo: 32, disponibilidad: 73, costoPromedio: 9886 },
-        'riego': { preventivo: 75, correctivo: 20, disponibilidad: 85, costoPromedio: 8089 },
-        'otros': { preventivo: 72, correctivo: 24, disponibilidad: 78, costoPromedio: 10789 }
+    tractor: {
+        activos: 8,
+        disponibilidad: 75,
+        preventivoPct: 70,
+        costoAnual: 143166.6,
+        mtbf: 165,
+        mttr: 4.5,
+        averiasPorActivo: 3.1,
+        rotacionInventario: 4.5,
+        stockouts: 5
     },
-    
-    // Datos por campaña
-    campanas: {
-        'todos': { costoTotal: 277117, ordenes: 145 },
-        '2024-25': { costoTotal: 277117, ordenes: 145 },
-        '2023-24': { costoTotal: 298500, ordenes: 156 },
-        '2022-23': { costoTotal: 285300, ordenes: 138 }
+    cosechadora: {
+        activos: 3,
+        disponibilidad: 67,
+        preventivoPct: 60,
+        costoAnual: 84411.95,
+        mtbf: 142,
+        mttr: 5.8,
+        averiasPorActivo: 3.5,
+        rotacionInventario: 5.2,
+        stockouts: 3
+    },
+    pulverizador: {
+        activos: 3,
+        disponibilidad: 73,
+        preventivoPct: 65,
+        costoAnual: 29659,
+        mtbf: 158,
+        mttr: 3.9,
+        averiasPorActivo: 3.2,
+        rotacionInventario: 3.8,
+        stockouts: 2
+    },
+    riego: {
+        activos: 2,
+        disponibilidad: 85,
+        preventivoPct: 75,
+        costoAnual: 16179.45,
+        mtbf: 178,
+        mttr: 2.8,
+        averiasPorActivo: 1.8,
+        rotacionInventario: 3.5,
+        stockouts: 1
+    },
+    otros: {
+        activos: 2,
+        disponibilidad: 78,
+        preventivoPct: 72,
+        costoAnual: 43698.55,
+        mtbf: 160,
+        mttr: 3.5,
+        averiasPorActivo: 2.4,
+        rotacionInventario: 4.0,
+        stockouts: 1
     }
 };
 
-// (Lógica de filtros eliminada. El dashboard ahora es estático con datos por defecto)
+// Factores por periodo (para pasar de anual a semana / mes / trimestre / año)
+const PERIOD_FACTORS = {
+    week: 1 / 52,
+    month: 1 / 12,
+    quarter: 1 / 4,
+    year: 1
+};
 
-function actualizarKPIs() {
-    if (!datosFiltrados) return;
-    
-    // Actualizar valores en el resumen
-    const kpiCards = document.querySelectorAll('.summary-card .card-value');
-    if (kpiCards.length >= 4) {
-        kpiCards[0].textContent = `${datosFiltrados.disponibilidad.toFixed(1)}%`;
-        kpiCards[1].textContent = `${datosFiltrados.preventivo}%`;
-        kpiCards[2].textContent = `€${datosFiltrados.costoTotal.toLocaleString()}`;
-        kpiCards[3].textContent = `${(datosFiltrados.ordenes / 38).toFixed(1)} días`;
-    }
-}
+// Factores por lugar (afectan sobre todo a costos y algo a disponibilidad)
+const FACTOR_LUGAR_COSTO = {
+    todos: 1,
+    'fuente-el-olmo': 1.05,
+    'huelva': 0.95,
+    'moguer': 0.9
+};
 
-function destruirGraficos() {
-    Object.values(charts).forEach(chart => {
-        if (chart && typeof chart.destroy === 'function') {
-            chart.destroy();
-        }
-    });
-    charts = {};
-}
+const FACTOR_LUGAR_DISP = {
+    todos: 1,
+    'fuente-el-olmo': 1.03,
+    'huelva': 0.97,
+    'moguer': 0.95
+};
 
-// Datos reales de maquinaria (sincronizados con maquinaria.js)
+// Factores por campaña (ajustan costes principalmente)
+const FACTOR_CAMPANA_COSTO = {
+    'todos': 1,
+    '2024-25': 1,
+    '2023-24': 298500 / 277117, // un pelín más cara
+    '2022-23': 285300 / 277117
+};
+
+// Datos reales de maquinaria (para algunos gráficos y rankings)
 const DATOS_MAQUINAS = {
     totalMaquinas: 18,
-    tractores: 8,
-    cosechadoras: 3,
-    pulverizadores: 3,
-    sistemaRiego: 2,
-    otros: 2,
-    
-    // Estados
     operativas: 11,
     enMantenimiento: 4,
     programadas: 3,
     inactivas: 0,
-    
-    // Costos totales por máquina (según maquinaria.js)
     costosPorMaquina: {
         'TR-001': 18650.50,
         'CS-002': 28450.90,
@@ -106,261 +149,1441 @@ const DATOS_MAQUINAS = {
         'IN-011': 4567.80,
         'TR-012': 19876.45
     },
-    
-    // Calcular totales
-    get costoTotal() {
-        return Object.values(this.costosPorMaquina).reduce((sum, val) => sum + val, 0);
-    },
-    
-    get costoPromedioPorMaquina() {
-        return this.costoTotal / Object.keys(this.costosPorMaquina).length;
-    },
-    
-    // Top 5 máquinas por costo
-    get topMaquinasCosto() {
-        return Object.entries(this.costosPorMaquina)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5);
-    },
-    
-    // Distribución de costos por tipo
     costosPorTipo: {
-        'Tractores': 143166.60,  // Suma de todos los tractores
-        'Cosechadoras': 84411.95,  // Suma de las 3 cosechadoras (CS-002 + CS-003 + CS-004)
-        'Pulverizadores': 29659.00,  // Suma de pulverizadores
+        'Tractores': 143166.60,
+        'Cosechadoras': 84411.95,
+        'Pulverizadores': 29659.00,
         'Sistema Riego': 16179.45,
-        'Otros': 43698.55  // Generador + Infraestructura + Compresor
-    },
-    
-    disponibilidad: 87.5  // 11 operativas de 18 total = 61%, pero considerando las programadas que funcionan = 77%
+        'Otros': 43698.55
+    }
 };
 
-// Navegación entre secciones
-document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar datos filtrados con valores por defecto (estático)
-    datosFiltrados = DATOS_COMPLETOS.tipos.todos;
+// Helpers
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+}
 
+function randAround(base, pct = 0.05) {
+    const factor = 1 + (Math.random() * 2 * pct - pct);
+    return base * factor;
+}
+
+// =========================
+//  CÁLCULO DE MÉTRICAS
+// =========================
+
+function computeMetrics(state) {
+    const base = BASE_TIPO[state.tipo] || BASE_TIPO.todos;
+    const periodFactor = PERIOD_FACTORS[state.period] || 1;
+    const factorLugarCost = FACTOR_LUGAR_COSTO[state.lugar] || 1;
+    const factorLugarDisp = FACTOR_LUGAR_DISP[state.lugar] || 1;
+    const factorCampana = FACTOR_CAMPANA_COSTO[state.campana] || 1;
+
+    // Costes
+    const costoTotal = base.costoAnual * periodFactor * factorLugarCost * factorCampana;
+    const costoPreventivo = costoTotal * base.preventivoPct / 100;
+    const costoCorrectivo = costoTotal - costoPreventivo;
+
+    // Disponibilidad
+    const disponibilidad = clamp(base.disponibilidad * factorLugarDisp, 60, 99);
+
+    // MTBF / MTTR se mueven ligeramente con la disponibilidad
+    const mtbf = base.mtbf * (1 + (disponibilidad - base.disponibilidad) / 400);
+    const mttr = base.mttr * (1 - (disponibilidad - base.disponibilidad) / 800);
+
+    // Otros KPIs
+    const averiasPorActivo = base.averiasPorActivo;
+    const rotacionInventario = base.rotacionInventario;
+    const stockouts = Math.round(base.stockouts * factorLugarCost * periodFactor * 12); // normalizado al periodo
+
+    const totalActivos = Math.round(base.activos * (state.lugar === 'todos' ? 1 : 0.5));
+    const operativos = Math.round(totalActivos * disponibilidad / 100);
+    const enMantenimiento = Math.max(1, Math.round(totalActivos * 0.2));
+    const programados = Math.max(0, totalActivos - operativos - enMantenimiento);
+
+    const costoManoObra = costoTotal * 0.51;
+    const costoRepuestos = costoTotal * 0.32;
+    const costoExternos = costoTotal * 0.12;
+    const costoOtros = costoTotal * 0.05;
+
+    const costoPromedioPorActivo = totalActivos > 0 ? costoTotal / totalActivos : 0;
+
+    return {
+        state: { ...state },
+        costoTotal,
+        costoPreventivo,
+        costoCorrectivo,
+        costoManoObra,
+        costoRepuestos,
+        costoExternos,
+        costoOtros,
+        disponibilidad,
+        preventivoPct: base.preventivoPct,
+        correctivoPct: 100 - base.preventivoPct - 5, // dejamos ~5% "predictivo"
+        mtbf,
+        mttr,
+        averiasPorActivo,
+        rotacionInventario,
+        stockouts,
+        totalActivos,
+        operativos,
+        enMantenimiento,
+        programados,
+        costoPromedioPorActivo,
+        ravPct: (costoTotal / (base.costoAnual * 10)) * 100 // suponemos VR = 10x coste anual
+    };
+}
+
+// =========================
+//  INICIALIZACIÓN DOM
+// =========================
+
+document.addEventListener('DOMContentLoaded', () => {
     // Cargar sección inicial
     mostrarSeccion('resumen');
 
-    // Event listeners para navegación
+    // Navegación top
     const navLinks = document.querySelectorAll('.nav-link');
     navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
+        link.addEventListener('click', e => {
             e.preventDefault();
-            const section = this.dataset.section;
+            const section = link.dataset.section;
             mostrarSeccion(section);
-
-            // Actualizar navegación activa
             navLinks.forEach(l => l.classList.remove('active'));
-            this.classList.add('active');
+            link.classList.add('active');
         });
     });
 
-    // Inicializar todas las gráficas
-    inicializarGraficas();
+    // Filtros
+    const filtros = document.querySelectorAll('#period-filter, #lugar-filter, #tipo-filter, #campana-filter');
+    filtros.forEach(f => f.addEventListener('change', onFiltersChange));
 
-    // Actualizar KPIs iniciales
-    actualizarKPIs();
+    // Primer cálculo + gráficas + KPIs
+    recalculateAndRedraw();
 
-    // Inicializar tooltips
+    // Tooltips personalizados
     inicializarTooltips();
 });
 
-// Sistema de tooltips personalizado
+// =========================
+//  FILTROS Y REDIBUJADO
+// =========================
+
+function onFiltersChange() {
+    STATE.period = document.getElementById('period-filter').value;
+    STATE.lugar = document.getElementById('lugar-filter').value;
+    STATE.tipo = document.getElementById('tipo-filter').value;
+    STATE.campana = document.getElementById('campana-filter').value;
+
+    recalculateAndRedraw();
+}
+
+function recalculateAndRedraw() {
+    currentMetrics = computeMetrics(STATE);
+    actualizarKPIs(currentMetrics);
+    destruirGraficas();
+    inicializarGraficas(currentMetrics);
+
+    console.log('✅ Filtros aplicados:', currentMetrics.state, 'Costo:', currentMetrics.costoTotal.toFixed(0));
+}
+
+// =========================
+//  SECCIONES
+// =========================
+
+function mostrarSeccion(seccionId) {
+    const sections = document.querySelectorAll('.bi-section');
+    sections.forEach(section => section.classList.remove('active'));
+    const seccionActiva = document.getElementById(seccionId);
+    if (seccionActiva) seccionActiva.classList.add('active');
+}
+
+// =========================
+//  KPIs EN PANTALLA
+// =========================
+
+function actualizarKPIs(m) {
+    // === RESUMEN GENERAL (las 4 tarjetas grandes de arriba) ===
+    const summaryCards = document.querySelectorAll('.kpi-summary-grid .card-value');
+    if (summaryCards.length >= 4) {
+        summaryCards[0].textContent = m.disponibilidad.toFixed(1) + '%';
+        summaryCards[1].textContent = m.preventivoPct.toFixed(0) + '%';
+        summaryCards[2].textContent = '€' + m.costoTotal.toLocaleString('es-ES', { maximumFractionDigits: 0 });
+        summaryCards[3].textContent = (m.mttr / 24).toFixed(1) + ' días';
+    }
+
+    // === Sección Disponibilidad ===
+    const dispCards = document.querySelectorAll('#disponibilidad .kpi-card .kpi-value');
+    if (dispCards.length >= 6) {
+        dispCards[0].innerHTML = m.disponibilidad.toFixed(1) + '<span>%</span>';
+        dispCards[1].innerHTML = m.mtbf.toFixed(0) + '<span>h</span>';
+        dispCards[2].innerHTML = m.mttr.toFixed(1) + '<span>h</span>';
+        dispCards[3].textContent = m.averiasPorActivo.toFixed(1);
+        dispCards[5].innerHTML = (m.correctivoPct * 0.48).toFixed(1) + '<span>%</span>'; // aproximamos paradas no planif.
+    }
+
+    // === Sección Preventivo vs Correctivo ===
+    const prevCards = document.querySelectorAll('#preventivo .kpi-card .kpi-value');
+    if (prevCards.length >= 4) {
+        prevCards[0].innerHTML = m.preventivoPct.toFixed(0) + '<span>%</span>';
+        prevCards[1].innerHTML = m.correctivoPct.toFixed(0) + '<span>%</span>';
+    }
+
+    // === Sección Órdenes de Trabajo ===
+    const otCards = document.querySelectorAll('#ordenes .kpi-card .kpi-value');
+    if (otCards.length >= 4) {
+        const tiempoMedioDias = (m.mttr / 24) + 2; // añadimos espera de repuestos
+        otCards[0].innerHTML = tiempoMedioDias.toFixed(1) + '<span>días</span>';
+        otCards[1].textContent = m.enMantenimiento;
+    }
+
+    // === Sección Costos ===
+    const costosCards = document.querySelectorAll('#costos .kpi-card .kpi-value');
+    if (costosCards.length >= 4) {
+        costosCards[0].textContent = '€' + m.costoTotal.toLocaleString('es-ES', { maximumFractionDigits: 0 });
+        costosCards[1].textContent = '€' + m.costoManoObra.toLocaleString('es-ES', { maximumFractionDigits: 0 });
+        costosCards[2].textContent = '€' + m.costoRepuestos.toLocaleString('es-ES', { maximumFractionDigits: 0 });
+        costosCards[3].innerHTML = m.ravPct.toFixed(1) + '<span>%</span>';
+    }
+
+    // === Sección Repuestos ===
+    const repuestosCards = document.querySelectorAll('#repuestos .kpi-card .kpi-value');
+    if (repuestosCards.length >= 4) {
+        repuestosCards[0].innerHTML = m.rotacionInventario.toFixed(1) + '<span>x/año</span>';
+        repuestosCards[1].textContent = m.stockouts;
+        repuestosCards[2].textContent = '€' + (m.costoRepuestos * 0.2).toLocaleString('es-ES', { maximumFractionDigits: 0 });
+    }
+
+    // === Sección Rendimiento ===
+    const rendimientoCards = document.querySelectorAll('#operativos .kpi-card .kpi-value');
+    if (rendimientoCards.length >= 4) {
+        rendimientoCards[0].textContent = m.totalActivos;
+        rendimientoCards[1].textContent = m.operativos;
+        rendimientoCards[2].textContent = m.enMantenimiento;
+        rendimientoCards[3].textContent = '€' + m.costoPromedioPorActivo.toLocaleString('es-ES', { maximumFractionDigits: 0 });
+    }
+}
+
+// =========================
+//  GRÁFICAS
+// =========================
+
+function destruirGraficas() {
+    Object.values(charts).forEach(chart => {
+        if (chart && typeof chart.destroy === 'function') chart.destroy();
+    });
+    charts = {};
+}
+
+function inicializarGraficas(m) {
+    crearGraficoDistribucionMantenimiento(m);
+    crearGraficoCostosEvolucion(m);
+    crearGraficoDisponibilidadPorTipo(m);
+    crearGraficoTopMaquinas(m);
+
+    crearGraficoDisponibilidadEvolucion(m);
+    crearGraficoMTBFMTTR(m);
+    crearGraficoAverias(m);
+
+    crearGraficoPrevCorrecHoras(m);
+    crearGraficoPrevCorrecCostos(m);
+    crearGraficoEvolucionPrevCorr(m);
+
+    crearGraficoEstadoOT(m);
+    crearGraficoProductividad(m);
+    crearGraficoBacklog(m);
+
+    crearGraficoDistribucionCostos(m);
+    crearGraficoCostoTipo(m);
+    crearGraficoEvolucionCostos(m);
+
+    crearGraficoConsumoRepuestos(m);
+    crearGraficoValorInventario(m);
+
+    crearGraficoEstadoActivos(m);
+    crearGraficoHorasOperacion(m);
+    crearGraficoUtilizacion(m);
+}
+
+// --- Resumen General ---
+
+function crearGraficoDistribucionMantenimiento(m) {
+    const ctx = document.getElementById('chartMantenimientoDistribucion');
+    if (!ctx) return;
+
+    const preventivo = m.preventivoPct;
+    const correctivo = m.correctivoPct;
+    const predictivo = clamp(100 - preventivo - correctivo, 2, 15);
+
+    charts.distribucionMant = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Preventivo', 'Correctivo', 'Predictivo'],
+            datasets: [{
+                data: [preventivo, correctivo, predictivo],
+                backgroundColor: ['#28a745', '#dc3545', '#ffc107'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+function crearGraficoCostosEvolucion(m) {
+    const ctx = document.getElementById('chartCostosEvolucion');
+    if (!ctx) return;
+
+    const period = STATE.period;
+    let labels;
+    if (period === 'week') labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    else if (period === 'month') labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+    else if (period === 'quarter') labels = ['Mes 1', 'Mes 2', 'Mes 3'];
+    else labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    const base = m.costoTotal / labels.length;
+    const data = labels.map(() => randAround(base, 0.15));
+
+    charts.costosEvol = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Costos (€)',
+                data,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: v => '€' + v.toLocaleString()
+                    }
+                }
+            }
+        }
+    });
+}
+
+function crearGraficoDisponibilidadPorTipo(m) {
+    const ctx = document.getElementById('chartDisponibilidadTipo');
+    if (!ctx) return;
+
+    const labels = ['Riego', 'Tractores', 'Otros', 'Cosechadoras', 'Pulverizadores'];
+    const data = [85, 75, 78, 67, 73];
+
+    charts.dispTipo = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                label: 'Disponibilidad (%)',
+                backgroundColor: ['#20c997', '#17a2b8', '#6c757d', '#28a745', '#ffc107']
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    max: 100,
+                    ticks: { callback: v => v + '%' }
+                }
+            }
+        }
+    });
+}
+
+function crearGraficoTopMaquinas() {
+    const ctx = document.getElementById('chartTopMaquinas');
+    if (!ctx) return;
+
+    const tipo = STATE.tipo;
+    let maquinas = Object.entries(DATOS_MAQUINAS.costosPorMaquina);
+
+    if (tipo !== 'todos') {
+        maquinas = maquinas.filter(([id]) => {
+            if (tipo === 'tractor') return id.startsWith('TR-') || id.startsWith('CT-');
+            if (tipo === 'cosechadora') return id.startsWith('CS-');
+            if (tipo === 'pulverizador') return id.startsWith('PV-');
+            if (tipo === 'riego') return id.startsWith('RI-');
+            if (tipo === 'otros') return id.startsWith('GE-') || id.startsWith('IN-');
+            return true;
+        });
+    }
+
+    const top = maquinas.sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+    charts.topMaquinas = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: top.map(m => m[0]),
+            datasets: [{
+                data: top.map(m => m[1]),
+                label: 'Costo (€)',
+                backgroundColor: '#dc3545'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    ticks: { callback: v => '€' + v.toLocaleString() }
+                }
+            }
+        }
+    });
+}
+
+// --- Disponibilidad ---
+
+function crearGraficoDisponibilidadEvolucion(m) {
+    const ctx = document.getElementById('chartDisponibilidadEvolucion');
+    if (!ctx) return;
+
+    const period = STATE.period;
+    let labels;
+    if (period === 'week') labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    else if (period === 'month') labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+    else if (period === 'quarter') labels = ['Mes 1', 'Mes 2', 'Mes 3'];
+    else labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    const dispData = labels.map(() => clamp(randAround(m.disponibilidad, 0.03), 60, 99));
+    const mtbfData = labels.map(() => randAround(m.mtbf, 0.08));
+
+    charts.dispEvol = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Disponibilidad (%)',
+                    data: dispData,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40,167,69,0.1)',
+                    yAxisID: 'y',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'MTBF (h)',
+                    data: mtbfData,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0,123,255,0.1)',
+                    yAxisID: 'y1',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                y: { position: 'left', title: { display: true, text: 'Disponibilidad (%)' } },
+                y1: { position: 'right', title: { display: true, text: 'MTBF (h)' }, grid: { drawOnChartArea: false } }
+            }
+        }
+    });
+}
+
+function crearGraficoMTBFMTTR(m) {
+    const ctx = document.getElementById('chartMTBFMTTR');
+    if (!ctx) return;
+
+    const labels = ['Tractores', 'Cosechadoras', 'Pulverizadores', 'Riego'];
+    const mtbfData = [165, 142, 158, 178];
+    const mttrData = [4.5, 5.8, 3.9, 2.8];
+
+    charts.mtbfmttr = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label: 'MTBF (h)', data: mtbfData, backgroundColor: '#28a745' },
+                { label: 'MTTR (h)', data: mttrData, backgroundColor: '#dc3545' }
+            ]
+        },
+        options: {
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+function crearGraficoAverias() {
+    const ctx = document.getElementById('chartAverias');
+    if (!ctx) return;
+
+    charts.averias = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Mecánicas', 'Eléctricas', 'Hidráulicas', 'Neumáticas', 'Otras'],
+            datasets: [{
+                data: [35, 25, 20, 12, 8],
+                backgroundColor: ['#dc3545', '#ffc107', '#007bff', '#17a2b8', '#6c757d']
+            }]
+        },
+        options: {
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
+// --- Preventivo vs Correctivo ---
+
+function crearGraficoPrevCorrecHoras(m) {
+    const ctx = document.getElementById('chartPrevCorrecHoras');
+    if (!ctx) return;
+
+    charts.prevCorrecHoras = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Preventivo', 'Correctivo'],
+            datasets: [{
+                data: [m.preventivoPct, m.correctivoPct],
+                backgroundColor: ['#28a745', '#dc3545'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
+function crearGraficoPrevCorrecCostos(m) {
+    const ctx = document.getElementById('chartPrevCorrecCostos');
+    if (!ctx) return;
+
+    charts.prevCorrecCostos = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Preventivo', 'Correctivo'],
+            datasets: [{
+                data: [m.costoPreventivo, m.costoCorrectivo],
+                backgroundColor: ['#28a745', '#dc3545'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.label + ': €' + ctx.parsed.toLocaleString()
+                    }
+                }
+            }
+        }
+    });
+}
+
+function crearGraficoEvolucionPrevCorr(m) {
+    const ctx = document.getElementById('chartEvolucionPrevCorr');
+    if (!ctx) return;
+
+    const period = STATE.period;
+    let labels;
+    if (period === 'week') labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    else if (period === 'month') labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+    else if (period === 'quarter') labels = ['Mes 1', 'Mes 2', 'Mes 3'];
+    else labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    const prevData = labels.map(() => randAround(m.preventivoPct, 0.05));
+    const corrData = labels.map((_, i) => 100 - prevData[i]);
+
+    charts.evolPrevCorr = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Preventivo', data: prevData, borderColor: '#28a745', backgroundColor: 'rgba(40,167,69,0.1)', tension: 0.4, fill: true },
+                { label: 'Correctivo', data: corrData, borderColor: '#dc3545', backgroundColor: 'rgba(220,53,69,0.1)', tension: 0.4, fill: true }
+            ]
+        },
+        options: {
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                y: { max: 100, ticks: { callback: v => v + '%' } }
+            }
+        }
+    });
+}
+
+// --- Órdenes de Trabajo ---
+
+function crearGraficoEstadoOT(m) {
+    const ctx = document.getElementById('chartEstadoOT');
+    if (!ctx) return;
+
+    const totalOT = Math.max(10, m.totalActivos * 8);
+    const completadas = Math.round(totalOT * 0.7);
+    const abiertas = Math.round(totalOT * 0.1);
+    const enProgreso = Math.round(totalOT * 0.15);
+    const retrasadas = totalOT - completadas - abiertas - enProgreso;
+
+    charts.estadoOT = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Abiertas', 'En Progreso', 'Completadas', 'Retrasadas'],
+            datasets: [{
+                data: [abiertas, enProgreso, completadas, retrasadas],
+                backgroundColor: ['#ffc107', '#007bff', '#28a745', '#dc3545']
+            }]
+        },
+        options: {
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
+function crearGraficoProductividad() {
+    const ctx = document.getElementById('chartProductividad');
+    if (!ctx) return;
+
+    charts.productividad = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Juan P.', 'María G.', 'Carlos R.', 'Ana M.', 'Luis F.'],
+            datasets: [{
+                data: [15, 13, 12, 11, 9],
+                label: 'OTs Completadas',
+                backgroundColor: '#667eea'
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+function crearGraficoBacklog(m) {
+    const ctx = document.getElementById('chartBacklog');
+    if (!ctx) return;
+
+    const period = STATE.period;
+    let labels;
+    if (period === 'week') labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    else if (period === 'month') labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+    else if (period === 'quarter') labels = ['Mes 1', 'Mes 2', 'Mes 3'];
+    else labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    const base = m.totalActivos * 0.8;
+    const data = labels.map(() => Math.max(0, randAround(base, 0.25)));
+
+    charts.backlog = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Máquinas en Servicio',
+                data,
+                borderColor: '#ffc107',
+                backgroundColor: 'rgba(255,193,7,0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+// --- Costos ---
+
+function crearGraficoDistribucionCostos(m) {
+    const ctx = document.getElementById('chartDistribucionCostos');
+    if (!ctx) return;
+
+    charts.distCostos = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Mano de Obra', 'Repuestos', 'Externos', 'Otros'],
+            datasets: [{
+                data: [m.costoManoObra, m.costoRepuestos, m.costoExternos, m.costoOtros],
+                backgroundColor: ['#007bff', '#28a745', '#ffc107', '#6c757d']
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.label + ': €' + ctx.parsed.toLocaleString()
+                    }
+                }
+            }
+        }
+    });
+}
+
+function crearGraficoCostoTipo() {
+    const ctx = document.getElementById('chartCostoTipo');
+    if (!ctx) return;
+
+    const tipo = STATE.tipo;
+
+    let labels, data;
+    if (tipo === 'todos') {
+        labels = ['Tractores', 'Cosechadoras', 'Otros', 'Pulverizadores', 'Riego'];
+        data = [
+            DATOS_MAQUINAS.costosPorTipo['Tractores'],
+            DATOS_MAQUINAS.costosPorTipo['Cosechadoras'],
+            DATOS_MAQUINAS.costosPorTipo['Otros'],
+            DATOS_MAQUINAS.costosPorTipo['Pulverizadores'],
+            DATOS_MAQUINAS.costosPorTipo['Sistema Riego']
+        ];
+    } else {
+        // Desglose por máquina para el tipo seleccionado
+        const all = Object.entries(DATOS_MAQUINAS.costosPorMaquina).filter(([id]) => {
+            if (tipo === 'tractor') return id.startsWith('TR-') || id.startsWith('CT-');
+            if (tipo === 'cosechadora') return id.startsWith('CS-');
+            if (tipo === 'pulverizador') return id.startsWith('PV-');
+            if (tipo === 'riego') return id.startsWith('RI-');
+            if (tipo === 'otros') return id.startsWith('GE-') || id.startsWith('IN-');
+            return true;
+        });
+        labels = all.map(m => m[0]);
+        data = all.map(m => m[1]);
+    }
+
+    charts.costoTipo = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                label: 'Costo Total (€)',
+                backgroundColor: '#667eea'
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { ticks: { callback: v => '€' + v.toLocaleString() } }
+            }
+        }
+    });
+}
+
+function crearGraficoEvolucionCostos(m) {
+    const ctx = document.getElementById('chartEvolucionCostos');
+    if (!ctx) return;
+
+    const period = STATE.period;
+    let labels;
+    if (period === 'week') labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    else if (period === 'month') labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+    else if (period === 'quarter') labels = ['Mes 1', 'Mes 2', 'Mes 3'];
+    else labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    const basePrev = m.costoPreventivo / labels.length;
+    const baseCorr = m.costoCorrectivo / labels.length;
+
+    const prevData = labels.map(() => randAround(basePrev, 0.15));
+    const corrData = labels.map(() => randAround(baseCorr, 0.2));
+
+    charts.evolCostos = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Preventivo', data: prevData, borderColor: '#28a745', backgroundColor: 'rgba(40,167,69,0.1)', tension: 0.4, fill: true },
+                { label: 'Correctivo', data: corrData, borderColor: '#dc3545', backgroundColor: 'rgba(220,53,69,0.1)', tension: 0.4, fill: true }
+            ]
+        },
+        options: {
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                y: { ticks: { callback: v => '€' + v.toLocaleString() } }
+            }
+        }
+    });
+}
+
+// --- Repuestos ---
+
+function crearGraficoConsumoRepuestos(m) {
+    const ctx = document.getElementById('chartConsumoRepuestos');
+    if (!ctx) return;
+
+    const period = STATE.period;
+    let labels;
+    if (period === 'week') labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    else if (period === 'month') labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+    else if (period === 'quarter') labels = ['Mes 1', 'Mes 2', 'Mes 3'];
+    else labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    const base = m.costoRepuestos / labels.length;
+    const data = labels.map(() => randAround(base, 0.2));
+
+    charts.consumoRepuestos = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Consumo (€)',
+                data,
+                backgroundColor: '#17a2b8'
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { ticks: { callback: v => '€' + v.toLocaleString() } } }
+        }
+    });
+}
+
+function crearGraficoValorInventario(m) {
+    const ctx = document.getElementById('chartValorInventario');
+    if (!ctx) return;
+
+    const period = STATE.period;
+    let labels;
+    if (period === 'week') labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    else if (period === 'month') labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+    else if (period === 'quarter') labels = ['Mes 1', 'Mes 2', 'Mes 3'];
+    else labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    const valorInicial = m.costoRepuestos * 1.5;
+    const data = labels.map((_, i) => valorInicial - i * (valorInicial * 0.03) + (Math.random() * valorInicial * 0.01));
+
+    charts.valorInventario = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Valor (€)',
+                data,
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40,167,69,0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { ticks: { callback: v => '€' + v.toLocaleString() } } }
+        }
+    });
+}
+
+// --- Rendimiento ---
+
+function crearGraficoEstadoActivos(m) {
+    const ctx = document.getElementById('chartEstadoActivos');
+    if (!ctx) return;
+
+    charts.estadoActivos = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Operativos', 'En Mantenimiento', 'Programados', 'Inactivos'],
+            datasets: [{
+                data: [m.operativos, m.enMantenimiento, m.programados, 0],
+                backgroundColor: ['#28a745', '#ffc107', '#007bff', '#dc3545'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total ? (ctx.parsed / total) * 100 : 0;
+                            return `${ctx.label}: ${ctx.parsed} (${pct.toFixed(1)}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function crearGraficoHorasOperacion() {
+    const ctx = document.getElementById('chartHorasOperacion');
+    if (!ctx) return;
+
+    const tipo = STATE.tipo;
+    let labels, data, colors;
+
+    if (tipo === 'tractor') {
+        labels = ['TR-001', 'TR-003', 'TR-004', 'TR-005', 'TR-012', 'CT-001', 'TR-008', 'TR-006'];
+        data = [2845, 3012, 1890, 2734, 2650, 2156, 2148, 1245];
+        colors = '#007bff';
+    } else if (tipo === 'cosechadora') {
+        labels = ['CS-002', 'CS-003', 'CS-004'];
+        data = [2345, 2678, 2526];
+        colors = '#28a745';
+    } else if (tipo === 'pulverizador') {
+        labels = ['PV-002', 'PV-005', 'PV-010'];
+        data = [1389, 1234, 1450];
+        colors = '#6f42c1';
+    } else if (tipo === 'riego') {
+        labels = ['RI-004', 'RI-009'];
+        data = [5234, 5456];
+        colors = '#17a2b8';
+    } else if (tipo === 'otros') {
+        labels = ['GE-006', 'IN-007', 'IN-011'];
+        data = [5892, 3967, 2100];
+        colors = '#ffc107';
+    } else {
+        labels = ['Tractores', 'Cosechadoras', 'Generador', 'Riego', 'Pulverizadores'];
+        data = [18597, 7549, 5892, 10690, 4073];
+        colors = ['#007bff', '#28a745', '#ffc107', '#17a2b8', '#6f42c1'];
+    }
+
+    charts.horasOperacion = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Horas de Operación',
+                data,
+                backgroundColor: colors
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { ticks: { callback: v => v.toLocaleString() + 'h' } }
+            }
+        }
+    });
+}
+
+function crearGraficoUtilizacion() {
+    const ctx = document.getElementById('chartUtilizacion');
+    if (!ctx) return;
+
+    const tipo = STATE.tipo;
+    let labels, data;
+
+    if (tipo === 'tractor') {
+        labels = ['TR-001', 'TR-003', 'TR-005', 'TR-004', 'TR-002', 'TR-006', 'CT-001', 'TR-007'];
+        data = [85, 92, 88, 72, 78, 45, 65, 70];
+    } else if (tipo === 'cosechadora') {
+        labels = ['CS-003', 'CS-002', 'CS-004'];
+        data = [95, 78, 85];
+    } else if (tipo === 'pulverizador') {
+        labels = ['PV-005', 'PV-002', 'PV-010'];
+        data = [60, 68, 72];
+    } else if (tipo === 'riego') {
+        labels = ['RI-004', 'RI-009'];
+        data = [90, 92];
+    } else if (tipo === 'otros') {
+        labels = ['GE-006', 'IN-007', 'IN-011'];
+        data = [88, 75, 65];
+    } else {
+        labels = ['TR-001', 'TR-003', 'TR-005', 'TR-004', 'CS-003', 'CS-002', 'RI-004', 'RI-009'];
+        data = [85, 92, 88, 72, 95, 78, 90, 92];
+    }
+
+    charts.utilizacion = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Utilización (%)',
+                data,
+                backgroundColor: ctx => {
+                    const value = ctx.parsed.y;
+                    if (value >= 80) return '#28a745';
+                    if (value >= 60) return '#ffc107';
+                    return '#dc3545';
+                }
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    max: 100,
+                    ticks: { callback: v => v + '%' }
+                }
+            }
+        }
+    });
+}
+
+// =========================
+//  TOOLTIP PERSONALIZADO
+// =========================
+
+// =========================
+//  TOOLTIP PERSONALIZADO
+// =========================
+
 function inicializarTooltips() {
-    const tooltipData = {
-        // KPIs de disponibilidad
-        'disponibilidad': {
+    // --- Tooltips para KPIs / tarjetas ---
+    const tooltipKPI = {
+        // Resumen general
+        disponibilidad: {
             title: 'Disponibilidad Técnica',
-            desc: 'Porcentaje de tiempo que los activos están operativos y disponibles para producción.',
-            source: 'Calculado como: (Horas Operativas / Horas Totales) × 100',
-            comparison: 'Objetivo: >85% | Industria: 75-80%'
+            desc: 'Porcentaje de tiempo que los activos han estado operativos y listos para producir en el periodo seleccionado.',
+            source: 'Disponibilidad = Horas operativas / Horas totales planificadas',
+            comparison: 'Objetivo > 85% | Referencia sector agro: 75–80%.'
         },
-        'mtbf': {
-            title: 'MTBF (Mean Time Between Failures)',
-            desc: 'Tiempo promedio entre fallos. Indica la fiabilidad del equipo.',
-            source: 'Calculado como: Horas Totales de Operación / Número de Fallos',
-            comparison: 'Mes anterior: 144h | Objetivo: >150h'
-        },
-        'mttr': {
-            title: 'MTTR (Mean Time To Repair)',
-            desc: 'Tiempo promedio de reparación. Mide la eficiencia del mantenimiento.',
-            source: 'Calculado como: Tiempo Total de Reparación / Número de Reparaciones',
-            comparison: 'Mes anterior: 4.7h | Objetivo: <4h'
-        },
-        'preventivo': {
-            title: 'Mantenimiento Preventivo',
-            desc: 'Porcentaje de actividades de mantenimiento planificadas vs correctivas.',
-            source: 'Calculado como: (OTs Preventivas / Total OTs) × 100',
-            comparison: 'Mes anterior: 63% | Objetivo: >70%'
-        },
-        'correctivo': {
-            title: 'Mantenimiento Correctivo',
-            desc: 'Porcentaje de reparaciones no planificadas debido a fallos.',
-            source: 'Calculado como: (OTs Correctivas / Total OTs) × 100',
-            comparison: 'Objetivo: <30% | Crítico: >40%'
+        preventivo: {
+            title: 'Peso del Mantenimiento Preventivo',
+            desc: 'Porcentaje de horas / OTs dedicadas a mantenimiento planificado frente al total.',
+            source: 'Basado en OT marcadas como Preventivas vs Correctivas.',
+            comparison: 'Modelo maduro: ≥ 70% preventivo, ≤ 30% correctivo.'
         },
         'costo-total': {
             title: 'Costo Total de Mantenimiento',
-            desc: 'Suma de todos los costos de mantenimiento incluyendo mano de obra, repuestos y servicios.',
-            source: 'Incluye: Mano de obra (51%), Repuestos (32%), Externos (17%)',
-            comparison: 'Mes anterior: €288,450 | Reducción: 3.8%',
+            desc: 'Suma de todos los costes de mantenimiento (mano de obra, repuestos, servicios externos y otros) en el periodo y filtros activos.',
+            source: 'Coste estimado según tipo de activo, lugar, campaña y periodo.',
+            comparison: 'Para evaluar, compáralo con el RAV% (valor de reposición).',
             miniChart: {
-                labels: ['MO', 'Rep', 'Ext'],
-                values: [51, 32, 17]
+                labels: ['MO', 'Repuestos', 'Externos', 'Otros'],
+                values: [51, 32, 12, 5]
             }
-        },
-        'rav': {
-            title: 'RAV% (Replacement Asset Value)',
-            desc: 'Porcentaje del costo de mantenimiento respecto al valor de reposición del activo.',
-            source: 'Calculado como: (Costo Anual Mantenimiento / Valor Reposición) × 100',
-            comparison: 'Excelente: <3% | Bueno: 3-5% | Alto: >5%'
         },
         'tiempo-resolucion': {
             title: 'Tiempo Medio de Resolución',
-            desc: 'Tiempo promedio desde la apertura hasta el cierre de una orden de trabajo.',
-            source: 'Incluye: Diagnóstico + Espera de repuestos + Reparación + Verificación',
-            comparison: 'Mes anterior: 4.3 días | Mejora: 0.5 días'
+            desc: 'Tiempo promedio desde que se abre una orden de trabajo hasta que se cierra, incluyendo diagnóstico y validación.',
+            source: 'Incluye: diagnóstico + espera de repuestos + reparación + verificación.',
+            comparison: 'Cuanto más cerca de 0, mejor. Analiza también por tipo de activo.'
         },
-        'ordenes-abiertas': {
-            title: 'Órdenes de Trabajo Abiertas',
-            desc: 'Número total de órdenes de trabajo en proceso o pendientes.',
-            source: 'Estado: En progreso (4) + Por hacer (3)',
-            comparison: 'Semana anterior: 9 | Reducción: 2 OTs'
+
+        // Sección DISPONIBILIDAD
+        mtbf: {
+            title: 'MTBF (Mean Time Between Failures)',
+            desc: 'Horas promedio de operación entre averías. Es un indicador directo de fiabilidad.',
+            source: 'MTBF = Horas de operación / Nº de averías registradas.',
+            comparison: 'Debe crecer en el tiempo si el plan preventivo es efectivo.'
         },
+        mttr: {
+            title: 'MTTR (Mean Time To Repair)',
+            desc: 'Tiempo medio que tardas en devolver un equipo a servicio una vez se avería.',
+            source: 'MTTR = Tiempo total de reparación / Nº de reparaciones.',
+            comparison: 'Ideal: MTTR bajo + MTBF alto.'
+        },
+        'averias-activo': {
+            title: 'Averías por Activo',
+            desc: 'Promedio de averías registradas por cada activo en el periodo.',
+            source: 'Contabiliza solo averías con OT asociada.',
+            comparison: 'Útil para detectar “activos problema” (los que se disparan por encima de la media).'
+        },
+        criticidad: {
+            title: 'Índice de Criticidad',
+            desc: 'Valor agregado que combina impacto en producción, seguridad y coste de cada activo.',
+            source: 'Escala 1–10. Los activos > 7 deberían tener más preventivo y repuestos críticos garantizados.',
+            comparison: 'Revisa planes de mantenimiento de los activos de mayor criticidad.'
+        },
+        'paradas-no-planificadas': {
+            title: 'Paradas No Planificadas',
+            desc: 'Porcentaje del tiempo total de parada que ha sido debido a averías no planificadas.',
+            source: 'Calculado a partir de OTs correctivas con impacto en producción.',
+            comparison: 'La meta es que vaya bajando a medida que el preventivo madura.'
+        },
+
+        // Sección PREVENTIVO vs CORRECTIVO
         'cumplimiento-plan': {
-            title: 'Cumplimiento del Plan de Mantenimiento',
-            desc: 'Porcentaje de actividades preventivas realizadas según lo programado.',
-            source: 'Calculado como: (Preventivos Realizados / Preventivos Programados) × 100',
-            comparison: 'Mes anterior: 85% | Mejora: 4%'
+            title: 'Cumplimiento del Plan Preventivo',
+            desc: 'Porcentaje de OTs preventivas realizadas frente a las programadas.',
+            source: 'Cubre tanto OTs realizadas a tiempo como con ligero retraso.',
+            comparison: 'Buen objetivo: ≥ 90% de cumplimiento.'
         },
+        'preventivos-retrasados': {
+            title: 'Preventivos Retrasados',
+            desc: 'Número de OTs preventivas que han sobrepasado su fecha programada.',
+            source: 'Importante revisarlo en activos críticos o de seguridad.',
+            comparison: 'Ideal mantenerlo cercano a 0 o limitado a activos no críticos.'
+        },
+
+        // Sección ÓRDENES
+        'maquinas-mantenimiento': {
+            title: 'Máquinas en Mantenimiento',
+            desc: 'Activos que actualmente tienen una OT abierta que los saca (total o parcialmente) de servicio.',
+            source: 'Incluye OTs en estado En Progreso / Paradas.',
+            comparison: 'Si es demasiado alto frecuente, revisa capacidad del equipo y stock de repuestos.'
+        },
+        'oms-tiempo': {
+            title: 'Órdenes Cerradas a Tiempo',
+            desc: 'Porcentaje de OTs que se cierran dentro del plazo objetivo definido.',
+            source: 'Comparación entre fecha compromiso y fecha real de cierre.',
+            comparison: 'Indicador clave de disciplina operativa y planificación realista.'
+        },
+        'oms-tecnico': {
+            title: 'Órdenes por Técnico',
+            desc: 'Carga media de trabajo por técnico en el periodo.',
+            source: 'Cuenta OTs asignadas y cerradas por técnico.',
+            comparison: 'Permite equilibrar carga y detectar cuellos de botella.'
+
+        },
+
+        // Sección COSTOS
+        'mano-obra': {
+            title: 'Mano de Obra',
+            desc: 'Costes asociados a técnicos internos/externos en tareas de mantenimiento.',
+            source: 'Basado en horas estimadas × tarifa estándar.',
+            comparison: 'Idealmente controlado a través de buen preventivo y planificación.'
+        },
+        repuestos: {
+            title: 'Repuestos',
+            desc: 'Coste de materiales y piezas consumidas en el mantenimiento.',
+            source: 'Incluye repuestos preventivos y correctivos.',
+            comparison: 'Revisar junto con rotación de inventario y stock inmovilizado.'
+        },
+        rav: {
+            title: 'RAV% (Replacement Asset Value)',
+            desc: 'Proporción del coste de mantenimiento respecto al valor de reposición de los activos.',
+            source: 'RAV% = Coste anual / Valor de reposición.',
+            comparison: 'Excelente: <3% | Bueno: 3–5% | Alto: >5%.',
+
+        },
+
+        // Sección REPUESTOS
         'rotacion-inventario': {
             title: 'Rotación de Inventario',
-            desc: 'Número de veces que se renueva el inventario de repuestos en un año.',
-            source: 'Calculado como: Costo Anual Repuestos / Valor Promedio Inventario',
-            comparison: 'Óptimo: 4-6x/año | Bajo: <3x/año'
+            desc: 'Número de veces que renuevas el valor del inventario de repuestos en un año.',
+            source: 'Rotación = Consumo anual / Valor medio de inventario.',
+            comparison: 'Entre 4 y 6 suele ser un rango sano (depende del tipo de activo).'
         },
         'stock-outs': {
-            title: 'Stock-outs (Roturas de Stock)',
-            desc: 'Número de veces que un repuesto crítico no estuvo disponible cuando se necesitó.',
-            source: 'Incluye solo repuestos clasificados como críticos',
-            comparison: 'Mes anterior: 9 | Aumento: 3 eventos'
+            title: 'Stock-outs',
+            desc: 'Número de veces que un repuesto no estaba disponible cuando se necesitaba.',
+            source: 'Solo cuenta repuestos marcados como críticos o de alta rotación.',
+            comparison: 'Debería tender a 0 en repuestos críticos.'
+        },
+        'stock-inmovilizado': {
+            title: 'Stock Inmovilizado',
+            desc: 'Valor del inventario que no se ha movido en un periodo largo (ej. > 12 meses).',
+            source: 'Basado en fecha de último movimiento / consumo.',
+            comparison: 'Indicador de sobrestock o mala parametrización del catálogo.'
+        },
+        'repuestos-ok': {
+            title: 'Repuestos Críticos OK',
+            desc: 'Porcentaje de referencias críticas que tienen stock suficiente según la política de seguridad definida.',
+            source: 'Comparación entre stock actual y stock mínimo por referencia crítica.',
+            comparison: 'Objetivo: 100% asegurados.'
+        },
+
+        // Sección RENDIMIENTO
+        'total-activos': {
+            title: 'Total de Activos',
+            desc: 'Número de activos incluidos en el análisis según los filtros actuales (tipo, lugar, campaña).',
+            source: 'Inventario técnico de GMAO para la combinación de filtros.',
+            comparison: 'Sirve de contexto para interpretar ratios y costes medios.'
+        },
+        'activos-disponibles': {
+            title: 'Activos Disponibles',
+            desc: 'Activos que podrían ser utilizados en producción (no están parados por mantenimiento).',
+            source: 'Se basa en estados Operativo / Programado vs En mantenimiento.',
+            comparison: 'Ideal que la mayoría del parque esté disponible en picos de campaña.'
+        },
+        'en-mantenimiento': {
+            title: 'Activos en Mantenimiento',
+            desc: 'Activos que actualmente tienen una orden de trabajo que limita su uso.',
+            source: 'OTs abiertas con impacto en disponibilidad.',
+            comparison: 'Suele subir antes de campaña si haces bien el preventivo.'
+        },
+        'costo-promedio-activo': {
+            title: 'Costo Promedio por Activo',
+            desc: 'Coste medio de mantenimiento por activo en el periodo y filtros aplicados.',
+            source: 'Coste total / nº de activos incluidos.',
+            comparison: 'Útil para comparar tipos de equipos, zonas o campañas.'
         }
     };
-    
-    // Crear elemento de tooltip
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tooltip-custom';
-    document.body.appendChild(tooltip);
-    
-    // Agregar data-tooltip a elementos
-    setTimeout(() => {
-        agregarTooltipAElementos(tooltipData, tooltip);
-    }, 500);
-}
 
-function agregarTooltipAElementos(tooltipData, tooltipElement) {
-    // KPI Cards
-    document.querySelectorAll('.kpi-card').forEach((card, index) => {
-        const label = card.querySelector('.kpi-label')?.textContent.toLowerCase();
-        let tooltipKey = null;
-        
-        if (label?.includes('disponibilidad')) tooltipKey = 'disponibilidad';
-        else if (label?.includes('mtbf')) tooltipKey = 'mtbf';
-        else if (label?.includes('mttr')) tooltipKey = 'mttr';
-        else if (label?.includes('preventivo')) tooltipKey = 'preventivo';
-        else if (label?.includes('correctivo')) tooltipKey = 'correctivo';
-        else if (label?.includes('costo total')) tooltipKey = 'costo-total';
-        else if (label?.includes('rav')) tooltipKey = 'rav';
-        else if (label?.includes('resolución')) tooltipKey = 'tiempo-resolucion';
-        else if (label?.includes('mantenimiento') && card.closest('#ordenes')) tooltipKey = 'ordenes-abiertas';
-        else if (label?.includes('cumplimiento')) tooltipKey = 'cumplimiento-plan';
-        else if (label?.includes('rotación')) tooltipKey = 'rotacion-inventario';
-        else if (label?.includes('stock-out')) tooltipKey = 'stock-outs';
-        
-        if (tooltipKey && tooltipData[tooltipKey]) {
-            card.setAttribute('data-tooltip', tooltipKey);
-            agregarEventosTooltip(card, tooltipData[tooltipKey], tooltipElement);
-        }
-    });
-    
-    // Summary Cards
-    document.querySelectorAll('.summary-card').forEach((card, index) => {
-        const label = card.querySelector('.card-label')?.textContent.toLowerCase();
-        let tooltipKey = null;
-        
-        if (label?.includes('disponibilidad')) tooltipKey = 'disponibilidad';
-        else if (label?.includes('preventivo')) tooltipKey = 'preventivo';
-        else if (label?.includes('costo')) tooltipKey = 'costo-total';
-        else if (label?.includes('resolución')) tooltipKey = 'tiempo-resolucion';
-        
-        if (tooltipKey && tooltipData[tooltipKey]) {
-            card.setAttribute('data-tooltip', tooltipKey);
-            agregarEventosTooltip(card, tooltipData[tooltipKey], tooltipElement);
-        }
-    });
-    
-    // Chart Containers
-    const chartTooltips = {
+    // --- Tooltips para GRÁFICOS / visuales ---
+    const tooltipCharts = {
         'chartMantenimientoDistribucion': {
             title: 'Distribución de Mantenimiento',
-            desc: 'Muestra la proporción de actividades preventivas, correctivas y predictivas.',
-            source: 'Basado en el tipo de orden de trabajo registrada en el sistema',
-            comparison: 'Ideal: 70% preventivo, 25% correctivo, 5% predictivo'
+            desc: 'Muestra el peso relativo del mantenimiento preventivo, correctivo y predictivo.',
+            source: 'Calculado con las OTs del periodo seleccionado.',
+            comparison: 'Objetivo típico: ≥ 70% preventivo, ≤ 30% correctivo.'
+        },
+        'chartCostosEvolucion': {
+            title: 'Evolución de Costes',
+            desc: 'Cómo se han repartido los costes de mantenimiento a lo largo del periodo (semanas/meses).',
+            source: 'Incluye mano de obra, repuestos y servicios externos.',
+            comparison: 'Busca picos anómalos asociados a averías críticas o campañas.'
         },
         'chartDisponibilidadTipo': {
             title: 'Disponibilidad por Tipo de Máquina',
-            desc: 'Compara la disponibilidad operativa de diferentes tipos de equipos.',
-            source: 'Calculado por tipo: Horas operativas / Horas programadas',
-            comparison: 'Tractores: mejor desempeño | Cosechadoras: requieren atención'
+            desc: 'Compara la disponibilidad de los distintos tipos de activos (tractores, riego, etc.).',
+            source: 'Disponibilidad calculada por tipo para el periodo filtrado.',
+            comparison: 'Útil para priorizar inversiones o mejoras de mantenimiento.'
         },
         'chartTopMaquinas': {
-            title: 'Top 5 Máquinas por Costo',
-            desc: 'Identifica los activos con mayor costo de mantenimiento acumulado.',
-            source: 'Suma de: Mano de obra + Repuestos + Servicios externos',
-            comparison: 'Cosechadoras representan el 40% del costo total'
+            title: 'Top Máquinas por Costo',
+            desc: 'Ranking de activos que más coste acumulan en el periodo.',
+            source: 'Basado en coste total (MO + repuestos + externos) por activo.',
+            comparison: 'Candidatos a renovación, rediseño del plan preventivo o análisis de uso.'
+        },
+        'chartDisponibilidadEvolucion': {
+            title: 'Evolución de Disponibilidad y MTBF',
+            desc: 'Permite ver si la disponibilidad y la fiabilidad (MTBF) mejoran o empeoran en el tiempo.',
+            source: 'Agrupado según el periodo seleccionado (semana, mes, trimestre, año).',
+            comparison: 'Una tendencia positiva indica buen ajuste del plan de mantenimiento.'
+        },
+        'chartMTBFMTTR': {
+            title: 'MTBF vs MTTR por Tipo',
+            desc: 'Contrasta equipos que fallan mucho (MTBF bajo) con equipos que tardan mucho en repararse (MTTR alto).',
+            source: 'Datos agregados por tipo de activo.',
+            comparison: 'Ideal: MTBF alto y MTTR bajo.'
+        },
+        'chartAverias': {
+            title: 'Distribución de Tipos de Avería',
+            desc: 'Reparte las averías según su naturaleza (mecánica, eléctrica, hidráulica, etc.).',
+            source: 'Clasificación de averías en las OTs registradas.',
+            comparison: 'Ayuda a decidir qué competencias técnicas reforzar o qué repuestos asegurar.'
+        },
+        'chartPrevCorrecHoras': {
+            title: 'Horas: Preventivo vs Correctivo',
+            desc: 'Ver cómo se distribuyen las horas de mantenimiento entre tareas planificadas y reparaciones.',
+            source: 'Horas declaradas en OTs preventivas vs correctivas.',
+            comparison: 'Una proporción alta de correctivo suele implicar más paradas no planificadas.'
+        },
+        'chartPrevCorrecCostos': {
+            title: 'Costes: Preventivo vs Correctivo',
+            desc: 'Cuánto dinero se va en trabajos preventivos frente a correctivos.',
+            source: 'Coste asociado al tipo de OT.',
+            comparison: 'Invertir más en preventivo suele reducir los costes correctivos a medio plazo.'
+        },
+        'chartEvolucionPrevCorr': {
+            title: 'Evolución Preventivo/Correctivo',
+            desc: 'Muestra si estás ganando terreno al correctivo a lo largo del tiempo.',
+            source: 'Porcentaje mensual / semanal de cada tipo.',
+            comparison: 'Una línea de preventivo al alza generalmente es buena señal.'
+        },
+        'chartEstadoOT': {
+            title: 'Estado de las Órdenes de Trabajo',
+            desc: 'Foto rápida del backlog: abiertas, en progreso, completadas y retrasadas.',
+            source: 'Estados actuales de las OTs en el sistema.',
+            comparison: 'Un exceso de retrasadas indica saturación o mala planificación.'
+        },
+        'chartProductividad': {
+            title: 'Productividad por Técnico',
+            desc: 'OTs completadas por cada técnico en el periodo.',
+            source: 'Cuenta de OTs cerradas por técnico.',
+            comparison: 'Permite equilibrar carga y detectar buenas prácticas.'
+        },
+        'chartBacklog': {
+            title: 'Evolución del Backlog',
+            desc: 'Cuántas máquinas pendientes de servicio tienes a lo largo del tiempo.',
+            source: 'OTs abiertas o en servicio por periodo.',
+            comparison: 'Ideal que el backlog no crezca de forma sostenida.'
+        },
+        'chartDistribucionCostos': {
+            title: 'Distribución de Costes de Mantenimiento',
+            desc: 'Cómo se reparte el coste entre mano de obra, repuestos, externos y otros.',
+            source: 'Desglose del coste total calculado.',
+            comparison: 'Revisa desvíos grandes, por ejemplo, excesiva dependencia de servicios externos.'
+        },
+        'chartCostoTipo': {
+            title: 'Coste por Tipo de Máquina',
+            desc: 'Permite ver qué tipos de activo concentran más gasto de mantenimiento.',
+            source: 'Coste total por tipo / por máquina según filtro.',
+            comparison: 'Puedes usarlo para priorizar renovaciones o reformas técnicas.'
+        },
+        'chartEvolucionCostos': {
+            title: 'Evolución Mensual de Costes',
+            desc: 'Detalle de cómo se reparten los costes preventivos y correctivos a lo largo del periodo.',
+            source: 'Costes simulados pero coherentes con los filtros y KPIs.',
+            comparison: 'Picos marcados + correctivo alto suelen señalar averías importantes.'
+        },
+        'chartConsumoRepuestos': {
+            title: 'Consumo de Repuestos',
+            desc: 'Importe consumido en repuestos por periodo (semana/mes).',
+            source: 'Coste de repuestos consumidos.',
+            comparison: 'Picos pueden asociarse a grandes reparaciones o campañas.'
+        },
+        'chartValorInventario': {
+            title: 'Valor del Inventario',
+            desc: 'Valor aproximado del inventario de repuestos a lo largo del tiempo.',
+            source: 'Simulación en base a consumo y reposición.',
+            comparison: 'Sirve para vigilar que el inventario no crece sin control ni cae por debajo de lo seguro.'
+        },
+        'chartEstadoActivos': {
+            title: 'Estado de los Activos',
+            desc: 'Distribución de activos operativos, en mantenimiento, programados e inactivos.',
+            source: 'Estados de activo combinados con las OTs abiertas.',
+            comparison: 'Muy útil en campaña para ver si el parque disponible es suficiente.'
+        },
+        'chartHorasOperacion': {
+            title: 'Horas de Operación',
+            desc: 'Horas acumuladas de trabajo por tipo de equipo o por activo individual.',
+            source: 'Horas simuladas alineadas con el tipo de activo.',
+            comparison: 'Activos con muchas horas + coste alto suelen estar cerca de fin de vida útil.'
+        },
+        'chartUtilizacion': {
+            title: 'Utilización de Activos',
+            desc: 'Porcentaje de uso de cada activo respecto a su capacidad esperada.',
+            source: 'Orientativo en base a horas de operación y disponibilidad.',
+            comparison: 'Valores muy bajos pueden indicar infrautilización o problemas de planificación.'
         }
     };
-    
+
+    // --- Tooltips para pestañas de navegación ---
+    const tooltipTabs = {
+        resumen: {
+            title: 'Resumen General',
+            desc: 'Visión ejecutiva de la salud del mantenimiento: disponibilidad, preventivo, coste y tiempos.',
+            source: 'Agrega los KPIs clave más representativos.',
+            comparison: 'Ideal para revisar en reuniones de seguimiento.'
+        },
+        disponibilidad: {
+            title: 'Disponibilidad y Salud del Activo',
+            desc: 'Indicadores de fiabilidad (MTBF), mantenibilidad (MTTR) y criticidad.',
+            source: 'Enfocado en continuidad operativa y estabilidad del parque.',
+            comparison: 'Se complementa con los costes para tomar decisiones de inversión.'
+        },
+        preventivo: {
+            title: 'Preventivo vs Correctivo',
+            desc: 'Analiza el equilibrio entre trabajo planificado y reparaciones de emergencia.',
+            source: 'Compara horas, costes y evolución temporal.',
+            comparison: 'Clave para reducir paradas no planificadas y costes a largo plazo.'
+        },
+        ordenes: {
+            title: 'Órdenes de Mantenimiento',
+            desc: 'Gestión operativa del trabajo diario: backlog, estados y productividad.',
+            source: 'Mira el flujo de OTs en el tiempo.',
+            comparison: 'Muy útil para jefes de equipo y planificación.'
+        },
+        costos: {
+            title: 'Costos de Mantenimiento',
+            desc: 'Detalle del gasto y su distribución por tipo, periodo y tipo de mantenimiento.',
+            source: 'Basado en modelo de costes asociados a cada activo.',
+            comparison: 'Conecta directamente con decisiones financieras.'
+        },
+        repuestos: {
+            title: 'Repuestos y Almacén',
+            desc: 'Stock, rotación, roturas y valor inmovilizado.',
+            source: 'Pensado para coordinación entre mantenimiento y almacén.',
+            comparison: 'Busca equilibrio entre servicio y capital inmovilizado.'
+        },
+        operativos: {
+            title: 'Rendimiento de Activos',
+            desc: 'Disponibilidad real del parque, utilización y costes por activo.',
+            source: 'Conecta inventario, uso y costes para tomar decisiones tácticas.',
+            comparison: 'Ideal para priorizar renovaciones o reasignaciones de equipos.'
+        }
+    };
+
+    // Crear el elemento tooltip flotante
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip-custom';
+    document.body.appendChild(tooltip);
+
+    // Esperar un poco a que el DOM esté listo
+    setTimeout(() => {
+        agregarTooltipAElementos(tooltipKPI, tooltipCharts, tooltipTabs, tooltip);
+    }, 400);
+}
+
+function agregarTooltipAElementos(tooltipKPI, tooltipCharts, tooltipTabs, tooltipElement) {
+    // --- KPI cards (todas las tarjetas de métricas) ---
+    document.querySelectorAll('.kpi-card').forEach(card => {
+        const labelText = (card.querySelector('.kpi-label')?.textContent || '').toLowerCase();
+        let key = null;
+
+        if (labelText.includes('disponibilidad')) key = 'disponibilidad';
+        else if (labelText.includes('mtbf')) key = 'mtbf';
+        else if (labelText.includes('mttr')) key = 'mttr';
+        else if (labelText.includes('averías por activo')) key = 'averias-activo';
+        else if (labelText.includes('criticidad')) key = 'criticidad';
+        else if (labelText.includes('paradas no planificadas')) key = 'paradas-no-planificadas';
+        else if (labelText.includes('mantenimiento preventivo')) key = 'preventivo';
+        else if (labelText.includes('mantenimiento correctivo')) key = 'correctivo';
+        else if (labelText.includes('cumplimiento plan')) key = 'cumplimiento-plan';
+        else if (labelText.includes('preventivos retrasados')) key = 'preventivos-retrasados';
+        else if (labelText.includes('máquinas en mantenimiento')) key = 'maquinas-mantenimiento';
+        else if (labelText.includes('oms cerradas')) key = 'oms-tiempo';
+        else if (labelText.includes('oms por técnico')) key = 'oms-tecnico';
+        else if (labelText.includes('costo total')) key = 'costo-total';
+        else if (labelText.includes('mano de obra')) key = 'mano-obra';
+        else if (labelText.includes('repuestos (32%')) key = 'repuestos';
+        else if (labelText.includes('rav')) key = 'rav';
+        else if (labelText.includes('rotación inventario')) key = 'rotacion-inventario';
+        else if (labelText.includes('stock-outs')) key = 'stock-outs';
+        else if (labelText.includes('stock inmovilizado')) key = 'stock-inmovilizado';
+        else if (labelText.includes('repuestos críticos ok')) key = 'repuestos-ok';
+        else if (labelText.includes('total activos')) key = 'total-activos';
+        else if (labelText.includes('activos disponibles')) key = 'activos-disponibles';
+        else if (labelText.includes('en mantenimiento')) key = 'en-mantenimiento';
+        else if (labelText.includes('costo promedio/activo')) key = 'costo-promedio-activo';
+        else if (labelText.includes('tiempo medio resolución')) key = 'tiempo-resolucion';
+
+        if (key && tooltipKPI[key]) {
+            card.setAttribute('data-tooltip', key);
+            agregarEventosTooltip(card, tooltipKPI[key], tooltipElement);
+        }
+    });
+
+    // --- Summary cards del Resumen General ---
+    document.querySelectorAll('.summary-card').forEach(card => {
+        const labelText = (card.querySelector('.card-label')?.textContent || '').toLowerCase();
+        let key = null;
+
+        if (labelText.includes('disponibilidad')) key = 'disponibilidad';
+        else if (labelText.includes('preventivo')) key = 'preventivo';
+        else if (labelText.includes('costo total')) key = 'costo-total';
+        else if (labelText.includes('tiempo resolución')) key = 'tiempo-resolucion';
+
+        if (key && tooltipKPI[key]) {
+            card.setAttribute('data-tooltip', key);
+            agregarEventosTooltip(card, tooltipKPI[key], tooltipElement);
+        }
+    });
+
+    // --- Chart containers / visuales ---
     document.querySelectorAll('.chart-container').forEach(container => {
         const canvas = container.querySelector('canvas');
-        if (canvas && chartTooltips[canvas.id]) {
-            container.setAttribute('data-tooltip', canvas.id);
-            agregarEventosTooltip(container, chartTooltips[canvas.id], tooltipElement);
+        if (!canvas) return;
+        const chartId = canvas.id;
+        if (tooltipCharts[chartId]) {
+            container.setAttribute('data-tooltip', chartId);
+            agregarEventosTooltip(container, tooltipCharts[chartId], tooltipElement);
+        }
+    });
+
+    // --- Pestañas de navegación ---
+    document.querySelectorAll('.nav-link').forEach(link => {
+        const section = link.dataset.section;
+        if (tooltipTabs[section]) {
+            link.setAttribute('data-tooltip', section);
+            agregarEventosTooltip(link, tooltipTabs[section], tooltipElement);
         }
     });
 }
 
 function agregarEventosTooltip(element, data, tooltipElement) {
-    element.addEventListener('mouseenter', (e) => {
-        mostrarTooltip(e, data, tooltipElement);
-    });
-    
-    element.addEventListener('mousemove', (e) => {
-        posicionarTooltip(e, tooltipElement);
-    });
-    
-    element.addEventListener('mouseleave', () => {
-        ocultarTooltip(tooltipElement);
-    });
+    element.addEventListener('mouseenter', e => mostrarTooltip(e, data, tooltipElement));
+    element.addEventListener('mousemove', e => posicionarTooltip(e, tooltipElement));
+    element.addEventListener('mouseleave', () => ocultarTooltip(tooltipElement));
 }
 
 function mostrarTooltip(event, data, tooltipElement) {
     let content = `
         <div class="tooltip-custom-title">${data.title}</div>
         <div class="tooltip-custom-desc">${data.desc}</div>
-        <div class="tooltip-custom-data">📊 ${data.source}</div>
+        <div class="tooltip-custom-data">📊 ${data.source || ''}</div>
     `;
-    
+
     if (data.comparison) {
         content += `
             <div class="tooltip-custom-comparison">
-                📈 <strong>Comparación:</strong><br>${data.comparison}
+                📈 <strong>Referencia:</strong><br>${data.comparison}
             </div>
         `;
     }
-    
+
     if (data.miniChart) {
         content += `<div class="tooltip-custom-mini-chart">`;
         data.miniChart.labels.forEach((label, i) => {
@@ -376,1425 +1599,36 @@ function mostrarTooltip(event, data, tooltipElement) {
         });
         content += `</div>`;
     }
-    
+
     tooltipElement.innerHTML = content;
     tooltipElement.classList.add('show');
     posicionarTooltip(event, tooltipElement);
 }
 
 function posicionarTooltip(event, tooltipElement) {
-    const x = event.clientX + 15;
-    const y = event.clientY + 15;
     const rect = tooltipElement.getBoundingClientRect();
-    
-    // Ajustar si se sale de la pantalla
-    let finalX = x;
-    let finalY = y;
-    
-    if (x + rect.width > window.innerWidth) {
-        finalX = event.clientX - rect.width - 15;
-    }
-    
-    if (y + rect.height > window.innerHeight) {
-        finalY = event.clientY - rect.height - 15;
-    }
-    
-    tooltipElement.style.left = finalX + 'px';
-    tooltipElement.style.top = finalY + 'px';
+    let x = event.clientX + 15;
+    let y = event.clientY + 15;
+
+    if (x + rect.width > window.innerWidth) x = event.clientX - rect.width - 15;
+    if (y + rect.height > window.innerHeight) y = event.clientY - rect.height - 15;
+
+    tooltipElement.style.left = x + 'px';
+    tooltipElement.style.top = y + 'px';
 }
 
 function ocultarTooltip(tooltipElement) {
     tooltipElement.classList.remove('show');
 }
 
-function mostrarSeccion(seccionId) {
-    // Ocultar todas las secciones
-    const sections = document.querySelectorAll('.bi-section');
-    sections.forEach(section => section.classList.remove('active'));
-    
-    // Mostrar sección seleccionada
-    const seccionActiva = document.getElementById(seccionId);
-    if (seccionActiva) {
-        seccionActiva.classList.add('active');
-    }
-}
+// =========================
+//  UTILIDADES EXTRA
+// =========================
 
-// Inicializar todas las gráficas
-function inicializarGraficas() {
-    // Gráficas de Resumen General
-    crearGraficoDistribucionMantenimiento();
-    crearGraficoCostosEvolucion();
-    crearGraficoDisponibilidadPorTipo();
-    crearGraficoTopMaquinas();
-    
-    // Gráficas de Disponibilidad
-    crearGraficoDisponibilidadEvolucion();
-    crearGraficoMTBFMTTR();
-    crearGraficoAverias();
-    
-    // Gráficas de Preventivo vs Correctivo
-    crearGraficoPrevCorrecHoras();
-    crearGraficoPrevCorrecCostos();
-    crearGraficoEvolucionPrevCorr();
-    
-    // Gráficas de Órdenes de Trabajo
-    crearGraficoEstadoOT();
-    crearGraficoProductividad();
-    crearGraficoBacklog();
-    
-    // Gráficas de Costos
-    crearGraficoDistribucionCostos();
-    crearGraficoCostoTipo();
-    crearGraficoEvolucionCostos();
-    
-    // Gráficas de Repuestos
-    crearGraficoConsumoRepuestos();
-    crearGraficoValorInventario();
-    
-    // Gráficas de Rendimiento
-    crearGraficoEstadoActivos();
-    crearGraficoHorasOperacion();
-    crearGraficoUtilizacion();
-}
-
-// ===== GRÁFICAS DE RESUMEN GENERAL =====
-
-function crearGraficoDistribucionMantenimiento() {
-    const ctx = document.getElementById('chartMantenimientoDistribucion');
-    if (!ctx) return;
-    
-    const preventivo = datosFiltrados?.preventivo || 68;
-    const correctivo = datosFiltrados?.correctivo || 28;
-    const predictivo = 100 - preventivo - correctivo;
-    
-    if (charts.distribucionMant) {
-        charts.distribucionMant.destroy();
-    }
-    
-    charts.distribucionMant = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Preventivo', 'Correctivo', 'Predictivo'],
-            datasets: [{
-                data: [preventivo, correctivo, predictivo],
-                backgroundColor: ['#28a745', '#dc3545', '#ffc107'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        boxWidth: 12,
-                        font: { size: 11 }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoCostosEvolucion() {
-    const ctx = document.getElementById('chartCostosEvolucion');
-    if (!ctx) return;
-    
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    const period = document.getElementById('period-filter')?.value || 'month';
-    
-    // Ajustar labels según el período
-    let labels, dataMultiplier;
-    if (period === 'week') {
-        labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-        dataMultiplier = 0.15;
-    } else if (period === 'month') {
-        labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
-        dataMultiplier = 0.6;
-    } else if (period === 'quarter') {
-        labels = ['Mes 1', 'Mes 2', 'Mes 3'];
-        dataMultiplier = 2.5;
-    } else {
-        labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        dataMultiplier = 1;
-    }
-    
-    // Calcular costo base según filtro
-    let costoBase = 277117;
-    if (tipoFiltro === 'tractor') costoBase = 143166.60;
-    else if (tipoFiltro === 'cosechadora') costoBase = 84411.95;
-    else if (tipoFiltro === 'pulverizador') costoBase = 29659.00;
-    else if (tipoFiltro === 'riego') costoBase = 16179.45;
-    else if (tipoFiltro === 'otros') costoBase = 43698.55;
-    
-    const costoPromedio = (costoBase / 6) * dataMultiplier;
-    const data = labels.map((_, i) => costoPromedio * (0.9 + Math.random() * 0.2));
-    
-    charts.costosEvol = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Costos (€)',
-                data: data,
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '€' + value.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoDisponibilidadPorTipo() {
-    const ctx = document.getElementById('chartDisponibilidadTipo');
-    if (!ctx) return;
-    
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    let labels, data, colors;
-    
-    if (tipoFiltro === 'todos') {
-        labels = ['Riego', 'Tractores', 'Otros', 'Cosechadoras', 'Pulverizadores'];
-        data = [100, 75, 67, 67, 33];
-        colors = ['#20c997', '#17a2b8', '#6c757d', '#28a745', '#ffc107'];
-    } else if (tipoFiltro === 'tractor') {
-        labels = ['TR-001', 'TR-003', 'TR-004', 'TR-005', 'TR-012', 'CT-001', 'TR-008', 'TR-006'];
-        data = [100, 50, 100, 100, 100, 100, 100, 0];
-        colors = Array(8).fill('#17a2b8');
-    } else if (tipoFiltro === 'cosechadora') {
-        labels = ['CS-002', 'CS-004', 'CS-003'];
-        data = [100, 100, 0];
-        colors = ['#28a745', '#28a745', '#dc3545'];
-    } else if (tipoFiltro === 'pulverizador') {
-        labels = ['PV-002', 'PV-005', 'PV-010'];
-        data = [50, 100, 50];
-        colors = Array(3).fill('#ffc107');
-    } else if (tipoFiltro === 'riego') {
-        labels = ['RI-004', 'RI-009'];
-        data = [100, 100];
-        colors = Array(2).fill('#20c997');
-    } else {
-        labels = ['GE-006', 'IN-007', 'IN-011'];
-        data = [100, 50, 100];
-        colors = Array(3).fill('#6c757d');
-    }
-    
-    charts.dispTipo = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Disponibilidad (%)',
-                data: data,
-                backgroundColor: colors
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoTopMaquinas() {
-    const ctx = document.getElementById('chartTopMaquinas');
-    if (!ctx) return;
-    
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    // Filtrar máquinas por tipo
-    let maquinasFiltradas = Object.entries(DATOS_MAQUINAS.costosPorMaquina);
-    
-    if (tipoFiltro !== 'todos') {
-        maquinasFiltradas = maquinasFiltradas.filter(([id, costo]) => {
-            if (tipoFiltro === 'tractor') return id.startsWith('TR-') || id.startsWith('CT-');
-            if (tipoFiltro === 'cosechadora') return id.startsWith('CS-');
-            if (tipoFiltro === 'pulverizador') return id.startsWith('PV-');
-            if (tipoFiltro === 'riego') return id.startsWith('RI-');
-            if (tipoFiltro === 'otros') return id.startsWith('GE-') || id.startsWith('IN-');
-            return true;
-        });
-    }
-    
-    // Ordenar y tomar top 5
-    const topMaquinas = maquinasFiltradas
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
-    
-    charts.topMaquinas = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: topMaquinas.map(m => m[0]),
-            datasets: [{
-                label: 'Costo (€)',
-                data: topMaquinas.map(m => m[1]),
-                backgroundColor: '#dc3545'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            indexAxis: 'y',
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '€' + value.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// ===== GRÁFICAS DE DISPONIBILIDAD =====
-
-function crearGraficoDisponibilidadEvolucion() {
-    const ctx = document.getElementById('chartDisponibilidadEvolucion');
-    if (!ctx) return;
-    
-    const period = document.getElementById('period-filter')?.value || 'month';
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    // Ajustar labels según el período
-    let labels;
-    if (period === 'week') {
-        labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    } else if (period === 'month') {
-        labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
-    } else if (period === 'quarter') {
-        labels = ['Mes 1', 'Mes 2', 'Mes 3'];
-    } else {
-        labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    }
-    
-    // Disponibilidad base según tipo
-    let dispBase = 77.8;
-    if (tipoFiltro === 'tractor') dispBase = 75;
-    else if (tipoFiltro === 'cosechadora') dispBase = 67;
-    else if (tipoFiltro === 'pulverizador') dispBase = 33;
-    else if (tipoFiltro === 'riego') dispBase = 100;
-    else if (tipoFiltro === 'otros') dispBase = 67;
-    
-    const dispData = labels.map((_, i) => dispBase + (Math.random() * 4 - 2));
-    const mtbfData = labels.map(() => 140 + Math.random() * 20);
-    
-    charts.dispEvol = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Disponibilidad (%)',
-                    data: dispData,
-                    borderColor: '#28a745',
-                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                    yAxisID: 'y',
-                    tension: 0.4
-                },
-                {
-                    label: 'MTBF (h)',
-                    data: mtbfData,
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    yAxisID: 'y1',
-                    tension: 0.4
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
-            scales: {
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Disponibilidad (%)'
-                    }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    title: {
-                        display: true,
-                        text: 'MTBF (horas)'
-                    },
-                    grid: {
-                        drawOnChartArea: false,
-                    }
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoMTBFMTTR() {
-    const ctx = document.getElementById('chartMTBFMTTR');
-    if (!ctx) return;
-    
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    // Ajustar métricas según tipo
-    let labels, mtbfData, mttrData;
-    
-    if (tipoFiltro === 'tractor') {
-        labels = ['Tractores'];
-        mtbfData = [165];
-        mttrData = [4.5];
-    } else if (tipoFiltro === 'cosechadora') {
-        labels = ['Cosechadoras'];
-        mtbfData = [142];
-        mttrData = [5.8];
-    } else if (tipoFiltro === 'pulverizador') {
-        labels = ['Pulverizadores'];
-        mtbfData = [158];
-        mttrData = [3.9];
-    } else if (tipoFiltro === 'riego') {
-        labels = ['Riego'];
-        mtbfData = [178];
-        mttrData = [2.8];
-    } else if (tipoFiltro === 'otros') {
-        labels = ['Otros'];
-        mtbfData = [160];
-        mttrData = [3.5];
-    } else {
-        labels = ['Tractores', 'Cosechadoras', 'Pulverizadores', 'Riego'];
-        mtbfData = [165, 142, 158, 178];
-        mttrData = [4.5, 5.8, 3.9, 2.8];
-    }
-    
-    charts.mtbfmttr = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'MTBF (h)',
-                    data: mtbfData,
-                    backgroundColor: '#28a745'
-                },
-                {
-                    label: 'MTTR (h)',
-                    data: mttrData,
-                    backgroundColor: '#dc3545'
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoAverias() {
-    const ctx = document.getElementById('chartAverias');
-    if (!ctx) return;
-    
-    charts.averias = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: ['Mecánicas', 'Eléctricas', 'Hidráulicas', 'Neumáticas', 'Otras'],
-            datasets: [{
-                data: [35, 25, 20, 12, 8],
-                backgroundColor: ['#dc3545', '#ffc107', '#007bff', '#17a2b8', '#6c757d']
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-}
-
-// ===== GRÁFICAS DE PREVENTIVO VS CORRECTIVO =====
-
-function crearGraficoPrevCorrecHoras() {
-    const ctx = document.getElementById('chartPrevCorrecHoras');
-    if (!ctx) return;
-    
-    charts.prevCorrecHoras = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Preventivo', 'Correctivo'],
-            datasets: [{
-                data: [68, 32],
-                backgroundColor: ['#28a745', '#dc3545'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoPrevCorrecCostos() {
-    const ctx = document.getElementById('chartPrevCorrecCostos');
-    if (!ctx) return;
-    
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    // Calcular costo base según filtro
-    let costoBase = 277117;
-    if (tipoFiltro === 'tractor') costoBase = 143166.60;
-    else if (tipoFiltro === 'cosechadora') costoBase = 84411.95;
-    else if (tipoFiltro === 'pulverizador') costoBase = 29659.00;
-    else if (tipoFiltro === 'riego') costoBase = 16179.45;
-    else if (tipoFiltro === 'otros') costoBase = 43698.55;
-    
-    const preventivo = Math.round(costoBase * 0.68);
-    const correctivo = Math.round(costoBase * 0.32);
-    
-    charts.prevCorrecCostos = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Preventivo', 'Correctivo'],
-            datasets: [{
-                data: [preventivo, correctivo],
-                backgroundColor: ['#28a745', '#dc3545'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.label + ': €' + context.parsed.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoEvolucionPrevCorr() {
-    const ctx = document.getElementById('chartEvolucionPrevCorr');
-    if (!ctx) return;
-    
-    const period = document.getElementById('period-filter')?.value || 'month';
-    
-    // Ajustar labels según el período
-    let labels;
-    if (period === 'week') {
-        labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    } else if (period === 'month') {
-        labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
-    } else if (period === 'quarter') {
-        labels = ['Mes 1', 'Mes 2', 'Mes 3'];
-    } else {
-        labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    }
-    
-    const prevData = labels.map(() => 60 + Math.random() * 10);
-    const corrData = labels.map((_, i) => 100 - prevData[i]);
-    
-    charts.evolPrevCorr = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Preventivo',
-                    data: prevData,
-                    borderColor: '#28a745',
-                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: 'Correctivo',
-                    data: corrData,
-                    borderColor: '#dc3545',
-                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// ===== GRÁFICAS DE ÓRDENES DE TRABAJO =====
-
-function crearGraficoEstadoOT() {
-    const ctx = document.getElementById('chartEstadoOT');
-    if (!ctx) return;
-    
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    // Base: 18 máquinas
-    let numMaquinas = 18;
-    if (tipoFiltro === 'tractor') numMaquinas = 8;
-    else if (tipoFiltro === 'cosechadora') numMaquinas = 3;
-    else if (tipoFiltro === 'pulverizador') numMaquinas = 3;
-    else if (tipoFiltro === 'riego') numMaquinas = 2;
-    else if (tipoFiltro === 'otros') numMaquinas = 2;
-    
-    // OTs proporcionales al número de máquinas (189 OTs totales base / 18 máquinas = ~10.5 OTs por máquina)
-    const factor = numMaquinas / 18;
-    const abiertas = Math.round(24 * factor);
-    const enProgreso = Math.round(15 * factor);
-    const completadas = Math.round(142 * factor);
-    const retrasadas = Math.round(8 * factor);
-    
-    charts.estadoOT = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: ['Abiertas', 'En Progreso', 'Completadas', 'Retrasadas'],
-            datasets: [{
-                data: [abiertas, enProgreso, completadas, retrasadas],
-                backgroundColor: ['#ffc107', '#007bff', '#28a745', '#dc3545']
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoProductividad() {
-    const ctx = document.getElementById('chartProductividad');
-    if (!ctx) return;
-    
-    charts.productividad = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Juan P.', 'María G.', 'Carlos R.', 'Ana M.', 'Luis F.'],
-            datasets: [{
-                label: 'OTs Completadas',
-                data: [15, 13, 12, 11, 9],
-                backgroundColor: '#667eea'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoBacklog() {
-    const ctx = document.getElementById('chartBacklog');
-    if (!ctx) return;
-    
-    const period = document.getElementById('period-filter')?.value || 'month';
-    
-    // Ajustar labels según el período
-    let labels;
-    if (period === 'week') {
-        labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    } else if (period === 'month') {
-        labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
-    } else if (period === 'quarter') {
-        labels = ['Mes 1', 'Mes 2', 'Mes 3'];
-    } else {
-        labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    }
-    
-    const data = labels.map(() => 15 + Math.floor(Math.random() * 15));
-    
-    charts.backlog = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Máquinas en Servicio',
-                data: data,
-                borderColor: '#ffc107',
-                backgroundColor: 'rgba(255, 193, 7, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
-
-// ===== GRÁFICAS DE COSTOS =====
-
-function crearGraficoDistribucionCostos() {
-    const ctx = document.getElementById('chartDistribucionCostos');
-    if (!ctx) return;
-    
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    // Calcular costo base según filtro
-    let costoBase = 277117;
-    if (tipoFiltro === 'tractor') costoBase = 143166.60;
-    else if (tipoFiltro === 'cosechadora') costoBase = 84411.95;
-    else if (tipoFiltro === 'pulverizador') costoBase = 29659.00;
-    else if (tipoFiltro === 'riego') costoBase = 16179.45;
-    else if (tipoFiltro === 'otros') costoBase = 43698.55;
-    
-    // Del total: 51% Mano de obra, 32% Repuestos, 12% Externos, 5% Otros
-    const manoObra = Math.round(costoBase * 0.51);
-    const repuestos = Math.round(costoBase * 0.32);
-    const externos = Math.round(costoBase * 0.12);
-    const otros = Math.round(costoBase * 0.05);
-    
-    charts.distCostos = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: ['Mano de Obra', 'Repuestos', 'Externos', 'Otros'],
-            datasets: [{
-                data: [manoObra, repuestos, externos, otros],
-                backgroundColor: ['#007bff', '#28a745', '#ffc107', '#6c757d']
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.label + ': €' + context.parsed.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoCostoTipo() {
-    const ctx = document.getElementById('chartCostoTipo');
-    if (!ctx) return;
-    
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    let labels, data;
-    
-    if (tipoFiltro === 'todos') {
-        labels = ['Tractores', 'Cosechadoras', 'Otros', 'Pulverizadores', 'Riego'];
-        data = [143166.60, 84412.00, 43698.55, 29659.00, 16179.45];
-    } else if (tipoFiltro === 'tractor') {
-        // Desglose individual de tractores
-        labels = ['TR-003', 'TR-012', 'TR-005', 'TR-001', 'TR-004', 'TR-007', 'CT-001', 'TR-008'];
-        data = [22150.80, 19876.45, 18920.30, 18650.50, 15680.45, 15420.75, 12340.75, 11567.60];
-    } else if (tipoFiltro === 'cosechadora') {
-        labels = ['CS-003', 'CS-002', 'CS-004'];
-        data = [31280.65, 28450.90, 24680.40];
-    } else if (tipoFiltro === 'pulverizador') {
-        labels = ['PV-002', 'PV-005', 'PV-010'];
-        data = [12890.25, 9876.40, 6892.35];
-    } else if (tipoFiltro === 'riego') {
-        labels = ['RI-004', 'RI-009'];
-        data = [8945.30, 7234.15];
-    } else {
-        labels = ['GE-006', 'IN-007', 'IN-011'];
-        data = [22340.80, 16789.95, 4567.80];
-    }
-    
-    charts.costoTipo = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Costo Total (€)',
-                data: data,
-                backgroundColor: '#667eea'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '€' + value.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoEvolucionCostos() {
-    const ctx = document.getElementById('chartEvolucionCostos');
-    if (!ctx) return;
-    
-    const period = document.getElementById('period-filter')?.value || 'month';
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    // Ajustar labels según el período
-    let labels;
-    if (period === 'week') {
-        labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    } else if (period === 'month') {
-        labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
-    } else if (period === 'quarter') {
-        labels = ['Mes 1', 'Mes 2', 'Mes 3'];
-    } else {
-        labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    }
-    
-    // Calcular costo base según filtro
-    let costoBase = 277117;
-    if (tipoFiltro === 'tractor') costoBase = 143166.60;
-    else if (tipoFiltro === 'cosechadora') costoBase = 84411.95;
-    else if (tipoFiltro === 'pulverizador') costoBase = 29659.00;
-    else if (tipoFiltro === 'riego') costoBase = 16179.45;
-    else if (tipoFiltro === 'otros') costoBase = 43698.55;
-    
-    const costoPrev = (costoBase * 0.68) / labels.length;
-    const costoCorr = (costoBase * 0.32) / labels.length;
-    
-    const prevData = labels.map(() => costoPrev * (0.9 + Math.random() * 0.2));
-    const corrData = labels.map(() => costoCorr * (0.8 + Math.random() * 0.4));
-    
-    charts.evolCostos = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Preventivo',
-                    data: prevData,
-                    borderColor: '#28a745',
-                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: 'Correctivo',
-                    data: corrData,
-                    borderColor: '#dc3545',
-                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '€' + value.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// ===== GRÁFICAS DE REPUESTOS =====
-
-function crearGraficoConsumoRepuestos() {
-    const ctx = document.getElementById('chartConsumoRepuestos');
-    if (!ctx) return;
-    
-    const period = document.getElementById('period-filter')?.value || 'month';
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    // Ajustar labels según el período
-    let labels;
-    if (period === 'week') {
-        labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    } else if (period === 'month') {
-        labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
-    } else if (period === 'quarter') {
-        labels = ['Mes 1', 'Mes 2', 'Mes 3'];
-    } else {
-        labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    }
-    
-    // Calcular costo repuestos según tipo (32% del costo total)
-    let costoBase = 277117;
-    if (tipoFiltro === 'tractor') costoBase = 143166.60;
-    else if (tipoFiltro === 'cosechadora') costoBase = 84411.95;
-    else if (tipoFiltro === 'pulverizador') costoBase = 29659.00;
-    else if (tipoFiltro === 'riego') costoBase = 16179.45;
-    else if (tipoFiltro === 'otros') costoBase = 43698.55;
-    
-    const costoRepuestos = (costoBase * 0.32) / labels.length;
-    const data = labels.map(() => costoRepuestos * (0.85 + Math.random() * 0.3));
-    
-    charts.consumoRepuestos = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Consumo (€)',
-                data: data,
-                backgroundColor: '#17a2b8'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '€' + value.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoValorInventario() {
-    const ctx = document.getElementById('chartValorInventario');
-    if (!ctx) return;
-    
-    const period = document.getElementById('period-filter')?.value || 'month';
-    
-    // Ajustar labels según el período
-    let labels;
-    if (period === 'week') {
-        labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    } else if (period === 'month') {
-        labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
-    } else if (period === 'quarter') {
-        labels = ['Mes 1', 'Mes 2', 'Mes 3'];
-    } else {
-        labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    }
-    
-    // Inventario decrece ligeramente con el tiempo
-    const valorInicial = 22000;
-    const data = labels.map((_, i) => valorInicial - (i * 300) + (Math.random() * 200));
-    
-    charts.valorInventario = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Valor (€)',
-                data: data,
-                borderColor: '#28a745',
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '€' + value.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// ===== GRÁFICAS DE RENDIMIENTO =====
-
-function crearGraficoEstadoActivos() {
-    const ctx = document.getElementById('chartEstadoActivos');
-    if (!ctx) return;
-    
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    // Base: 18 máquinas
-    let numMaquinas = 18;
-    if (tipoFiltro === 'tractor') numMaquinas = 8;
-    else if (tipoFiltro === 'cosechadora') numMaquinas = 3;
-    else if (tipoFiltro === 'pulverizador') numMaquinas = 3;
-    else if (tipoFiltro === 'riego') numMaquinas = 2;
-    else if (tipoFiltro === 'otros') numMaquinas = 2;
-    
-    // Distribución proporcional: 61% operativos, 22% mantenimiento, 17% programados
-    const operativos = Math.round(numMaquinas * 0.61);
-    const enMantenimiento = Math.round(numMaquinas * 0.22);
-    const programados = numMaquinas - operativos - enMantenimiento;
-    
-    charts.estadoActivos = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Operativos', 'En Mantenimiento', 'Programados', 'Inactivos'],
-            datasets: [{
-                data: [operativos, enMantenimiento, programados, 0],
-                backgroundColor: ['#28a745', '#ffc107', '#007bff', '#dc3545'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((context.parsed / total) * 100).toFixed(1);
-                            return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoHorasOperacion() {
-    const ctx = document.getElementById('chartHorasOperacion');
-    if (!ctx) return;
-    
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    // Datos reales calculados de maquinaria.js
-    let labels, data, colors;
-    
-    if (tipoFiltro === 'tractor') {
-        labels = ['TR-001', 'TR-002', 'TR-003', 'TR-004', 'TR-005', 'TR-006', 'CT-001', 'TR-007'];
-        data = [2845, 2567, 3012, 1890, 2734, 1245, 2156, 2148];
-        colors = '#007bff';
-    } else if (tipoFiltro === 'cosechadora') {
-        labels = ['CS-002', 'CS-003', 'CS-004'];
-        data = [2345, 2678, 2526];
-        colors = '#28a745';
-    } else if (tipoFiltro === 'pulverizador') {
-        labels = ['PV-005', 'PV-008', 'PV-009'];
-        data = [1234, 1389, 1450];
-        colors = '#6f42c1';
-    } else if (tipoFiltro === 'riego') {
-        labels = ['RI-010', 'RI-012'];
-        data = [5234, 5456];
-        colors = '#17a2b8';
-    } else if (tipoFiltro === 'otros') {
-        labels = ['GE-006', 'IN-007'];
-        data = [5892, 3967];
-        colors = '#ffc107';
-    } else {
-        labels = ['Tractores', 'Cosechadoras', 'Generador', 'Riego', 'Pulverizadores'];
-        data = [18597, 7549, 5892, 10690, 4073];
-        colors = ['#007bff', '#28a745', '#ffc107', '#17a2b8', '#6f42c1'];
-    }
-    
-    charts.horasOperacion = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Horas de Operación',
-                data: data,
-                backgroundColor: colors
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return value.toLocaleString() + 'h';
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoUtilizacion() {
-    const ctx = document.getElementById('chartUtilizacion');
-    if (!ctx) return;
-    
-    const tipoFiltro = document.getElementById('tipo-filter')?.value || 'todos';
-    
-    let labels, data;
-    
-    if (tipoFiltro === 'tractor') {
-        labels = ['TR-001', 'TR-003', 'TR-005', 'TR-004', 'TR-002', 'TR-006', 'CT-001', 'TR-007'];
-        data = [85, 92, 88, 72, 78, 45, 65, 70];
-    } else if (tipoFiltro === 'cosechadora') {
-        labels = ['CS-003', 'CS-002', 'CS-004'];
-        data = [95, 78, 85];
-    } else if (tipoFiltro === 'pulverizador') {
-        labels = ['PV-005', 'PV-008', 'PV-009'];
-        data = [60, 68, 72];
-    } else if (tipoFiltro === 'riego') {
-        labels = ['RI-010', 'RI-012'];
-        data = [90, 92];
-    } else if (tipoFiltro === 'otros') {
-        labels = ['GE-006', 'IN-007'];
-        data = [88, 75];
-    } else {
-        labels = ['TR-001', 'TR-003', 'TR-005', 'TR-004', 'CS-003', 'CS-002', 'RI-010', 'RI-012'];
-        data = [85, 92, 88, 72, 95, 78, 90, 92];
-    }
-    
-    charts.utilizacion = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Utilización (%)',
-                data: data,
-                backgroundColor: function(context) {
-                    const value = context.parsed.y;
-                    if (value >= 80) return '#28a745';
-                    if (value >= 60) return '#ffc107';
-                    return '#dc3545';
-                }
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Función para actualizar datos según los filtros seleccionados
-function actualizarDatos() {
-    const lugar = document.getElementById('lugar-filter')?.value || 'todos';
-    const tipo = document.getElementById('tipo-filter')?.value || 'todos';
-    const campana = document.getElementById('campana-filter')?.value || 'todos';
-    const period = document.getElementById('period-filter')?.value || 'month';
-    
-    // Aplicar filtros
-    let datosTemporales = { ...DATOS_MAQUINAS };
-    let maquinasFiltradas = Object.keys(DATOS_MAQUINAS.costosPorMaquina);
-    
-    // Filtrar por tipo
-    if (tipo !== 'todos') {
-        maquinasFiltradas = maquinasFiltradas.filter(id => {
-            if (tipo === 'tractor') return id.startsWith('TR-') || id.startsWith('CT-');
-            if (tipo === 'cosechadora') return id.startsWith('CS-');
-            if (tipo === 'pulverizador') return id.startsWith('PV-');
-            if (tipo === 'riego') return id.startsWith('RI-');
-            if (tipo === 'otros') return id.startsWith('GE-') || id.startsWith('IN-');
-            return true;
-        });
-    }
-    
-    // Calcular totales con máquinas filtradas
-    const costoTotalFiltrado = maquinasFiltradas.reduce((sum, id) => {
-        return sum + (DATOS_MAQUINAS.costosPorMaquina[id] || 0);
-    }, 0);
-    
-    const totalMaquinasFiltradas = maquinasFiltradas.length;
-    
-    // Actualizar KPIs en el HTML
-    actualizarKPIs(costoTotalFiltrado, totalMaquinasFiltradas, tipo);
-    
-    // Recrear todas las gráficas con los datos filtrados
-    destruirGraficas();
-    inicializarGraficas();
-    
-    // Mostrar mensaje de confirmación
-    const tipoTexto = {
-        'todos': 'Todos los tipos',
-        'tractor': 'Tractores',
-        'cosechadora': 'Cosechadoras',
-        'pulverizador': 'Pulverizadores',
-        'riego': 'Sistema Riego',
-        'otros': 'Otros'
-    }[tipo];
-    
-    console.log(`✅ Filtros aplicados: ${tipoTexto} | ${totalMaquinasFiltradas} máquinas | €${costoTotalFiltrado.toLocaleString()}`);
-}
-
-function actualizarKPIs(costoTotal, totalMaquinas, tipoFiltro) {
-    // Calcular disponibilidad según tipo
-    const disponibilidad = tipoFiltro === 'todos' ? 77.8 : 
-                          tipoFiltro === 'cosechadora' ? 67 :
-                          tipoFiltro === 'riego' ? 100 :
-                          tipoFiltro === 'tractor' ? 75 :
-                          tipoFiltro === 'pulverizador' ? 33 : 67;
-    
-    // Calcular MTBF según tipo
-    const mtbf = tipoFiltro === 'tractor' ? 165 :
-                 tipoFiltro === 'cosechadora' ? 142 :
-                 tipoFiltro === 'pulverizador' ? 158 :
-                 tipoFiltro === 'riego' ? 178 :
-                 tipoFiltro === 'otros' ? 160 : 156;
-    
-    // Calcular MTTR según tipo
-    const mttr = tipoFiltro === 'tractor' ? 4.5 :
-                 tipoFiltro === 'cosechadora' ? 5.8 :
-                 tipoFiltro === 'pulverizador' ? 3.9 :
-                 tipoFiltro === 'riego' ? 2.8 :
-                 tipoFiltro === 'otros' ? 3.5 : 4.2;
-    
-    // Calcular averías por activo
-    const averiasActivo = tipoFiltro === 'cosechadora' ? 3.5 :
-                          tipoFiltro === 'pulverizador' ? 3.2 :
-                          tipoFiltro === 'riego' ? 1.8 : 2.8;
-    
-    // Calcular costos distribuidos
-    const costoManoObra = Math.round(costoTotal * 0.51);
-    const costoRepuestos = Math.round(costoTotal * 0.32);
-    const costoPreventivo = Math.round(costoTotal * 0.68);
-    const costoCorrectivo = Math.round(costoTotal * 0.32);
-    const costoPromedio = Math.round(costoTotal / totalMaquinas);
-    
-    // === SECCIÓN RESUMEN (cards superiores) ===
-    const cardValues = document.querySelectorAll('.kpi-summary-grid .card-value');
-    if (cardValues.length >= 3) {
-        cardValues[0].textContent = disponibilidad.toFixed(1) + '%';
-        cardValues[2].textContent = '€' + costoTotal.toLocaleString('es-ES', {maximumFractionDigits: 0});
-    }
-    
-    // === SECCIÓN DISPONIBILIDAD ===
-    const dispCards = document.querySelectorAll('#disponibilidad .kpi-card .kpi-value');
-    if (dispCards.length >= 6) {
-        dispCards[0].innerHTML = disponibilidad.toFixed(1) + '<span>%</span>';
-        dispCards[1].innerHTML = mtbf + '<span>h</span>';
-        dispCards[2].innerHTML = mttr.toFixed(1) + '<span>h</span>';
-        dispCards[3].textContent = averiasActivo.toFixed(1);
-    }
-    
-    // === SECCIÓN ÓRDENES DE TRABAJO ===
-    const otCards = document.querySelectorAll('#ordenes .kpi-card .kpi-value');
-    if (otCards.length >= 4) {
-        const factorOT = totalMaquinas / 18;
-        const tiempoPromedio = tipoFiltro === 'cosechadora' ? 4.5 :
-                               tipoFiltro === 'pulverizador' ? 4.2 :
-                               tipoFiltro === 'riego' ? 2.8 : 3.8;
-        
-        otCards[0].innerHTML = tiempoPromedio.toFixed(1) + '<span>días</span>';
-        otCards[1].textContent = Math.round(7 * factorOT);
-    }
-    
-    // === SECCIÓN COSTOS ===
-    const costosCards = document.querySelectorAll('#costos .kpi-card .kpi-value');
-    if (costosCards.length >= 4) {
-        costosCards[0].textContent = '€' + costoTotal.toLocaleString('es-ES', {maximumFractionDigits: 0});
-        costosCards[1].textContent = '€' + costoPreventivo.toLocaleString('es-ES', {maximumFractionDigits: 0});
-        costosCards[2].textContent = '€' + costoRepuestos.toLocaleString('es-ES', {maximumFractionDigits: 0});
-    }
-    
-    // === SECCIÓN REPUESTOS ===
-    const repuestosCards = document.querySelectorAll('#repuestos .kpi-card .kpi-value');
-    if (repuestosCards.length >= 4) {
-        const rotacion = tipoFiltro === 'cosechadora' ? 5.2 :
-                         tipoFiltro === 'pulverizador' ? 3.8 :
-                         tipoFiltro === 'riego' ? 3.5 : 4.2;
-        
-        repuestosCards[0].innerHTML = rotacion.toFixed(1) + '<span>x/año</span>';
-        repuestosCards[1].textContent = Math.max(8, Math.round(12 * (totalMaquinas / 18)));
-    }
-    
-    // === SECCIÓN RENDIMIENTO (OPERATIVOS) ===
-    const rendimientoCards = document.querySelectorAll('#operativos .kpi-card .kpi-value');
-    if (rendimientoCards.length >= 4) {
-        const operativos = Math.round(totalMaquinas * 0.61);
-        const enMantenimiento = Math.round(totalMaquinas * 0.22);
-        
-        rendimientoCards[0].textContent = totalMaquinas;
-        rendimientoCards[1].textContent = operativos;
-        rendimientoCards[2].textContent = enMantenimiento;
-        rendimientoCards[3].textContent = '€' + costoPromedio.toLocaleString('es-ES', {maximumFractionDigits: 0});
-    }
-}
-
-function destruirGraficas() {
-    // Destruir todas las gráficas existentes
-    Object.keys(charts).forEach(key => {
-        if (charts[key]) {
-            charts[key].destroy();
-        }
-    });
-    charts = {};
-}
-
-// Función para exportar reporte
 function exportarReporte() {
     alert('Funcionalidad de exportación en desarrollo.\nSe generará un PDF con todos los KPIs y gráficas.');
 }
 
-// Función de cerrar sesión desde navbar
 function cerrarSesion() {
     if (confirm('¿Está seguro que desea cerrar sesión?')) {
         localStorage.removeItem('gmao_logged_in');
@@ -1803,64 +1637,6 @@ function cerrarSesion() {
     }
 }
 
-// Función para volver atrás
 function volverAtras() {
     window.location.href = 'gestortaller.html';
 }
-
-// Función para volver atrás
-function volverAtras() {
-    window.location.href = 'gestortaller.html';
-}
-
-// ===== FILTRADO Y ACTUALIZACIÓN =====
-function aplicarFiltros() {
-    const periodo = document.getElementById('period-filter').value;
-    const lugar = document.getElementById('lugar-filter').value;
-    const tipo = document.getElementById('tipo-filter').value;
-    const campana = document.getElementById('campana-filter').value;
-
-    // Filtrar datos según los criterios seleccionados
-    datosFiltrados = datosOriginales.filter(dato => {
-        const coincidePeriodo = periodo === 'todos' || dato.periodo === periodo;
-        const coincideLugar = lugar === 'todos' || dato.lugar === lugar;
-        const coincideTipo = tipo === 'todos' || dato.tipo === tipo;
-        const coincideCampana = campana === 'todos' || dato.campana === campana;
-        return coincidePeriodo && coincideLugar && coincideTipo && coincideCampana;
-    });
-
-    // Actualizar gráficos y KPIs
-    actualizarGraficos();
-    actualizarKPIs();
-}
-
-function actualizarGraficos() {
-    // Destruir gráficos existentes
-    Object.values(charts).forEach(chart => chart.destroy());
-
-    // Crear gráficos con datos filtrados
-    inicializarGraficas();
-}
-
-function actualizarKPIs() {
-    // Actualizar valores de los KPIs según los datos filtrados
-    const totalMaquinas = datosFiltrados.length;
-    const operativas = datosFiltrados.filter(d => d.estado === 'operativa').length;
-    const enMantenimiento = datosFiltrados.filter(d => d.estado === 'mantenimiento').length;
-
-    document.querySelector('.kpi-card .kpi-value').textContent = `${operativas}/${totalMaquinas}`;
-    document.querySelector('.kpi-card .kpi-label').textContent = 'Máquinas Operativas';
-}
-
-// ===== EVENTOS =====
-document.addEventListener('DOMContentLoaded', () => {
-    // Guardar datos originales
-    datosOriginales = [...DATOS_MAQUINAS];
-
-    // Agregar eventos a los filtros
-    const filtros = document.querySelectorAll('#period-filter, #lugar-filter, #tipo-filter, #campana-filter');
-    filtros.forEach(filtro => filtro.addEventListener('change', aplicarFiltros));
-
-    // Aplicar filtros iniciales
-    aplicarFiltros();
-});
