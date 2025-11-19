@@ -804,10 +804,10 @@ function eliminarMaterial(button) {
 }
 
 function crearOrden() {
-    // Recopilar datos finales
+    // Descripción de la orden (texto libre del wizard)
     ordenWizardData.descripcion = document.getElementById('descripcionOrden').value;
-    
-    // Recopilar tareas editables
+
+    // Recopilar tareas editables del wizard
     const tareasEditables = [];
     document.querySelectorAll('.tarea-texto').forEach(input => {
         if (input.value.trim()) {
@@ -815,32 +815,105 @@ function crearOrden() {
         }
     });
     ordenWizardData.tareas = tareasEditables;
-    
-    // Recopilar tipo de trabajo
+
+    // Tipo de trabajo (preventivo/correctivo/etc.)
     ordenWizardData.tipoTrabajo = document.getElementById('tipoTrabajo').value;
-    
-    // Validar datos mínimos (solo los esenciales)
+
+    // Validación básica (igual que antes)
     if (!ordenWizardData.criticidad || !ordenWizardData.fechaInicio || !ordenWizardData.responsable) {
         alert('⚠️ Faltan datos obligatorios para crear la orden');
         return;
     }
-    
-    // Simular creación de orden
-    console.log('Datos de la orden:', ordenWizardData);
-    
-    alert(`✅ Orden de Trabajo creada exitosamente!
-    
-🚨 Criticidad: ${ordenWizardData.criticidad}
-📅 Fecha inicio: ${new Date(ordenWizardData.fechaInicio).toLocaleDateString('es-ES')}
-📅 Fecha fin: ${new Date(ordenWizardData.fechaFin).toLocaleDateString('es-ES')}
-👤 Responsable: ${ordenWizardData.responsable}
-📋 Tareas: ${ordenWizardData.tareas.length > 0 ? ordenWizardData.tareas.length + ' programadas' : 'Sin tareas específicas'}
-🔧 Tipo: ${document.getElementById('tipoTrabajo').options[document.getElementById('tipoTrabajo').selectedIndex]?.text || 'No especificado'}`);
-    
-    // Cerrar ambos modales
-    cerrarModalOrden();
-    cerrarModal();
+
+    // Si quieres mantener esta validación de tareas, puedes dejarla o comentarla
+    // if (ordenWizardData.tareas.length === 0) {
+    //     if (!confirm('No has definido tareas específicas. ¿Crear la orden igualmente?')) {
+    //         return;
+    //     }
+    // }
+
+    // ====== NUEVO: construir objeto de orden compatible con "finishIncidencia" ======
+
+    // Generar ID de orden tipo OT-2025-0001
+    const numeroOrden = 'OT-' + new Date().getFullYear() + '-' +
+        String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+
+    // Icono según tipo de activo
+    let iconoActivo = '🔧';
+    if (solicitudSeleccionada && solicitudSeleccionada.tipoActivo) {
+        const tipo = solicitudSeleccionada.tipoActivo.toLowerCase();
+        if (tipo.includes('tractor')) iconoActivo = '🚜';
+        else if (tipo.includes('cosech')) iconoActivo = '🌾';
+        else if (tipo.includes('pulver')) iconoActivo = '💧';
+        else if (tipo.includes('vehíc') || tipo.includes('vehic')) iconoActivo = '🚗';
+    }
+
+    // Mapeo tipo mantenimiento a formato del otro módulo
+    let tipoMantenimientoInterno = 'mantenimiento-correctivo';
+    if (solicitudSeleccionada && solicitudSeleccionada.tipoMantenimiento === 'Mantenimiento Preventivo') {
+        tipoMantenimientoInterno = 'mantenimiento-preventivo';
+    }
+
+    // Pasar tareas a formato { descripcion, completada }
+    const tareasFinal = ordenWizardData.tareas.map(t => ({
+        descripcion: t,
+        completada: false
+    }));
+
+    // Pseudo detalle de activo (para que ver-ordenes-trabajo tenga algo que mostrar)
+    const activoDetalle = solicitudSeleccionada ? {
+        Activo: solicitudSeleccionada.numeroActivo,
+        CatActivo: solicitudSeleccionada.tipoActivo,
+        NomActivo: `${solicitudSeleccionada.numeroActivo} - ${solicitudSeleccionada.tipoActivo}`,
+        ubicacion: solicitudSeleccionada.ubicacion,
+        estado: 'Operativo'
+    } : null;
+
+    const nuevaOrden = {
+        id: numeroOrden,
+        // Lo que se mostrará en tarjetas/listas
+        activo: solicitudSeleccionada
+            ? `${iconoActivo} ${solicitudSeleccionada.numeroActivo} - ${solicitudSeleccionada.tipoActivo}`
+            : 'Sin activo',
+        activoDetalle: activoDetalle,
+        tipoMantenimiento: tipoMantenimientoInterno, // mismo formato que finishIncidencia
+        titulo: solicitudSeleccionada
+            ? `Orden desde ${solicitudSeleccionada.id} - ${solicitudSeleccionada.averia}`
+            : 'Orden de mantenimiento',
+        descripcion: ordenWizardData.descripcion || (solicitudSeleccionada?.descripcion ?? ''),
+        // Usamos criticidad como prioridad (puedes mapearla a Alta/Media/Baja si quieres)
+        prioridad: ordenWizardData.criticidad || 'Media',
+        responsable: ordenWizardData.responsable,
+        equipoApoyo: ordenWizardData.equipoApoyo || [],
+        notasResponsable: '',
+
+        fechaInicio: ordenWizardData.fechaInicio,
+        fechaFin: ordenWizardData.fechaFin,
+
+        plantillaTareas: ordenWizardData.tipoTrabajo || '',
+        tareas: tareasFinal,
+        descripcionTareas: ordenWizardData.descripcion || '',
+        archivos: [],
+
+        estado: 'por-hacer',
+        fechaCreacion: new Date().toISOString(),
+        ubicacion: solicitudSeleccionada
+            ? { finca: solicitudSeleccionada.ubicacion }
+            : {}
+    };
+
+    // Guardar en localStorage usando la MISMA clave que el otro flujo
+    let ordenesGuardadas = JSON.parse(localStorage.getItem('nuevasOrdenesCreadas') || '[]');
+    ordenesGuardadas.push(nuevaOrden);
+    localStorage.setItem('nuevasOrdenesCreadas', JSON.stringify(ordenesGuardadas));
+
+    // (Opcional) pequeño resumen en alert
+    alert(`✅ Orden de Trabajo ${numeroOrden} creada exitosamente.\n\nSerás redirigido al listado de órdenes.`);
+
+    // Redirigir a la página de ver órdenes de trabajo
+    window.location.href = 'ver-ordenes-mantenimiento.html';
 }
+
 
 function cancelarOrden() {
     cerrarModalOrden();

@@ -19,6 +19,9 @@ function cargarOrdenesExistentes() {
         {
             id: 'OT-2024-001',
             activo: '🚜 Tractor John Deere 5075E',
+            categoriaActivo: 'Maquinaria',
+            tipoActivo: 'Tractor', 
+            ubicacion: 'Fuente el Olmo',           
             tipoMantenimiento: 'correctivo',
             tipoAveria: 'Motor',
             descripcionAveria: 'No arranca por las mañanas, hace ruido extraño',
@@ -34,6 +37,9 @@ function cargarOrdenesExistentes() {
         {
             id: 'OT-2024-002',
             activo: '💧 Pulverizador Apache AS1220',
+            categoriaActivo: 'Maquinaria',
+            tipoActivo: 'Pulverizador',
+            ubicacion: 'Fuente el Olmo',
             tipoMantenimiento: 'preventivo',
             tipoAveria: null,
             descripcionAveria: null,
@@ -49,6 +55,9 @@ function cargarOrdenesExistentes() {
         {
             id: 'OT-2024-003',
             activo: '🏢 Nave Almacén 1',
+            categoriaActivo: 'Infraestructura',
+            tipoActivo: 'Edificio',
+            ubicacion: 'Fuente el Olmo',
             tipoMantenimiento: 'correctivo',
             tipoAveria: 'Eléctrico',
             descripcionAveria: 'Falta de iluminación en sector norte',

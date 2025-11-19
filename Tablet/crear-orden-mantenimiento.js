@@ -1478,7 +1478,7 @@ function finishIncidencia() {
     alert(`✅ Orden de Mantenimiento ${ordenId} creada correctamente`);
     
     // Redirigir a ver órdenes de trabajo
-    window.location.href = 'ver-ordenes-trabajo.html';
+    window.location.href = 'ver-ordenes-mantenimiento.html';
 }
 
 // Funciones de navegación de la navbar

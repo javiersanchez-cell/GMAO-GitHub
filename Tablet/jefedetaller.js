@@ -14,7 +14,7 @@ function volverAtras() {
 
 function verSolicitudes() {
     // Redirigir a la página de visualización de solicitudes
-    window.location.href = 'ver-solicitudes.html';
+    window.location.href = 'ver-incidencias-totales.html';
 }
 
 function crearSolicitud() {
@@ -24,7 +24,7 @@ function crearSolicitud() {
 
 function verOrdenesTrabajo() {
     // Redirigir a la página de órdenes de trabajo kanban
-    window.location.href = 'ver-ordenes-trabajo.html';
+    window.location.href = 'ver-ordenes-mantenimiento.html';
 }
 
 // Verificar autenticación al cargar la página

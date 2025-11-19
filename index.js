@@ -5,7 +5,7 @@ function handleLogin(event) {
     const password = document.getElementById('password').value;
     
     // Credenciales hardcodeadas
-    if (username === 'jefedetaller' && password === 'jefedetaller') {
+    if (username === 'jefetaller' && password === 'jefetaller') {
         localStorage.setItem('gmao_logged_in', 'true');
         localStorage.setItem('gmao_username', username);
         window.location.href = 'Tablet/jefedetaller.html';
