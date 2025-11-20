@@ -163,6 +163,32 @@ body {
     align-items: center;
     flex-wrap: wrap;
 }
+
+/* Etiqueta para el tipo de activo/máquina */
+.tipo-activo-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, var(--planasa-green-ultra-light) 0%, rgba(63, 156, 53, 0.12) 100%);
+    color: var(--planasa-green-dark);
+    border: 1.5px solid var(--planasa-green-light);
+    box-shadow: 0 2px 6px rgba(63, 156, 53, 0.15);
+    transition: all 0.2s ease;
+}
+
+.tipo-activo-badge:hover {
+    background: linear-gradient(135deg, rgba(63, 156, 53, 0.15) 0%, rgba(63, 156, 53, 0.2) 100%);
+    border-color: var(--planasa-green);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(63, 156, 53, 0.2);
+}
+
 .badge-tipo-activo {
     background: var(--planasa-gray-100);
     border: 1px solid var(--planasa-gray-200);

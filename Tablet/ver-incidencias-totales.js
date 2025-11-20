@@ -90,11 +90,14 @@ function cargarSolicitudes() {
             <div class="solicitud-main-info">
                 <div class="solicitud-id">${solicitud.id}</div>
                 <div class="solicitud-resumen">
-                    <div class="solicitud-titulo">${solicitud.numeroActivo} - ${solicitud.tipoActivo}</div>
+                    <div class="solicitud-titulo">${solicitud.numeroActivo}</div>
                     <div class="solicitud-subtitulo">${solicitud.nombre} • ${formatearFecha(solicitud.fecha)}</div>
                 </div>
             </div>
             <div class="solicitud-badges">
+                <span class="tipo-activo-badge">
+                    ${solicitud.tipoActivo}
+                </span>
                 <div class="tipo-mantenimiento-badge-small ${solicitud.tipoMantenimiento === 'Mantenimiento Preventivo' ? 'preventivo' : 'correctivo'}">
                     ${solicitud.tipoMantenimiento === 'Mantenimiento Preventivo' ? 'PREVENTIVO' : 'CORRECTIVO'}
                     <i class="fas ${solicitud.tipoMantenimiento === 'Mantenimiento Preventivo' ? 'fa-calendar-check' : 'fa-wrench'}"></i>
