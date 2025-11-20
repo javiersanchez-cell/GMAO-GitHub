@@ -7,8 +7,23 @@ const opcionesActivos = {
     averia: ["Sistema Hidráulico", "Motor", "Transmisión", "Sistema Eléctrico", "Frenos", "Neumáticos", "Cabina", "Refrigeración", "Revisión General", "Cambio de Aceite", "Filtros", "Inspección", "Calibración"]
 };
 
+// Función para cargar incidencias desde localStorage
+function cargarIncidenciasDesdeStorage() {
+    let incidencias = [];
+    try {
+        const stored = localStorage.getItem('incidenciasGMAO');
+        if (stored) {
+            incidencias = JSON.parse(stored);
+            console.log('✅ Incidencias cargadas desde localStorage:', incidencias.length);
+        }
+    } catch (e) {
+        console.error('Error al cargar incidencias:', e);
+    }
+    return incidencias;
+}
+
 // Datos de ejemplo de solicitudes
-const solicitudesData = [
+let solicitudesData = [
     {
         id: "SOL-001",
         fecha: "2024-11-10",
@@ -39,6 +54,7 @@ const solicitudesData = [
         descripcion: "Fallo en el sistema de dosificación del pulverizador. La bomba no mantiene la presión constante.",
         acciones: "Se reinició el sistema y se comprobó el estado de la batería."
     },
+    ...cargarIncidenciasDesdeStorage(),
     {
         id: "SOL-003",
         fecha: "2024-11-08",

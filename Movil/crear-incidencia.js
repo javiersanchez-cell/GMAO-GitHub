@@ -1124,7 +1124,54 @@ function findActivoById(activoId) {
 
 function finishIncidencia() {
     console.log('📋 Finalizando incidencia:', incidenciaData);
+    
+    // Crear objeto de incidencia completo
+    const nuevaIncidencia = {
+        id: `SOL-${Date.now()}`,
+        fecha: new Date().toISOString().split('T')[0],
+        nombre: 'Usuario Móvil',
+        tipoMantenimiento: incidenciaData.tipoIncidencia === 'averia' ? 'Mantenimiento Correctivo' : 
+                          incidenciaData.tipoIncidencia === 'mantenimiento-preventivo' ? 'Mantenimiento Preventivo' : 
+                          incidenciaData.tipoIncidencia === 'consulta' ? 'Consulta' : 'Otro',
+        importancia: incidenciaData.importancia,
+        numeroActivo: incidenciaData.activo?.Activo || '',
+        categoriaActivo: incidenciaData.activo?.CatActivo || '',
+        tipoActivo: incidenciaData.activo?.NomActivo || '',
+        ubicacion: incidenciaData.ubicacion.finca,
+        averia: incidenciaData.titulo,
+        estado: 'pendiente',
+        descripcion: incidenciaData.descripcion,
+        acciones: '',
+        urgencia: incidenciaData.urgencia || '',
+        archivos: incidenciaData.archivos || [],
+        timestamp: new Date().toISOString()
+    };
+    
+    // Guardar en localStorage
+    let incidencias = [];
+    try {
+        const stored = localStorage.getItem('incidenciasGMAO');
+        if (stored) {
+            incidencias = JSON.parse(stored);
+        }
+    } catch (e) {
+        console.error('Error al cargar incidencias:', e);
+    }
+    
+    // Agregar nueva incidencia al inicio
+    incidencias.unshift(nuevaIncidencia);
+    
+    // Guardar de vuelta en localStorage
+    try {
+        localStorage.setItem('incidenciasGMAO', JSON.stringify(incidencias));
+        console.log('✅ Incidencia guardada:', nuevaIncidencia);
+    } catch (e) {
+        console.error('Error al guardar incidencia:', e);
+    }
+    
+    // Mostrar confirmación y redirigir
     alert('Incidencia creada correctamente');
+    window.location.href = 'mis-solicitudes.html';
 }
 
 // Funciones de navegación de la navbar

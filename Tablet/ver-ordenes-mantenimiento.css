@@ -22,7 +22,8 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: var(--planasa-gray-50);
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     color: var(--planasa-gray-900);
 }
 
@@ -30,9 +31,10 @@ body {
     max-width: 100%;
     margin: 0 auto;
     padding: 1rem;
-    min-height: calc(100vh - 80px);
+    height: calc(100vh - 60px);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 
@@ -42,8 +44,9 @@ body {
     display: flex;
     justify-content: center;
     gap: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
 .filtros-container select {
@@ -72,10 +75,12 @@ body {
 /* Kanban Board */
 .kanban-board {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1.5rem;
-    min-height: 600px;
     flex: 1;
+    align-items: stretch;
+    overflow: hidden;
+    width: 100%;
 }
 
 .kanban-column {
@@ -86,6 +91,8 @@ body {
     flex-direction: column;
     overflow: hidden;
     border: 1px solid var(--planasa-gray-200);
+    min-width: 0;
+    width: 100%;
 }
 
 .column-header {
@@ -127,7 +134,7 @@ body {
     flex: 1;
     padding: 1.25rem;
     overflow-y: auto;
-    max-height: 70vh;
+    overflow-x: hidden;
     background: var(--planasa-gray-50);
 }
 
@@ -1614,6 +1621,12 @@ body {
 }
 
 /* ============ ESTILOS TABLA ============ */
+#tabla-ordenes {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
 #tabla-ordenes tbody tr {
     transition: all 0.2s ease;
 }
@@ -1623,9 +1636,32 @@ body {
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+#tabla-ordenes th,
+#tabla-ordenes td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#vista-tabla {
+    width: 100%;
+    overflow-x: auto;
+}
+
 /* ============ ESTILOS CALENDARIO ============ */
+#vista-calendario {
+    width: 100%;
+    overflow-x: auto;
+}
+
+#calendario-grid {
+    min-width: 600px;
+    width: 100%;
+}
+
 #calendario-grid > div {
     transition: all 0.2s ease;
+    min-width: 0;
 }
 
 .toolbar-container {
@@ -1633,4 +1669,5 @@ body {
     padding: 15px 20px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    flex-shrink: 0;
 }

@@ -349,6 +349,312 @@ function cargarOrdenesExistentes() {
                     estado: 'Completado'
                 }
             ]
+        },
+        {
+            id: 'OM-2025-009',
+            activo: '💧 Sistema de Bombeo Principal',
+            categoriaActivo: 'Equipamiento',
+            tipoActivo: 'Bomba',
+            ubicacion: 'Fuente el Olmo',
+            tipoMantenimiento: 'correctivo',
+            tipoAveria: 'Mecánico',
+            descripcionAveria: 'Vibraciones anormales y ruido excesivo en la bomba principal',
+            acciones: 'Se detectó rodamiento dañado. Pendiente de recibir repuesto del proveedor.',
+            solicitante: 'Antonio Ruiz',
+            prioridad: 'Crítica',
+            responsable: 'Carlos Méndez',
+            equipoApoyo: ['Luis Rodríguez'],
+            fechaInicio: '2025-11-22',
+            fechaFin: '2025-11-24',
+            duracionHoras: 16,
+            estado: 'parado',
+            tareas: ['Desmontar bomba', 'Inspeccionar rodamientos', 'Sustituir rodamiento dañado', 'Verificar alineación', 'Montar y probar'],
+            fechaCreacion: new Date('2025-11-22T08:30:00'),
+            descripcion: 'Reparación urgente bomba principal - PARADO POR REPUESTO',
+            descripcionTareas: 'Sustitución de rodamiento dañado. Trabajo pausado a la espera de pieza',
+            observaciones: '⚠️ PARADO: Esperando llegada de rodamiento SKF 6309 (ETA: 24/11/2025)',
+            historicoMantenimientos: [
+                {
+                    fecha: '2025-08-15',
+                    tipo: 'Preventivo',
+                    descripcion: 'Revisión trimestral y lubricación',
+                    responsable: 'Carlos Méndez',
+                    estado: 'Completado'
+                },
+                {
+                    fecha: '2025-05-20',
+                    tipo: 'Preventivo',
+                    descripcion: 'Mantenimiento preventivo bomba',
+                    responsable: 'Luis Rodríguez',
+                    estado: 'Completado'
+                }
+            ]
+        },
+        {
+            id: 'OM-2025-010',
+            activo: '🌡️ Sensor de Temperatura Cámara 5',
+            categoriaActivo: 'Equipamiento',
+            tipoActivo: 'Sensor',
+            ubicacion: 'Moguer',
+            tipoMantenimiento: 'correctivo',
+            tipoAveria: 'Electrónico',
+            descripcionAveria: 'Sensor descalibrado, lecturas erróneas de temperatura',
+            acciones: 'Se verificó cableado y alimentación. Sensor requiere calibración o sustitución.',
+            solicitante: 'Carmen Fernández',
+            prioridad: 'Media',
+            responsable: 'María López',
+            equipoApoyo: [],
+            fechaInicio: '2025-11-23',
+            fechaFin: '2025-11-23',
+            duracionHoras: 3,
+            estado: 'por-hacer',
+            tareas: ['Verificar conexiones eléctricas', 'Calibrar sensor', 'Si falla calibración: sustituir sensor', 'Configurar en sistema SCADA', 'Test 2 horas'],
+            fechaCreacion: new Date('2025-11-23T09:15:00'),
+            descripcion: 'Calibración/sustitución sensor temperatura',
+            descripcionTareas: 'Verificar y calibrar sensor de temperatura o sustituir si es necesario',
+            historicoMantenimientos: [
+                {
+                    fecha: '2025-06-10',
+                    tipo: 'Preventivo',
+                    descripcion: 'Calibración semestral sensores',
+                    responsable: 'María López',
+                    estado: 'Completado'
+                }
+            ]
+        },
+        {
+            id: 'OM-2025-011',
+            activo: '🚚 Camioneta Ford Ranger Matrícula 1234-ABC',
+            categoriaActivo: 'Vehículo',
+            tipoActivo: 'Camioneta',
+            ubicacion: 'Huelva',
+            tipoMantenimiento: 'preventivo',
+            tipoAveria: null,
+            descripcionAveria: 'Revisión periódica 20.000 km',
+            acciones: null,
+            solicitante: 'Sistema Automático',
+            prioridad: 'Media',
+            responsable: 'Ana García',
+            equipoApoyo: [],
+            fechaInicio: '2025-11-28',
+            fechaFin: '2025-11-29',
+            duracionHoras: 8,
+            estado: 'por-hacer',
+            tareas: ['Cambio aceite motor', 'Cambio filtro aceite', 'Cambio filtro aire', 'Revisión frenos', 'Rotación neumáticos', 'Verificar niveles', 'Test road'],
+            fechaCreacion: new Date('2025-11-20T10:00:00'),
+            descripcion: 'Revisión 20.000 km',
+            descripcionTareas: 'Mantenimiento preventivo programado cada 20.000 km según manual',
+            historicoMantenimientos: [
+                {
+                    fecha: '2025-05-15',
+                    tipo: 'Preventivo',
+                    descripcion: 'Revisión 10.000 km',
+                    responsable: 'Ana García',
+                    estado: 'Completado'
+                },
+                {
+                    fecha: '2025-01-10',
+                    tipo: 'Preventivo',
+                    descripcion: 'Revisión anual + ITV',
+                    responsable: 'Luis Rodríguez',
+                    estado: 'Completado'
+                }
+            ]
+        },
+        {
+            id: 'OM-2025-012',
+            activo: '🔌 Panel Solar Sector A - Strings 3 y 4',
+            categoriaActivo: 'Infraestructura',
+            tipoActivo: 'Instalación fotovoltaica',
+            ubicacion: 'Huelva',
+            tipoMantenimiento: 'correctivo',
+            tipoAveria: 'Eléctrico',
+            descripcionAveria: 'Bajada de producción en strings 3 y 4, posible problema en inversor',
+            acciones: 'Mediciones iniciales confirman caída de rendimiento del 40%. Revisar inversor y strings.',
+            solicitante: 'Javier Morales',
+            prioridad: 'Alta',
+            responsable: 'Luis Rodríguez',
+            equipoApoyo: ['Diego López'],
+            fechaInicio: '2025-11-25',
+            fechaFin: '2025-11-26',
+            duracionHoras: 10,
+            estado: 'por-hacer',
+            tareas: ['Medición voltaje/corriente por string', 'Inspección visual paneles', 'Revisar conexiones inversor', 'Test inversor', 'Limpiar paneles si necesario', 'Verificar producción 24h'],
+            fechaCreacion: new Date('2025-11-20T14:30:00'),
+            descripcion: 'Diagnóstico y reparación sistema fotovoltaico',
+            descripcionTareas: 'Identificar y solucionar problema de pérdida de rendimiento en instalación solar',
+            historicoMantenimientos: [
+                {
+                    fecha: '2025-09-01',
+                    tipo: 'Preventivo',
+                    descripcion: 'Limpieza paneles y revisión general',
+                    responsable: 'Luis Rodríguez',
+                    estado: 'Completado'
+                },
+                {
+                    fecha: '2025-03-15',
+                    tipo: 'Correctivo',
+                    descripcion: 'Sustitución inversor string 1',
+                    responsable: 'Diego López',
+                    estado: 'Completado'
+                }
+            ]
+        },
+        {
+            id: 'OM-2025-013',
+            activo: '🔧 Compresor de Aire Ingersoll Rand',
+            categoriaActivo: 'Equipamiento',
+            tipoActivo: 'Compresor',
+            ubicacion: 'Fuente el Olmo',
+            tipoMantenimiento: 'preventivo',
+            tipoAveria: null,
+            descripcionAveria: 'Mantenimiento trimestral programado',
+            acciones: null,
+            solicitante: 'Sistema Automático',
+            prioridad: 'Media',
+            responsable: 'Carlos Méndez',
+            equipoApoyo: [],
+            fechaInicio: '2025-11-15',
+            fechaFin: '2025-11-15',
+            duracionHoras: 4,
+            estado: 'hecho',
+            tareas: ['Cambio filtro aire', 'Verificar nivel aceite', 'Revisar correas', 'Limpiar radiador', 'Test funcionamiento'],
+            fechaCreacion: new Date('2025-11-15T08:00:00'),
+            descripcion: 'Mantenimiento trimestral compresor',
+            descripcionTareas: 'Revisión preventiva cada 3 meses según fabricante',
+            historicoMantenimientos: [
+                {
+                    fecha: '2025-08-14',
+                    tipo: 'Preventivo',
+                    descripcion: 'Mantenimiento trimestral',
+                    responsable: 'Carlos Méndez',
+                    estado: 'Completado'
+                },
+                {
+                    fecha: '2025-05-10',
+                    tipo: 'Correctivo',
+                    descripcion: 'Sustitución válvula seguridad',
+                    responsable: 'Luis Rodríguez',
+                    estado: 'Completado'
+                }
+            ]
+        },
+        {
+            id: 'OM-2025-014',
+            activo: '🌡️ Calibración Termómetros Cámaras Frío',
+            categoriaActivo: 'Equipamiento',
+            tipoActivo: 'Instrumentación',
+            ubicacion: 'Moguer',
+            tipoMantenimiento: 'preventivo',
+            tipoAveria: null,
+            descripcionAveria: 'Calibración semestral obligatoria',
+            acciones: null,
+            solicitante: 'Control de Calidad',
+            prioridad: 'Alta',
+            responsable: 'María López',
+            equipoApoyo: [],
+            fechaInicio: '2025-11-12',
+            fechaFin: '2025-11-13',
+            duracionHoras: 8,
+            estado: 'hecho',
+            tareas: ['Calibración cámara 1', 'Calibración cámara 2', 'Calibración cámara 3', 'Calibración cámara 4', 'Emisión certificados', 'Actualizar registros'],
+            fechaCreacion: new Date('2025-11-12T09:00:00'),
+            descripcion: 'Calibración semestral termómetros',
+            descripcionTareas: 'Calibración obligatoria según ISO 9001 y trazabilidad ENAC',
+            historicoMantenimientos: [
+                {
+                    fecha: '2025-05-15',
+                    tipo: 'Preventivo',
+                    descripcion: 'Calibración semestral anterior',
+                    responsable: 'María López',
+                    estado: 'Completado'
+                },
+                {
+                    fecha: '2024-11-20',
+                    tipo: 'Preventivo',
+                    descripcion: 'Calibración semestral',
+                    responsable: 'María López',
+                    estado: 'Completado'
+                }
+            ]
+        },
+        {
+            id: 'OM-2025-015',
+            activo: '💧 Filtros Sistema de Ósmosis',
+            categoriaActivo: 'Equipamiento',
+            tipoActivo: 'Sistema tratamiento agua',
+            ubicacion: 'Huelva',
+            tipoMantenimiento: 'preventivo',
+            tipoAveria: null,
+            descripcionAveria: 'Sustitución filtros según plan',
+            acciones: null,
+            solicitante: 'Sistema Automático',
+            prioridad: 'Media',
+            responsable: 'Luis Rodríguez',
+            equipoApoyo: ['Diego López'],
+            fechaInicio: '2025-11-10',
+            fechaFin: '2025-11-11',
+            duracionHoras: 6,
+            estado: 'hecho',
+            tareas: ['Cambiar pre-filtro sedimentos', 'Cambiar filtro carbón activo', 'Cambiar membrana ósmosis', 'Verificar presiones', 'Test calidad agua'],
+            fechaCreacion: new Date('2025-11-10T08:30:00'),
+            descripcion: 'Cambio filtros sistema ósmosis',
+            descripcionTareas: 'Sustitución periódica según horas de uso',
+            historicoMantenimientos: [
+                {
+                    fecha: '2025-08-05',
+                    tipo: 'Preventivo',
+                    descripcion: 'Cambio filtros',
+                    responsable: 'Luis Rodríguez',
+                    estado: 'Completado'
+                },
+                {
+                    fecha: '2025-05-01',
+                    tipo: 'Preventivo',
+                    descripcion: 'Cambio filtros',
+                    responsable: 'Ana García',
+                    estado: 'Completado'
+                }
+            ]
+        },
+        {
+            id: 'OM-2025-016',
+            activo: '🚪 Puertas Automáticas Acceso Principal',
+            categoriaActivo: 'Infraestructura',
+            tipoActivo: 'Sistema automatización',
+            ubicacion: 'Moguer',
+            tipoMantenimiento: 'correctivo',
+            tipoAveria: 'Mecánico',
+            descripcionAveria: 'Sensor de apertura descalibrado',
+            acciones: 'Se ajustó sensor y se verificó funcionamiento correcto durante 2 horas.',
+            solicitante: 'Recepción',
+            prioridad: 'Alta',
+            responsable: 'Diego López',
+            equipoApoyo: [],
+            fechaInicio: '2025-11-14',
+            fechaFin: '2025-11-14',
+            duracionHoras: 3,
+            estado: 'hecho',
+            tareas: ['Diagnóstico sensor', 'Ajuste sensores apertura', 'Lubricación guías', 'Verificar motor', 'Test 50 ciclos'],
+            fechaCreacion: new Date('2025-11-14T10:15:00'),
+            descripcion: 'Ajuste sensores puertas automáticas',
+            descripcionTareas: 'Calibración y verificación del sistema de apertura automática',
+            historicoMantenimientos: [
+                {
+                    fecha: '2025-06-20',
+                    tipo: 'Preventivo',
+                    descripcion: 'Mantenimiento semestral puertas',
+                    responsable: 'Diego López',
+                    estado: 'Completado'
+                },
+                {
+                    fecha: '2024-12-15',
+                    tipo: 'Preventivo',
+                    descripcion: 'Mantenimiento anual',
+                    responsable: 'Luis Rodríguez',
+                    estado: 'Completado'
+                }
+            ]
         }
     ];
 
@@ -553,7 +859,19 @@ function formatearFecha(fecha) {
 }
 
 // Mostrar detalle de orden
-function mostrarDetalleOrden(orden) {
+function mostrarDetalleOrden(ordenParam) {
+    // Si recibimos un string (ID), buscar la orden en el array global
+    let orden;
+    if (typeof ordenParam === 'string') {
+        orden = ordenesDeTrabajoGlobal.find(o => o.id === ordenParam);
+        if (!orden) {
+            console.error('Orden no encontrada:', ordenParam);
+            return;
+        }
+    } else {
+        orden = ordenParam;
+    }
+    
     ordenSeleccionada = orden;
     const modal = document.getElementById('modal-detalle');
     const titulo = document.getElementById('modal-titulo');
@@ -604,7 +922,7 @@ function mostrarDetalleOrden(orden) {
                     </div>
                     <div class="modal-info-item">
                         <div class="modal-info-label">Fecha de inicio</div>
-                        <input type="date" class="modal-input" id="edit-fechaInicio" value="${orden.fechaInicio ? new Date(orden.fechaInicio).toISOString().split('T')[0] : ''}">
+                        <input type="date" class="modal-input" id="edit-fechaInicio" value="${orden.fechaInicio || ''}">
                     </div>
                     <div class="modal-info-item">
                         <div class="modal-info-label">Duración (horas)</div>
@@ -655,6 +973,7 @@ function mostrarDetalleOrden(orden) {
                         const tareaTexto = typeof tarea === 'string' ? tarea : (tarea.descripcion || '');
                         return `
                         <div class="tarea-item-editable" data-index="${index}">
+                            <span style="font-weight: 600; color: var(--planasa-green-dark); margin-right: 8px; min-width: 25px;">${index + 1}.</span>
                             <input type="checkbox" id="tarea-check-${index}" class="tarea-checkbox" ${tarea.completada ? 'checked' : ''}>
                             <input type="text" class="tarea-input" id="tarea-${index}" value="${tareaTexto}" placeholder="Descripción de la tarea">
                             <button type="button" class="btn-eliminar-tarea" onclick="eliminarTarea(${index})" title="Eliminar tarea">
@@ -1353,10 +1672,10 @@ function renderizarTabla() {
         };
         
         const estadoBadge = {
-            'por-hacer': { text: 'Por Hacer', color: '#3b82f6', bg: '#dbeafe' },
-            'en-progreso': { text: 'En Progreso', color: '#f59e0b', bg: '#fef3c7' },
-            'parado': { text: 'Parado', color: '#ef4444', bg: '#fee2e2' },
-            'hecho': { text: 'Completado', color: '#10b981', bg: '#d1fae5' }
+            'por-hacer': { text: 'Por Hacer', color: '#374151', bg: '#e5e7eb' },       // Gris
+            'en-progreso': { text: 'En Progreso', color: '#1e40af', bg: '#dbeafe' },   // Azul
+            'parado': { text: 'Parado', color: '#a16207', bg: '#fef3c7' },             // Amarillo
+            'hecho': { text: 'Completado', color: '#15803d', bg: '#dcfce7' }           // Verde
         };
         
         tr.innerHTML = `
@@ -1418,12 +1737,24 @@ function renderizarCalendario() {
     
     // Días de la semana
     const diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    diasSemana.forEach(dia => {
+    diasSemana.forEach((dia, index) => {
         const header = document.createElement('div');
-        header.style.padding = '10px';
+        header.style.padding = '12px';
         header.style.textAlign = 'center';
-        header.style.fontWeight = '600';
-        header.style.color = 'var(--planasa-green-dark)';
+        header.style.fontWeight = '700';
+        header.style.fontSize = '0.85rem';
+        header.style.letterSpacing = '0.5px';
+        header.style.textTransform = 'uppercase';
+        header.style.color = 'white';
+        header.style.background = 'var(--planasa-green)';
+        header.style.borderRadius = '6px';
+        
+        // Fin de semana con color diferente
+        if (index >= 5) {
+            header.style.background = 'var(--planasa-green-dark)';
+            header.style.opacity = '0.9';
+        }
+        
         header.textContent = dia;
         grid.appendChild(header);
     });
@@ -1441,22 +1772,24 @@ function renderizarCalendario() {
     for (let i = 0; i < diaSemanaInicio; i++) {
         const celda = document.createElement('div');
         celda.style.padding = '10px';
-        celda.style.minHeight = '100px';
-        celda.style.background = '#f9fafb';
+        celda.style.minHeight = '120px';
+        celda.style.background = 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)';
         celda.style.borderRadius = '8px';
+        celda.style.border = '1px dashed #d1d5db';
         grid.appendChild(celda);
     }
     
     // Añadir días del mes
     for (let dia = 1; dia <= diasEnMes; dia++) {
         const celda = document.createElement('div');
-        celda.style.padding = '10px';
-        celda.style.minHeight = '100px';
+        celda.style.padding = '12px';
+        celda.style.minHeight = '120px';
         celda.style.background = 'white';
-        celda.style.border = '1px solid #e5e7eb';
-        celda.style.borderRadius = '8px';
+        celda.style.border = '2px solid #e5e7eb';
+        celda.style.borderRadius = '10px';
         celda.style.cursor = 'pointer';
-        celda.style.transition = 'all 0.2s';
+        celda.style.transition = 'all 0.3s ease';
+        celda.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
         
         const fechaCelda = `${añoActualCalendario}-${String(mesActualCalendario + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
         
@@ -1466,21 +1799,46 @@ function renderizarCalendario() {
                       mesActualCalendario === hoy.getMonth() && 
                       añoActualCalendario === hoy.getFullYear();
         
-        if (esHoy) {
-            celda.style.background = '#f0fdf4';
-            celda.style.border = '2px solid var(--planasa-green)';
+        // Verificar si es fin de semana
+        const diaSemanaCelda = new Date(fechaCelda).getDay();
+        const esFinDeSemana = diaSemanaCelda === 0 || diaSemanaCelda === 6;
+        
+        if (esFinDeSemana) {
+            celda.style.background = '#fafafa';
         }
         
-        // Número del día
+        if (esHoy) {
+            celda.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
+            celda.style.border = '3px solid var(--planasa-green)';
+            celda.style.boxShadow = '0 4px 12px rgba(63, 156, 53, 0.2)';
+        }
+        
+        // Número del día con mejor estilo
         const numeroDia = document.createElement('div');
-        numeroDia.style.fontWeight = '600';
-        numeroDia.style.marginBottom = '8px';
-        numeroDia.style.color = esHoy ? 'var(--planasa-green)' : '#374151';
+        numeroDia.style.fontWeight = '700';
+        numeroDia.style.marginBottom = '10px';
+        numeroDia.style.fontSize = '1.1rem';
+        
+        if (esHoy) {
+            numeroDia.style.background = 'var(--planasa-green)';
+            numeroDia.style.color = 'white';
+            numeroDia.style.width = '32px';
+            numeroDia.style.height = '32px';
+            numeroDia.style.borderRadius = '50%';
+            numeroDia.style.display = 'flex';
+            numeroDia.style.alignItems = 'center';
+            numeroDia.style.justifyContent = 'center';
+            numeroDia.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        } else {
+            numeroDia.style.color = esFinDeSemana ? '#9ca3af' : '#374151';
+        }
+        
         numeroDia.textContent = dia;
         celda.appendChild(numeroDia);
         
-        // Buscar órdenes para este día (incluye todos los días entre fechaInicio y fechaFin)
-        const ordenesDelDia = ordenesDeTrabajoGlobal.filter(orden => {
+        // Buscar órdenes para este día aplicando filtros
+        const ordenesFiltradas = obtenerOrdenesFiltradas();
+        const ordenesDelDia = ordenesFiltradas.filter(orden => {
             const fechaInicio = new Date(orden.fechaInicio);
             const fechaFin = new Date(orden.fechaFin);
             const fechaActual = new Date(fechaCelda);
@@ -1488,29 +1846,105 @@ function renderizarCalendario() {
             return fechaActual >= fechaInicio && fechaActual <= fechaFin;
         });
         
-        // Mostrar mini badges de órdenes
-        ordenesDelDia.forEach(orden => {
+        // Mostrar contador de órdenes si hay más de 0
+        if (ordenesDelDia.length > 0) {
+            const contador = document.createElement('div');
+            contador.style.position = 'absolute';
+            contador.style.top = '8px';
+            contador.style.right = '8px';
+            contador.style.background = 'var(--planasa-green)';
+            contador.style.color = 'white';
+            contador.style.borderRadius = '50%';
+            contador.style.width = '24px';
+            contador.style.height = '24px';
+            contador.style.display = 'flex';
+            contador.style.alignItems = 'center';
+            contador.style.justifyContent = 'center';
+            contador.style.fontSize = '0.75rem';
+            contador.style.fontWeight = '700';
+            contador.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+            contador.textContent = ordenesDelDia.length;
+            celda.style.position = 'relative';
+            celda.appendChild(contador);
+        }
+        
+        // Mostrar badges de órdenes con más información
+        ordenesDelDia.forEach((orden, index) => {
+            // Limitar a 3 badges visibles, el resto se indica con "..."
+            if (index >= 3) {
+                if (index === 3) {
+                    const masOrdenes = document.createElement('div');
+                    masOrdenes.style.padding = '4px 6px';
+                    masOrdenes.style.marginTop = '4px';
+                    masOrdenes.style.fontSize = '0.7rem';
+                    masOrdenes.style.fontWeight = '600';
+                    masOrdenes.style.color = 'var(--planasa-gray-600)';
+                    masOrdenes.style.textAlign = 'center';
+                    masOrdenes.textContent = `+${ordenesDelDia.length - 3} más`;
+                    celda.appendChild(masOrdenes);
+                }
+                return;
+            }
+            
             const badge = document.createElement('div');
-            badge.style.padding = '4px 6px';
+            badge.style.padding = '6px 8px';
             badge.style.marginBottom = '4px';
             badge.style.fontSize = '0.7rem';
-            badge.style.borderRadius = '4px';
+            badge.style.borderRadius = '6px';
             badge.style.overflow = 'hidden';
             badge.style.textOverflow = 'ellipsis';
             badge.style.whiteSpace = 'nowrap';
             badge.style.cursor = 'pointer';
+            badge.style.transition = 'all 0.2s';
+            badge.style.display = 'flex';
+            badge.style.alignItems = 'center';
+            badge.style.gap = '4px';
+            badge.style.fontWeight = '500';
+            badge.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
             
             const estadoColor = {
-                'por-hacer': { bg: '#dbeafe', color: '#1e40af' },
-                'en-progreso': { bg: '#fef3c7', color: '#92400e' },
-                'parado': { bg: '#fee2e2', color: '#991b1b' },
-                'hecho': { bg: '#d1fae5', color: '#065f46' }
+                'por-hacer': { bg: '#e5e7eb', color: '#374151', border: '#9ca3af' },      // Gris - Por hacer
+                'en-progreso': { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },   // Azul - En progreso
+                'parado': { bg: '#fef3c7', color: '#a16207', border: '#fde68a' },        // Amarillo - Parado
+                'hecho': { bg: '#dcfce7', color: '#15803d', border: '#86efac' }          // Verde - Completado
+            };
+            
+            const prioridadIcono = {
+                'Crítica': '🔴',
+                'Alta': '🟠',
+                'Media': '🟡',
+                'Baja': '🟢'
             };
             
             badge.style.background = estadoColor[orden.estado].bg;
             badge.style.color = estadoColor[orden.estado].color;
-            badge.textContent = orden.id;
-            badge.title = orden.activo;
+            badge.style.border = `1px solid ${estadoColor[orden.estado].border}`;
+            
+            // Contenido del badge con icono de prioridad
+            badge.innerHTML = `
+                <span>${prioridadIcono[orden.prioridad] || ''}</span>
+                <span style="font-weight: 600;">${orden.id}</span>
+            `;
+            
+            const estadoTexto = {
+                'por-hacer': 'Por Hacer',
+                'en-progreso': 'En Progreso',
+                'parado': 'Parado',
+                'hecho': 'Completado'
+            };
+            
+            badge.title = `${orden.activo}\nPrioridad: ${orden.prioridad}\nEstado: ${estadoTexto[orden.estado]}\nResponsable: ${orden.responsable}`;
+            
+            badge.onmouseover = () => {
+                badge.style.transform = 'translateY(-2px)';
+                badge.style.boxShadow = '0 4px 6px rgba(0,0,0,0.15)';
+            };
+            
+            badge.onmouseout = () => {
+                badge.style.transform = 'translateY(0)';
+                badge.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+            };
+            
             badge.onclick = (e) => {
                 e.stopPropagation();
                 mostrarDetalleOrden(orden.id);
@@ -1519,23 +1953,18 @@ function renderizarCalendario() {
             celda.appendChild(badge);
         });
         
-        // Click en la celda para ver órdenes del día
-        celda.onclick = () => {
-            if (ordenesDelDia.length > 0) {
-                mostrarOrdenesDelDia(fechaCelda, ordenesDelDia);
-            }
-        };
-        
         celda.onmouseover = () => {
             if (!esHoy) {
                 celda.style.background = '#f9fafb';
                 celda.style.transform = 'translateY(-2px)';
+                celda.style.boxShadow = '0 4px 8px rgba(0,0,0,0.12)';
             }
         };
         celda.onmouseout = () => {
             if (!esHoy) {
                 celda.style.background = 'white';
                 celda.style.transform = 'translateY(0)';
+                celda.style.boxShadow = 'none';
             }
         };
         
