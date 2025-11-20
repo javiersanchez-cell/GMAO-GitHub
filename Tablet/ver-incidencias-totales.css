@@ -163,6 +163,26 @@ body {
     align-items: center;
     flex-wrap: wrap;
 }
+.badge-tipo-activo {
+    background: var(--planasa-gray-100);
+    border: 1px solid var(--planasa-gray-200);
+    padding: 0.45rem 0.7rem;
+    border-radius: 18px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: .5px;
+    color: var(--planasa-gray-700);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+.badge-tipo-activo:hover {
+    background: var(--planasa-green-ultra-light);
+    border-color: var(--planasa-green-light);
+    color: var(--planasa-green-dark);
+}
 
 .estado-badge {
     padding: 0.5rem 1rem;
@@ -1906,48 +1926,119 @@ body {
 
 /* Botones de continuar */
 .btn-continuar {
-    background: rgb(63, 156, 53);
+    background: linear-gradient(135deg, var(--planasa-green) 0%, var(--planasa-green-dark) 100%);
     color: white;
     border: none;
-    padding: 12px 25px;
-    border-radius: 8px;
-    font-size: 1rem;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     display: block;
-    margin: 0 auto;
+    margin: 20px auto 0;
+    box-shadow: 0 4px 15px rgba(63, 156, 53, 0.3);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-continuar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.btn-continuar:hover::before {
+    left: 100%;
 }
 
 .btn-continuar:hover {
-    background: rgb(53, 136, 43);
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, var(--planasa-green-dark) 0%, #2d7a28 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(63, 156, 53, 0.4);
+}
+
+.btn-continuar:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(63, 156, 53, 0.3);
 }
 
 .btn-continuar:disabled {
-    background: #ccc;
+    background: linear-gradient(135deg, var(--planasa-gray-300) 0%, var(--planasa-gray-200) 100%);
+    color: var(--planasa-gray-600);
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
+    opacity: 0.6;
+}
+
+.btn-continuar:disabled:hover {
+    transform: none;
+    box-shadow: none;
 }
 
 /* Paso 3: Responsable Simplificado */
 .responsable-simple {
-    margin-bottom: 30px;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fdf7 100%);
+    padding: 20px;
+    border-radius: 14px;
+    border: 2px solid var(--planasa-gray-200);
+    box-shadow: 0 4px 12px rgba(63, 156, 53, 0.06);
 }
 
 .responsable-simple label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--planasa-gray-900);
+    font-size: 1rem;
+    letter-spacing: 0.3px;
+}
+
+.responsable-simple label::before {
+    content: "👨‍🔧";
+    font-size: 1.3rem;
 }
 
 .responsable-simple select {
     width: 100%;
-    max-width: 400px;
-    padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
+    padding: 14px 16px;
+    border: 2px solid var(--planasa-gray-200);
+    border-radius: 10px;
     font-size: 1rem;
+    background: white;
+    color: var(--planasa-gray-900);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.responsable-simple select:hover {
+    border-color: var(--planasa-green-light);
+    box-shadow: 0 4px 12px rgba(63, 156, 53, 0.1);
+}
+
+.responsable-simple select:focus {
+    outline: none;
+    border-color: var(--planasa-green);
+    box-shadow: 0 0 0 4px rgba(63, 156, 53, 0.12);
+    background: #fafffe;
+}
+
+.responsable-simple select option {
+    padding: 12px;
+    font-size: 0.95rem;
 }
 
 .campo-grupo select[multiple] {
@@ -2119,6 +2210,293 @@ body {
     }
 }
 
+/* ================== ESTILOS GLOBALES EQUIPO DE APOYO ================== */
+.equipo-apoyo-wrapper {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fdf7 100%);
+    border: 2px solid var(--planasa-gray-200);
+    padding: 24px;
+    border-radius: 16px;
+    margin-top: 16px;
+    box-shadow: 0 6px 20px rgba(63, 156, 53, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.equipo-apoyo-wrapper:hover {
+    box-shadow: 0 8px 24px rgba(63, 156, 53, 0.12);
+    border-color: var(--planasa-green-light);
+}
+
+.equipo-apoyo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--planasa-gray-200);
+}
+
+.equipo-apoyo-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--planasa-gray-900);
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.equipo-apoyo-title::before {
+    content: "👥";
+    font-size: 1.3rem;
+}
+
+.equipo-apoyo-contador {
+    background: linear-gradient(135deg, var(--planasa-green) 0%, var(--planasa-green-light) 100%);
+    color: white;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(63, 156, 53, 0.3);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.equipo-apoyo-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.equipo-apoyo-search input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid var(--planasa-gray-200);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    background: var(--planasa-white);
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.equipo-apoyo-search input::placeholder {
+    color: var(--planasa-gray-600);
+    font-style: italic;
+}
+
+.equipo-apoyo-search input:focus {
+    outline: none;
+    border-color: var(--planasa-green);
+    box-shadow: 0 0 0 4px rgba(63, 156, 53, 0.12);
+    background: #fafffe;
+}
+
+.btn-limpiar-ayudantes {
+    background: var(--planasa-gray-300);
+    color: var(--planasa-gray-700);
+    border: none;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    line-height: 1;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-limpiar-ayudantes:hover {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.btn-limpiar-ayudantes:active {
+    transform: scale(0.98);
+}
+
+.equipo-apoyo-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.equipo-apoyo-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.equipo-apoyo-list::-webkit-scrollbar-track {
+    background: var(--planasa-gray-100);
+    border-radius: 10px;
+}
+
+.equipo-apoyo-list::-webkit-scrollbar-thumb {
+    background: var(--planasa-green-light);
+    border-radius: 10px;
+}
+
+.equipo-apoyo-list::-webkit-scrollbar-thumb:hover {
+    background: var(--planasa-green);
+}
+
+.equipo-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--planasa-white);
+    border: 2px solid var(--planasa-gray-200);
+    border-radius: 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 3px 8px rgba(63, 156, 53, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.equipo-checkbox::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(63, 156, 53, 0.1) 0%, rgba(76, 171, 66, 0.1) 100%);
+    transition: width 0.3s ease;
+    z-index: 0;
+}
+
+.equipo-checkbox:hover::before {
+    width: 100%;
+}
+
+.equipo-checkbox:hover {
+    border-color: var(--planasa-green-light);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(63, 156, 53, 0.15);
+}
+
+.equipo-checkbox.selected {
+    background: linear-gradient(135deg, #e8f5e6 0%, #f0f9ef 100%);
+    border-color: var(--planasa-green);
+    color: var(--planasa-green-dark);
+    box-shadow: 0 4px 12px rgba(63, 156, 53, 0.2);
+    transform: translateY(-1px);
+}
+
+.equipo-checkbox.selected::after {
+    content: "✓";
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: var(--planasa-green);
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(63, 156, 53, 0.4);
+    animation: checkmarkPop 0.3s ease;
+}
+
+@keyframes checkmarkPop {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.equipo-checkbox input[type="checkbox"] {
+    accent-color: var(--planasa-green);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    border-radius: 6px;
+    z-index: 1;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.avatar-ayudante {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--planasa-green) 0%, var(--planasa-green-light) 100%);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(63, 156, 53, 0.35);
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    border: 3px solid white;
+    transition: all 0.3s ease;
+    z-index: 1;
+    position: relative;
+}
+
+.equipo-checkbox:hover .avatar-ayudante {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 4px 14px rgba(63, 156, 53, 0.45);
+}
+
+.equipo-checkbox.selected .avatar-ayudante {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    box-shadow: 0 4px 14px rgba(39, 174, 96, 0.5);
+    transform: scale(1.05);
+}
+
+.nombre-ayudante {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--planasa-gray-900);
+    z-index: 1;
+    position: relative;
+    line-height: 1.3;
+}
+
+.equipo-apoyo-footer {
+    font-size: 0.8rem;
+    color: var(--planasa-gray-600);
+    text-align: center;
+    margin-top: 8px;
+    letter-spacing: 0.3px;
+    font-style: italic;
+    padding: 10px;
+    background: var(--planasa-gray-100);
+    border-radius: 8px;
+}
+
 /* Responsive para wizard */
 @media (max-width: 1024px) and (min-width: 769px) {
     /* Tablet */
@@ -2253,5 +2631,89 @@ body {
     
     .tarea-texto {
         font-size: 0.95rem;
+    }
+    
+    /* ================== RESPONSIVO MÓVIL - EQUIPO DE APOYO ================== */
+    .responsable-simple {
+        padding: 16px;
+    }
+    
+    .responsable-simple label {
+        font-size: 0.9rem;
+    }
+    
+    .responsable-simple select {
+        padding: 12px 14px;
+        font-size: 0.9rem;
+    }
+    
+    .equipo-apoyo-wrapper {
+        padding: 18px;
+        gap: 14px;
+    }
+
+    .equipo-apoyo-header {
+        flex-wrap: wrap;
+    }
+
+    .equipo-apoyo-title {
+        font-size: 0.95rem;
+    }
+
+    .equipo-apoyo-title::before {
+        font-size: 1.1rem;
+    }
+
+    .equipo-apoyo-contador {
+        font-size: 0.7rem;
+        padding: 5px 10px;
+    }
+
+    .equipo-apoyo-search input {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+    }
+
+    .btn-limpiar-ayudantes {
+        padding: 8px 10px;
+        min-width: 38px;
+        height: 38px;
+        font-size: 0.85rem;
+    }
+
+    .equipo-apoyo-list {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+        max-height: 220px;
+    }
+
+    .equipo-checkbox {
+        padding: 10px 12px;
+        font-size: 0.8rem;
+        gap: 8px;
+    }
+
+    .equipo-checkbox.selected::after {
+        width: 18px;
+        height: 18px;
+        top: 4px;
+        right: 4px;
+        font-size: 0.65rem;
+    }
+
+    .avatar-ayudante {
+        width: 32px;
+        height: 32px;
+        font-size: 0.7rem;
+        border-width: 2px;
+    }
+
+    .nombre-ayudante {
+        font-size: 0.8rem;
+    }
+
+    .equipo-apoyo-footer {
+        font-size: 0.7rem;
+        padding: 8px;
     }
 }

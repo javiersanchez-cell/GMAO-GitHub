@@ -161,18 +161,18 @@ function initializeEventListeners() {
 function setupFechasYResponsable() {
     // Listeners para fechas (Paso 7)
     const fechaInicio = document.getElementById('fecha-inicio');
-    const fechaFin = document.getElementById('fecha-fin');
-    
+    const duracionHoras = document.getElementById('duracion-horas');
+
     if (fechaInicio) {
         fechaInicio.addEventListener('change', function() {
             console.log('📅 Fecha inicio cambiada:', this.value);
             updateNextButtonState(7);
         });
     }
-    
-    if (fechaFin) {
-        fechaFin.addEventListener('change', function() {
-            console.log('📅 Fecha fin cambiada:', this.value);
+
+    if (duracionHoras) {
+        duracionHoras.addEventListener('input', function() {
+            console.log('⏳ Duración en horas cambiada:', this.value);
             updateNextButtonState(7);
         });
     }
@@ -928,9 +928,11 @@ function updateNextButtonState(step) {
             }
             break;
         case 7:
-            // Validar que al menos la fecha de inicio esté seleccionada
-            const fechaInicio = document.getElementById('fecha-inicio');
-            canContinue = fechaInicio && fechaInicio.value !== '';
+            // Validar fecha de inicio + duración en horas
+            const fechaInicio7 = document.getElementById('fecha-inicio');
+            const duracionHoras7 = document.getElementById('duracion-horas');
+            canContinue = fechaInicio7 && fechaInicio7.value !== '' &&
+                        duracionHoras7 && Number(duracionHoras7.value) > 0;
             const nextBtn7 = document.getElementById('next-btn-7');
             if (nextBtn7) {
                 nextBtn7.disabled = !canContinue;
@@ -1030,11 +1032,14 @@ function nextStep() {
             canAdvance = true;
             break;
         case 7:
-            // Validar fechas
-            const fechaInicio = document.getElementById('fecha-inicio');
-            canAdvance = fechaInicio && fechaInicio.value !== '';
+            // Validar fecha de inicio + duración en horas
+            const fechaInicioStep7 = document.getElementById('fecha-inicio');
+            const duracionHorasStep7 = document.getElementById('duracion-horas');
+            canAdvance = fechaInicioStep7 && fechaInicioStep7.value !== '' &&
+                        duracionHorasStep7 && Number(duracionHorasStep7.value) > 0;
+
             if (!canAdvance) {
-                alert('Por favor, selecciona al menos la fecha de inicio.');
+                alert('Por favor, indica la fecha de inicio y la duración en horas.');
                 return;
             }
             break;
@@ -1175,6 +1180,8 @@ function restoreStepState(step) {
 }
 
 let qrScanner = null;
+let qrYaLeido = false;  // 👉 NUEVO
+
 
 function openQRScanner() {
     console.log('🔍 Abriendo escáner QR...');
@@ -1183,39 +1190,45 @@ function openQRScanner() {
     
     if (qrModal && qrReader) {
         qrModal.style.display = 'block';
-        
-        // Crear instancia del escáner con cámara trasera
+
+        // Reiniciamos la bandera cada vez que abrimos el escáner
+        qrYaLeido = false;  // 👉 IMPORTANTE
+
         qrScanner = new Html5Qrcode('qr-reader');
-        
-        // Configuración para cámara trasera
+
         const config = {
             fps: 10,
             qrbox: { width: 250, height: 250 },
             aspectRatio: 1.0
         };
-        
-        // Intentar usar cámara trasera primero, si no existe usar la disponible
+
         qrScanner.start(
-            { facingMode: "environment" }, // Cámara trasera
+            { facingMode: "environment" },
             config,
             (decodedText, decodedResult) => {
+                // 👇 Evita el “bucle infinito”
+                if (qrYaLeido) return;
+                qrYaLeido = true;
+
                 console.log('✅ QR escaneado:', decodedText);
                 processQRData(decodedText);
                 cerrarEscanerQR();
             },
             (error) => {
-                // Error de escaneo - no hacer nada para evitar spam de logs
+                // errores de escaneo, los ignoramos
             }
         ).catch(err => {
             console.error('Error al iniciar cámara:', err);
             alert('No se pudo acceder a la cámara. Verifica los permisos.');
             cerrarEscanerQR();
         });
-        
-        // Configurar botón de prueba
+
         const testBtn = document.getElementById('test-qr-btn');
         if (testBtn) {
             testBtn.onclick = () => {
+                if (qrYaLeido) return;
+                qrYaLeido = true;
+
                 const testData = {
                     "categoria_activo": "maquinaria",
                     "tipo_activo": "Tractor",
@@ -1228,22 +1241,31 @@ function openQRScanner() {
     }
 }
 
+
 function cerrarEscanerQR() {
     const qrModal = document.getElementById('qr-modal');
     if (qrModal) {
         qrModal.style.display = 'none';
     }
-    
+
     // Detener el escáner si existe
     if (qrScanner) {
-        qrScanner.clear().then(() => {
-            console.log('🛑 Escáner QR detenido');
-        }).catch(error => {
-            console.error('Error al detener escáner:', error);
-        });
-        qrScanner = null;
+        // Primero parar el flujo de cámara
+        qrScanner.stop()
+            .then(() => {
+                return qrScanner.clear();
+            })
+            .then(() => {
+                console.log('🛑 Escáner QR detenido y limpiado');
+                qrScanner = null;
+            })
+            .catch(error => {
+                console.error('Error al detener escáner:', error);
+                qrScanner = null;
+            });
     }
 }
+
 
 function processQRData(qrData) {
     try {
@@ -1408,12 +1430,25 @@ function findActivoById(activoId) {
 function finishIncidencia() {
     console.log('📋 Finalizando orden de mantenimiento:', incidenciaData);
     
-    // Recopilar todos los datos del formulario
+    // Recopilar datos del formulario
     const responsableSelect = document.getElementById('responsable-select');
     const notasResponsable = document.getElementById('notas-responsable');
     const plantillaTareas = document.getElementById('plantilla-tareas');
     const descripcionTareas = document.getElementById('descripcion-tareas');
-    
+
+    // Fechas y duración
+    const fechaInicioValue = document.getElementById('fecha-inicio')?.value || '';
+    const duracionHorasValue = Number(document.getElementById('duracion-horas')?.value || 0);
+
+    // (Opcional) calcular fecha fin estimada a partir de la fecha de inicio + horas
+    let fechaFinEstimada = '';
+    if (fechaInicioValue && duracionHorasValue > 0) {
+        const inicio = new Date(fechaInicioValue); // tipo="date" → 'YYYY-MM-DD'
+        // Sumamos las horas (en horas locales del navegador)
+        inicio.setHours(inicio.getHours() + duracionHorasValue);
+        fechaFinEstimada = inicio.toISOString();
+    }
+
     // Recopilar tareas del DOM
     const tareasElements = document.querySelectorAll('.tarea-item');
     const tareasArray = [];
@@ -1456,8 +1491,11 @@ function finishIncidencia() {
         responsable: responsableSelect ? responsableSelect.options[responsableSelect.selectedIndex]?.text : '',
         equipoApoyo: incidenciaData.equipoApoyo || [],
         notasResponsable: notasResponsable ? notasResponsable.value : '',
-        fechaInicio: document.getElementById('fecha-inicio')?.value || '',
-        fechaFin: document.getElementById('fecha-fin')?.value || '',
+        // 🔽 Nuevo modelo de planificación
+        fechaInicio: fechaInicioValue,
+        duracionHoras: duracionHorasValue,
+        fechaFinEstimada: fechaFinEstimada,
+        // 🔼
         plantillaTareas: plantillaTareas ? plantillaTareas.options[plantillaTareas.selectedIndex]?.text : '',
         tareas: tareasArray,
         descripcionTareas: descripcionTareas ? descripcionTareas.value : '',

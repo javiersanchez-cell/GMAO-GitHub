@@ -538,7 +538,7 @@ function crearOrdenTrabajo() {
     ordenWizardData = {
         criticidad: '',
         fechaInicio: '',
-        fechaFin: '',
+        duracionHoras: 0,
         responsable: '',
         equipoApoyo: [],
         tareas: [],
@@ -595,90 +595,35 @@ function seleccionarCriticidad(criticidad) {
     // Pasar al siguiente paso más rápido
     setTimeout(() => {
         mostrarPaso(2);
-        // Establecer fecha mínima como hoy para ambos campos
-        const hoy = new Date().toISOString().split('T')[0]; // formato YYYY-MM-DD para date
+        const hoy = new Date().toISOString().split('T')[0];
         const fechaInicio = document.getElementById('fechaInicio');
-        const fechaFin = document.getElementById('fechaFin');
-        const fechaCalendario = document.getElementById('fechaCalendario');
-        
-        if (fechaInicio && fechaFin) {
+        if (fechaInicio) {
             fechaInicio.min = hoy;
-            fechaFin.min = hoy;
             fechaInicio.focus();
-        } else if (fechaCalendario) {
-            fechaCalendario.min = hoy;
-            fechaCalendario.focus();
         }
     }, 500);
 }
 
 function validarFechasProgramadas() {
     const fechaInicio = document.getElementById('fechaInicio');
-    const fechaFin = document.getElementById('fechaFin');
-    
-    if (fechaInicio && fechaFin && fechaInicio.value && fechaFin.value) {
-        const inicio = new Date(fechaInicio.value);
-        const fin = new Date(fechaFin.value);
-        
-        if (fin < inicio) {
-            alert('La fecha de finalización debe ser igual o posterior a la fecha de inicio');
+    const duracionHoras = document.getElementById('duracionHoras');
+    if (fechaInicio && duracionHoras && fechaInicio.value && duracionHoras.value) {
+        const dur = parseFloat(duracionHoras.value);
+        if (isNaN(dur) || dur <= 0) {
+            alert('La duración debe ser mayor a 0');
             return;
         }
-        
-        // Guardar fechas
         ordenWizardData.fechaInicio = fechaInicio.value;
-        ordenWizardData.fechaFin = fechaFin.value;
-        
-        // Mostrar en el resumen con formato solo de fecha
-        const inicioFormateado = inicio.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-        
-        const finFormateado = fin.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit', 
-            year: 'numeric'
-        });
-        
+        ordenWizardData.duracionHoras = dur;
         document.getElementById('fila-fechas').style.display = 'flex';
-        
-        // Si es el mismo día, mostrar solo una fecha
-        if (fechaInicio.value === fechaFin.value) {
-            document.getElementById('valor-fechas').innerHTML = `<strong>Fecha:</strong> ${inicioFormateado}`;
-        } else {
-            document.getElementById('valor-fechas').innerHTML = `<strong>Inicio:</strong> ${inicioFormateado}<br><strong>Fin:</strong> ${finFormateado}`;
-        }
-        
-        // Continuar automáticamente
-        setTimeout(() => {
-            mostrarPaso(3);
-        }, 300);
+        const inicioFormateado = new Date(fechaInicio.value).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+        document.getElementById('valor-fechas').innerHTML = `<strong>Inicio:</strong> ${inicioFormateado} <br><strong>Duración:</strong> ${dur}h`;
+        setTimeout(()=> mostrarPaso(3),300);
     }
 }
 
 // Función legacy para compatibilidad
-function confirmarFechaCalendario() {
-    const fechaSeleccionada = document.getElementById('fechaCalendario');
-    if (fechaSeleccionada && fechaSeleccionada.value) {
-        // Si es el campo único de fecha, usarlo como inicio y fin del mismo día
-        const fecha = fechaSeleccionada.value;
-        ordenWizardData.fechaInicio = fecha;
-        ordenWizardData.fechaFin = fecha;
-        
-        const fechaFormat = new Date(fecha).toLocaleDateString('es-ES');
-        document.getElementById('fila-fechas').style.display = 'flex';
-        document.getElementById('valor-fechas').textContent = `${fechaFormat}`;
-        
-        setTimeout(() => {
-            mostrarPaso(3);
-        }, 300);
-    } else {
-        // Si no hay campo único, validar fechas programadas
-        validarFechasProgramadas();
-    }
-}
+function confirmarFechaCalendario() { validarFechasProgramadas(); }
 
 function siguientePaso(numeroPaso) {
     mostrarPaso(numeroPaso);
@@ -751,6 +696,61 @@ function validarResponsable() {
     }
 }
 
+// Actualizar lista de equipo de apoyo (ayudantes) y reflejar en resumen
+function actualizarEquipoApoyo() {
+    const checkboxes = document.querySelectorAll('.equipo-apoyo-list input[type="checkbox"]');
+    const seleccionados = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+    ordenWizardData.equipoApoyo = seleccionados;
+
+    // Estilizar labels según selección
+    document.querySelectorAll('.equipo-checkbox').forEach(label => {
+        const input = label.querySelector('input');
+        if (input && input.checked) {
+            label.classList.add('selected');
+        } else {
+            label.classList.remove('selected');
+        }
+    });
+
+    // Actualizar texto del resumen del responsable si ya está seleccionado
+    const valorResp = document.getElementById('valor-responsable');
+    if (valorResp && ordenWizardData.responsable) {
+        if (seleccionados.length > 0) {
+            valorResp.textContent = `${ordenWizardData.responsable} (+ ${seleccionados.length} apoyo)`;
+        } else {
+            valorResp.textContent = ordenWizardData.responsable;
+        }
+    }
+
+    const contador = document.getElementById('contador-ayudantes');
+    if (contador) {
+        contador.textContent = `${seleccionados.length} seleccionados`;
+    }
+}
+
+function filtrarAyudantes() {
+    const filtro = document.getElementById('filtroAyudantes');
+    const termino = (filtro?.value || '').toLowerCase().trim();
+    document.querySelectorAll('.equipo-checkbox').forEach(label => {
+        const nombre = label.getAttribute('data-nombre');
+        if (!termino || nombre.includes(termino)) {
+            label.style.display = 'flex';
+        } else {
+            label.style.display = 'none';
+        }
+    });
+}
+
+function limpiarAyudantes() {
+    document.querySelectorAll('.equipo-apoyo-list input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+    actualizarEquipoApoyo();
+    const filtro = document.getElementById('filtroAyudantes');
+    if (filtro) filtro.value = '';
+    filtrarAyudantes();
+}
+
 function añadirTarea(event) {
     if (event.key === 'Enter') {
         añadirTareaManual();
@@ -820,7 +820,7 @@ function crearOrden() {
     ordenWizardData.tipoTrabajo = document.getElementById('tipoTrabajo').value;
 
     // Validación básica (igual que antes)
-    if (!ordenWizardData.criticidad || !ordenWizardData.fechaInicio || !ordenWizardData.responsable) {
+    if (!ordenWizardData.criticidad || !ordenWizardData.fechaInicio || !ordenWizardData.responsable || !(ordenWizardData.duracionHoras>0)) {
         alert('⚠️ Faltan datos obligatorios para crear la orden');
         return;
     }
@@ -881,25 +881,39 @@ function crearOrden() {
             ? `Orden desde ${solicitudSeleccionada.id} - ${solicitudSeleccionada.averia}`
             : 'Orden de mantenimiento',
         descripcion: ordenWizardData.descripcion || (solicitudSeleccionada?.descripcion ?? ''),
-        // Usamos criticidad como prioridad (puedes mapearla a Alta/Media/Baja si quieres)
+        
+        // DATOS COMPLETOS DE LA INCIDENCIA ORIGINAL
+        categoriaActivo: solicitudSeleccionada?.categoriaActivo || '',
+        tipoActivo: solicitudSeleccionada?.tipoActivo || '',
+        ubicacion: solicitudSeleccionada?.ubicacion || '',
+        tipoAveria: solicitudSeleccionada?.averia || null,
+        descripcionAveria: solicitudSeleccionada?.descripcion || '',
+        acciones: solicitudSeleccionada?.acciones || '',
+        solicitante: solicitudSeleccionada?.nombre || '',
+        
+        // Prioridad y responsables
         prioridad: ordenWizardData.criticidad || 'Media',
         responsable: ordenWizardData.responsable,
         equipoApoyo: ordenWizardData.equipoApoyo || [],
         notasResponsable: '',
 
+        // Fechas y duración
         fechaInicio: ordenWizardData.fechaInicio,
-        fechaFin: ordenWizardData.fechaFin,
+        duracionHoras: ordenWizardData.duracionHoras,
+        fechaFin: new Date(new Date(ordenWizardData.fechaInicio).getTime() + ordenWizardData.duracionHoras*60*60*1000).toISOString().split('T')[0],
+        fechaFinEstimada: new Date(new Date(ordenWizardData.fechaInicio).getTime() + ordenWizardData.duracionHoras*60*60*1000).toISOString(),
 
+        // Tareas y plantilla
         plantillaTareas: ordenWizardData.tipoTrabajo || '',
         tareas: tareasFinal,
         descripcionTareas: ordenWizardData.descripcion || '',
+        observaciones: '',
         archivos: [],
+        fotografias: [],
 
+        // Estado y creación
         estado: 'por-hacer',
-        fechaCreacion: new Date().toISOString(),
-        ubicacion: solicitudSeleccionada
-            ? { finca: solicitudSeleccionada.ubicacion }
-            : {}
+        fechaCreacion: new Date().toISOString()
     };
 
     // Guardar en localStorage usando la MISMA clave que el otro flujo

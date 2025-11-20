@@ -572,7 +572,7 @@ body {
     overflow: visible;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1.5rem;
     font-size: 0.9rem;
     line-height: 1.3;
 }
@@ -584,6 +584,9 @@ body {
     padding: 0.75rem;
     border-left: 3px solid var(--planasa-green);
     margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
 }
 
 .modal-section-title {
@@ -2153,6 +2156,23 @@ body {
 .wizard-btn-cancelar:hover {
     background: #5a6268;
     transform: translateY(-2px);
+}
+
+/* Etiqueta para el tipo de máquina / activo */
+.tipo-activo-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    background: var(--planasa-gray-100);
+    color: var(--planasa-green-dark);
+    border: 1px solid var(--planasa-green-light);
+    margin-right: 0.35rem;
 }
 
 @keyframes fadeIn {

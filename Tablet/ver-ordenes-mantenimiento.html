@@ -11,22 +11,38 @@
     <div id="navbar-container"></div>
 
     <div class="container">
-        <!-- Filtros simples -->
-        <div class="filtros-container">
-            <select id="filtroResponsable" onchange="filtrarOrdenes()">
-                <option value="">Todos los técnicos</option>
-                <option value="Carlos Méndez">Carlos Méndez</option>
-                <option value="Ana García">Ana García</option>
-                <option value="Luis Rodríguez">Luis Rodríguez</option>
-                <option value="María López">María López</option>
-            </select>
-            <select id="filtroPrioridad" onchange="filtrarOrdenes()">
-                <option value="">Todas las prioridades</option>
-                <option value="Crítica">🔴 Crítica</option>
-                <option value="Alta">🟠 Alta</option>
-                <option value="Media">🟡 Media</option>
-                <option value="Baja">🟢 Baja</option>
-            </select>
+        <!-- Barra de herramientas -->
+        <div class="toolbar-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px;">
+            <!-- Botones de modo de vista -->
+            <div class="view-mode-buttons" style="display: flex; gap: 10px;">
+                <button id="btn-kanban" class="view-btn active" onclick="cambiarVista('kanban')" style="padding: 10px 20px; background: var(--planasa-green); color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500;">
+                    <i class="fas fa-columns"></i> Kanban
+                </button>
+                <button id="btn-tabla" class="view-btn" onclick="cambiarVista('tabla')" style="padding: 10px 20px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500;">
+                    <i class="fas fa-table"></i> Tabla
+                </button>
+                <button id="btn-calendario" class="view-btn" onclick="cambiarVista('calendario')" style="padding: 10px 20px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500;">
+                    <i class="fas fa-calendar-alt"></i> Calendario
+                </button>
+            </div>
+
+            <!-- Filtros -->
+            <div class="filtros-container" style="display: flex; gap: 10px;">
+                <select id="filtroResponsable" onchange="filtrarOrdenes()">
+                    <option value="">Todos los técnicos</option>
+                    <option value="Carlos Méndez">Carlos Méndez</option>
+                    <option value="Ana García">Ana García</option>
+                    <option value="Luis Rodríguez">Luis Rodríguez</option>
+                    <option value="María López">María López</option>
+                </select>
+                <select id="filtroPrioridad" onchange="filtrarOrdenes()">
+                    <option value="">Todas las prioridades</option>
+                    <option value="Crítica">🔴 Crítica</option>
+                    <option value="Alta">🟠 Alta</option>
+                    <option value="Media">🟡 Media</option>
+                    <option value="Baja">🟢 Baja</option>
+                </select>
+            </div>
         </div>
 
         <!-- Kanban Board -->
@@ -85,6 +101,43 @@
                         <p>No hay órdenes completadas</p>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Vista Tabla -->
+        <div id="vista-tabla" style="display: none; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <table id="tabla-ordenes" style="width: 100%; border-collapse: collapse;">
+                <thead style="background: var(--planasa-green); color: white;">
+                    <tr>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">ID</th>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">Activo</th>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">Tipo</th>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">Responsable</th>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">Prioridad</th>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">Estado</th>
+                        <th style="padding: 15px; text-align: left; font-weight: 600;">Fecha Inicio</th>
+                        <th style="padding: 15px; text-align: center; font-weight: 600;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-body">
+                    <!-- Se llena dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Vista Calendario -->
+        <div id="vista-calendario" style="display: none; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div id="calendario-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <button onclick="cambiarMes(-1)" style="padding: 8px 16px; background: var(--planasa-green); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <h3 id="calendario-titulo" style="margin: 0; color: var(--planasa-green-dark); font-size: 1.3rem;"></h3>
+                <button onclick="cambiarMes(1)" style="padding: 8px 16px; background: var(--planasa-green); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div id="calendario-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px;">
+                <!-- Se llena dinámicamente -->
             </div>
         </div>
     </div>

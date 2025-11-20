@@ -283,7 +283,7 @@ body {
     padding: 0;
     border-radius: 15px;
     width: 100%;
-    max-width: 750px;
+    max-width: 1100px;
     height: auto;
     max-height: 90vh;
     display: flex;
@@ -1304,4 +1304,333 @@ body {
 .descripcion-item .modal-textarea {
     min-height: 80px;
     resize: vertical;
+}
+
+/* ================== ESTILOS NUEVOS PARA MODAL MEJORADO ================== */
+
+/* Sección de tareas editables */
+.seccion-tareas-editables {
+    transition: all 0.3s ease;
+}
+
+.lista-tareas-editables {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.tarea-item-editable {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: white;
+    border: 2px solid var(--planasa-gray-200);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.tarea-item-editable:hover {
+    border-color: var(--planasa-green-light);
+    box-shadow: 0 2px 8px rgba(63, 156, 53, 0.1);
+}
+
+.tarea-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--planasa-green);
+    flex-shrink: 0;
+}
+
+.tarea-input {
+    flex: 1;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: var(--planasa-gray-50);
+    transition: all 0.3s ease;
+}
+
+.tarea-input:focus {
+    outline: none;
+    background: white;
+    box-shadow: 0 0 0 2px rgba(63, 156, 53, 0.2);
+}
+
+.btn-eliminar-tarea {
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.btn-eliminar-tarea:hover {
+    background: #dc2626;
+    color: white;
+    transform: scale(1.05);
+}
+
+.btn-agregar-tarea {
+    background: linear-gradient(135deg, var(--planasa-green) 0%, var(--planasa-green-light) 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-shadow: 0 2px 8px rgba(63, 156, 53, 0.2);
+}
+
+.btn-agregar-tarea:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(63, 156, 53, 0.3);
+}
+
+/* Sección de descripción editable */
+.seccion-descripcion-editable .modal-textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--planasa-gray-200);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: vertical;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.seccion-descripcion-editable .modal-textarea:focus {
+    outline: none;
+    border-color: var(--planasa-green);
+    box-shadow: 0 0 0 3px rgba(63, 156, 53, 0.1);
+}
+
+/* Sección de incidencia origen */
+.seccion-incidencia-origen {
+    position: relative;
+    overflow: hidden;
+}
+
+.seccion-incidencia-origen::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+}
+
+.modal-input-readonly {
+    background: var(--planasa-gray-100);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: var(--planasa-gray-700);
+    border: 1px solid var(--planasa-gray-200);
+    font-weight: 500;
+}
+
+.fotos-container-simple {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.foto-item-simple {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--planasa-gray-200);
+    font-size: 0.85rem;
+    color: var(--planasa-gray-700);
+    transition: all 0.3s ease;
+}
+
+.foto-item-simple:hover {
+    border-color: var(--planasa-green);
+    box-shadow: 0 2px 6px rgba(63, 156, 53, 0.15);
+}
+
+.foto-item-simple i {
+    color: var(--planasa-green);
+    font-size: 1rem;
+}
+
+/* Estilos para grid de fotos */
+.fotos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.foto-thumbnail-wrapper {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    background: var(--planasa-gray-100);
+    border: 2px solid var(--planasa-gray-200);
+    transition: all 0.3s ease;
+}
+
+.foto-thumbnail-wrapper:hover {
+    border-color: var(--planasa-green);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(63, 156, 53, 0.2);
+}
+
+.foto-thumbnail-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.foto-thumbnail-wrapper img:hover {
+    transform: scale(1.1);
+}
+
+/* Sección de programación */
+.seccion-programacion {
+    position: relative;
+    overflow: hidden;
+}
+
+.seccion-programacion::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--planasa-green) 0%, var(--planasa-green-dark) 100%);
+}
+
+/* Select múltiple mejorado */
+.modal-select[multiple] {
+    padding: 8px;
+    border: 2px solid var(--planasa-gray-200);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    background: white;
+    min-height: 100px;
+}
+
+.modal-select[multiple] option {
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 2px 0;
+}
+
+.modal-select[multiple] option:checked {
+    background: var(--planasa-green-ultra-light);
+    color: var(--planasa-green-dark);
+    font-weight: 600;
+}
+
+/* Badges de equipo */
+.equipo-apoyo-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tecnico-badge-small {
+    background: linear-gradient(135deg, var(--planasa-green-ultra-light) 0%, #e8f5e6 100%);
+    color: var(--planasa-green-dark);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--planasa-green-light);
+    box-shadow: 0 2px 4px rgba(63, 156, 53, 0.1);
+}
+
+/* Responsive para modal mejorado */
+@media (max-width: 768px) {
+    .modal-content {
+        max-width: 95%;
+        margin: 10px;
+    }
+
+    .modal-section-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .tarea-item-editable {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .tarea-input {
+        font-size: 0.9rem;
+    }
+
+    .btn-eliminar-tarea {
+        padding: 6px 10px;
+    }
+}
+
+/* ============ ESTILOS PARA BOTONES DE VISTA ============ */
+.view-btn {
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.view-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+.view-btn.active {
+    box-shadow: 0 4px 8px rgba(63, 156, 53, 0.3);
+}
+
+/* ============ ESTILOS TABLA ============ */
+#tabla-ordenes tbody tr {
+    transition: all 0.2s ease;
+}
+
+#tabla-ordenes tbody tr:hover {
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* ============ ESTILOS CALENDARIO ============ */
+#calendario-grid > div {
+    transition: all 0.2s ease;
+}
+
+.toolbar-container {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
